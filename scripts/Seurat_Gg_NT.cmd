@@ -1,0 +1,8 @@
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_ctrl_1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_ctrl_2.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_D05_ctrl.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_D07_ctrl.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_lumb_1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_lumb_2.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_poly_1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/Gg_poly_2.Rmd')

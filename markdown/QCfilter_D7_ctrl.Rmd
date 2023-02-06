@@ -1,0 +1,176 @@
+---
+title: "QC and filtering of spinal cord day 7 control with Soupx and ddqc"
+author: "Fabio Sacher"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE, warning = FALSE, message = FALSE}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(gridExtra)
+library(SoupX)
+library(ddqcR)
+library(cowplot)
+library(patchwork)
+```
+
+```{r input, message=FALSE, warning=FALSE, include=FALSE}
+# This is where the raw data is located, results from a CellRanger pipeline
+cellranger_path = "/scicore/home/tschoppp/GROUP/mapped_data/10X_Gg_caudal_NT_WT_1121/"
+
+#The sample name, will  be used in plots and files
+my.samplename = "D07_ctrl"
+```
+
+Date: `r format(Sys.Date(), "%d.%m.%y")`
+
+This script takes raw UMIs from the 10x output, and runs some QC as well as filtering steps to remove cells which are likely dublets, very poor cells, as well as cells with hight abundance of MT read.
+
+Soupx 10 loading:
+
+```{r}
+sc = load10X(paste0(cellranger_path, "outs/"), readArgs = list(gene.column = 1))
+sc = autoEstCont(sc)
+out = adjustCounts(sc)
+```
+
+```{r soupx-inspection}
+dd = sc$metaData[colnames(sc$toc), ] %>% 
+  mutate(clusters = factor(clusters)) %>% 
+  mutate(clustersFine = factor(clustersFine))
+  
+mids = aggregate(cbind(tSNE1, tSNE2) ~ clusters, data = dd, FUN = mean)
+gg = ggplot(dd, aes(tSNE1, tSNE2)) + geom_point(aes(colour = clusters), size = 0.2) + 
+    geom_text(data = mids, aes(label = clusters)) + ggtitle(my.samplename) + 
+    guides(colour = guide_legend(override.aes = list(size = 1))) +
+    theme_cowplot()
+
+
+midsFine = aggregate(cbind(tSNE1, tSNE2) ~ clustersFine, data = dd, FUN = mean)
+ggFine = ggplot(dd, aes(tSNE1, tSNE2)) + geom_point(aes(colour = clustersFine), size = 0.2) + 
+    geom_text(data = midsFine, aes(label = clustersFine)) + ggtitle(paste0(my.samplename, " fine clusters")) + 
+    guides(colour = guide_legend(override.aes = list(size = 1))) +
+    theme_cowplot()
+gg + ggFine
+```
+
+In the following plot we can see the distribution of UMIs per cell, in this raw UMI table count
+
+```{r first-look, echo=FALSE, message=FALSE, warning=FALSE}
+ctable = out
+
+temp = data.frame(cells=colnames(ctable),UMIs=Matrix::colSums(ctable))
+ggplot(temp, aes(x=temp$UMIs)) + geom_histogram() + geom_vline(aes(xintercept=mean(temp$UMIs))) +
+  labs(title = paste0(my.samplename," Raw UMIs/Cell Frequency"), x = "UMIs/Cell", y = "Frequency")
+rm(temp)
+```
+
+# ddqc
+
+Data-driven QC to prevent harsh thresholding and retain more cells or cell types. It uses separate thresholds for each cluster:
+
+ Initial Qualtity Control (QC) is performed, when obvious low-quality cells are removed. By default those are cells with n_genes < 100 and percent_mito > 80.
+
+- The cells are clustered with the clustering resolution 1.3 (default)
+- Then thesholds are picked for each cluster. By default the following metrics are considered:
+    - **Number of counts/UMIs**: keep cells that have n_counts greater than median - 2 Median Absolute Deviations (MAD)
+    - **Number of genes**: keep cells that have n_genes greater than median - 2 MADs
+    - **Percent of mitochondrial transctipts**: keep cells that have percent_mito less than median + 2 MADs
+- In order to prevent the removal of healthy cells in clusters with high median n_genes and low percent_mito there are additional bounds for those thresholds:
+    - Cluster-level threshold for n_genes can't be greater than 200 (default). If it is greater, it will be set to 200.
+    - Cluster-level threshold for percent_mito can't be lower than 10 (default). If it is lower, it will be set to 10
+
+```{r MT_perc}
+data <- CreateSeuratObject(counts = out, project = my.samplename, min.cells = 3)
+data
+
+mt <- c("ENSGALG00000035334", #COX3
+     "ENSGALG00000032142", #MT-CO1
+     "ENSGALG00000032079", #MT-CYB
+     "ENSGALG00000037838", #ND6
+     "ENSGALG00000029500", #ND5
+     "ENSGALG00000036229", #MT-ND4
+     "ENSGALG00000042478", #ND4L
+     "ENSGALG00000030436", #ND3
+     "ENSGALG00000041091", #MT-ATP6
+     "ENSGALG00000032465", #MT-ATP8
+     "ENSGALG00000043768", #MT-ND2
+     "ENSGALG00000042750") #MT-ND1
+
+#The mt genes
+is.mt <- (rownames(data)%in%mt)
+
+# Percentage of reads belonging to Mt genes
+data[["percent.mt"]] <-  PercentageFeatureSet(data, features = mt)
+
+```
+
+```{r RB_perc}
+gnames <- modplots::gnames
+
+rb <- gnames[grep("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA", gnames$Gene.name), "Gene.stable.ID"]
+
+data[["percent.rb"]] <- PercentageFeatureSet(data, features = rb)
+```
+
+
+To perform ddqc on a dataset, we first need to run `initialQC` function to remove obvious bad quality cells:
+Since initialQC uses "MT-" as pattern for grep to calculate data[["percent.mt"]] and we already calculated it, we skip the function and manually filter with 50% as the hard threshold step:
+
+```{r initialQC}
+data <- subset(data, subset = percent.mt <= 50)
+data
+```
+
+Then we need to run `ddqc.metrics` <br>
+This function will not filter the Seurat object itself, but will return a data.frame with filtering statistics
+
+```{r metrics}
+df.qc <- ddqc.metrics(data, do.ribo = TRUE)
+```
+
+### Outputs
+There are two boxplots provided for exploratory data analysis:
+
+- log2(n_genes) by cluster: shows log2 of number of genes for each cluster in the initial clustering. Red line at 200 genes (7.64 in log2 scale) represents the most common fixed threshold cutoff for n_genes.
+- percent_mito by cluster: shows percent_mito for each cluster in the initial clustering. Red line at 10% represents the most common fixed threshold cutoff for percent_mito.
+
+The function will return a dataframe containing the following info for each cell:
+
+- `metric`: QC metric number
+- `cluster_labels`: cluster from initial clustering performed by ddqc
+- `metric.lower.co` and `metric.upper.co`: lower and upper cuttofs for each metric on which ddqc was performed. If ddqc was not performed for upper or lower end of this metric this field will be `None`
+- `metric.passed.qc`: whether the cell passed qc for a given metric
+This information is useful if you want to understand based on which metric the cell was filtered out.
+
+```{r table}
+df.qc
+```
+
+### Filter out the cells
+Now, we will filter out the cells that failed ddqc. 
+
+```{r filter}
+data <- filterData(data, df.qc) 
+data
+```
+
+### Save the dataset
+We will save the dataset as data.rds, which can then be imported into the scRNAseq pipeline of your choice for downstream analysis.
+```{r save}
+saveRDS(data, file = paste0("~/spinal_cord_paper/data/",my.samplename,"_filtered_",format(Sys.Date(), "%d%m%y"),".rds"))
+```
+
+```{r sessionInfo}
+sessionInfo()
+```
+

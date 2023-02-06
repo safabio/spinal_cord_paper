@@ -1,0 +1,100 @@
+---
+title: "Integration of Gg_NT ctrl 1 and 2"
+author: "Fabio Sacher"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+Render this script with > sbatch ~/test/NT_test_soupx_ddqcR/seurat_int_gg_ctrl_render.sh
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  comment = '', fig.width = 10, fig.height = 7
+)
+```
+
+```{r libraries, warning = FALSE, message = FALSE, echo = T, results = 'hide'}
+library(Seurat)
+library(magrittr)
+```
+
+```{r, load data}
+my.samples <- list()
+
+my.samples[[1]] <- readRDS("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_1_seurat_250123.rds")
+my.samples[[2]] <- readRDS("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_2_seurat_250123.rds")
+
+names(my.samples) <- c("Gg_NT_ctrl_1", "Gg_NT_ctrl_2")
+
+```
+
+```{r, Integration step}
+# integration features
+features <- SelectIntegrationFeatures(
+	object.list = my.samples,
+	nfeatures = 3000
+	)
+
+# prepare integration 
+my.samples <- PrepSCTIntegration(
+	object.list = my.samples,
+	anchor.features = features
+	)
+
+# find anchors
+NT.anchors <- FindIntegrationAnchors(
+	object.list = my.samples,
+	normalization.method = "SCT",
+	anchor.features = features
+	)
+
+rm(my.samples)
+
+# integrate
+int.nt.sct <- IntegrateData(
+	anchorset = NT.anchors,
+	# features.to.integrate = all_features,
+	normalization.method = "SCT"
+	)
+
+# compute PCA
+int.nt.sct <- RunPCA(
+	int.nt.sct,
+	verbose = FALSE
+	)
+
+# Run UMAP
+int.nt.sct <- RunUMAP(
+	int.nt.sct,
+	reduction = "pca",
+	dims = 1:30
+	)
+
+```
+
+## inspect the data
+
+```{r, inspection}
+
+PCAPlot(int.nt.sct)
+
+DimPlot(int.nt.sct, reduction = "umap")
+
+```
+
+## save the integrated object
+
+```{r, save object}
+saveRDS(int.nt.sct, file = paste0("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_integrated_",format(Sys.Date(), "%d%m%y"),".rds"))
+```
+
+```{r sessionInfo}
+sessionInfo()
+```
+

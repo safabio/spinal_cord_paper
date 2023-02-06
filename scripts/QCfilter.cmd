@@ -1,0 +1,8 @@
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_ctrl1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_ctrl2.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_lumb1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_lumb2.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_poly1.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_poly2.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_D5_ctrl.Rmd')
+Rscript -e rmarkdown::render('~/spinal_cord_paper/scripts/QCfilter_D7_ctrl.Rmd')
