@@ -1,5 +1,5 @@
 ---
-title: "Seurat workflow of the integrated Gg poly 1 and 2 data"
+title: "Seurat workflow of the integrated D05 ctrl, D07 ctrl and ctrl 1 (day 10)"
 author: "Fabio Sacher"
 date: "06.02.2023"
 output:
@@ -47,9 +47,9 @@ library(ggdendro)
 
 gnames <- modplots::gnames
 # load the integrated seurat
-my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_poly_integrated_060223.rds")
+my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_devel_integrated_060223.rds")
 
-my.int@project.name <- "Gg_poly_int"
+my.int@project.name <- "Gg_devel_int"
 
 my.int
 ```
