@@ -4,7 +4,7 @@
 #SBATCH --job-name=Seurat_Gg_NT_int_array
 #SBATCH --time=00:30:00
 #SBATCH --qos=30min
-#SBATCH --mem=20G
+#SBATCH --mem=30G
 #SBATCH --mail-user=fabio.sacher@unibas.ch
 #SBATCH --mail-type=ALL
 #SBATCH --output ./slurm_out/%x-%A_%a.out
