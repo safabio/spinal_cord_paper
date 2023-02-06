@@ -1,8 +1,11 @@
 ---
-title: "Integration of Gg_NT ctrl 1 and 2"
+title: "Integration of Gg ctrl 1 and 2"
 author: "Fabio Sacher"
+date: "06.02.2023"
 output:
   html_document:
+    toc: TRUE
+    toc_float: TRUE
     df_print: paged
   html_notebook:
     fig_height: 7
@@ -11,7 +14,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
-Render this script with > sbatch ~/test/NT_test_soupx_ddqcR/seurat_int_gg_ctrl_render.sh
+Render this script with > sbatch ~/spinal_cord_paper/scripts/Seurat_integration_array.sh
 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -27,10 +30,10 @@ library(magrittr)
 ```{r, load data}
 my.samples <- list()
 
-my.samples[[1]] <- readRDS("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_1_seurat_250123.rds")
-my.samples[[2]] <- readRDS("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_2_seurat_250123.rds")
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_060223.rds")
+my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_2_seurat_060223.rds")
 
-names(my.samples) <- c("Gg_NT_ctrl_1", "Gg_NT_ctrl_2")
+names(my.samples) <- c("Gg_ctrl_1", "Gg_ctrl_2")
 
 ```
 
@@ -91,10 +94,13 @@ DimPlot(int.nt.sct, reduction = "umap")
 ## save the integrated object
 
 ```{r, save object}
-saveRDS(int.nt.sct, file = paste0("~/test/NT_test_soupx_ddqcR/Gg_NT_ctrl_integrated_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(int.nt.sct, file = paste0("~/spinal_cord_paper/data/Gg_ctrl_integrated_",format(Sys.Date(), "%d%m%y"),".rds"))
 ```
 
 ```{r sessionInfo}
+# Date and time of Rendering
+Sys.time()
+
 sessionInfo()
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "Integration of Gg lumb 1 and 2"
+title: "Integration of Gg D05_ctrl, D07_ctrl, and ctrl_1 (day 10)"
 author: "Fabio Sacher"
 date: "06.02.2023"
 output:
@@ -30,10 +30,11 @@ library(magrittr)
 ```{r, load data}
 my.samples <- list()
 
-my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_1_seurat_060223.rds")
-my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_2_seurat_060223.rds")
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_D05_ctrl_seurat_060223.rds")
+my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_D07_ctrl_seurat_060223.rds")
+my.samples[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_060223.rds")
 
-names(my.samples) <- c("Gg_lumb_1", "Gg_lumb_2")
+names(my.samples) <- c("Gg_D05_ctrl", "Gg_D07_ctrl", "Gg_ctrl_1")
 
 ```
 
@@ -94,7 +95,7 @@ DimPlot(int.nt.sct, reduction = "umap")
 ## save the integrated object
 
 ```{r, save object}
-saveRDS(int.nt.sct, file = paste0("~/spinal_cord_paper/data/Gg_lumb_integrated_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(int.nt.sct, file = paste0("~/spinal_cord_paper/data/Gg_devel_integrated_",format(Sys.Date(), "%d%m%y"),".rds"))
 ```
 
 ```{r sessionInfo}
@@ -103,4 +104,3 @@ Sys.time()
 
 sessionInfo()
 ```
-
