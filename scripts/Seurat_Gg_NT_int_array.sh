@@ -8,7 +8,7 @@
 #SBATCH --mail-user=fabio.sacher@unibas.ch
 #SBATCH --mail-type=ALL
 #SBATCH --output ./slurm_out/%x-%A_%a.out
-#SBATCH --array=1-3
+#SBATCH --array=1-4
 
 
 module purge
