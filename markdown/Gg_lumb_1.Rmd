@@ -441,7 +441,7 @@ my.plots[[2]] = ggplot(emb[meta[order(meta$nFeature_RNA),]$cell_ID, ], aes(x = r
     scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
     theme_classic() + labs(colour="gene count")
 
-# log1p because of a few cells with high mt percent
+
 my.plots[[3]] = ggplot(emb[meta[order(meta$percent.mt),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
     geom_point(aes(color=(sort(meta$percent.mt))), size=2, alpha = 0.4, pch = 19) + 
     scale_colour_gradientn(colours = c("gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
@@ -452,12 +452,10 @@ my.plots[[4]] = ggplot(emb[meta[order(meta$CC.Difference.seurat),]$cell_ID, ], a
     scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
     theme_classic() + labs(colour="Cell Cycle\nS-G2M")
 
-if (my.multi) {
-  my.plots[[5]] = ggplot(emb, aes(x = reduc_1, y = reduc_2)) +
-    geom_point(aes(color=sort(meta$orig.ident)), size=2, alpha = 0.4, pch = 19) + 
-    scale_colour_manual(values = rainbow(length(table(my.se@meta.data$orig.ident))) ) +
-    theme_classic() + labs(colour="Dataset")
-}
+my.plots[[5]] = ggplot(emb[meta[order(meta$percent.rb),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$percent.rb)), size=2, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="percent.rb")
 
 grid.arrange(grobs=my.plots, ncol=2)
 
@@ -481,7 +479,7 @@ neurons <- list(dI1 = c("LHX2","LHX9","BARHL1","BARHL2","POU4F1"),
   V1 = c("EN1","PAX2","LHX1","LHX5"),
   V2a = c("VSX1","SOX14","LHX3"),
   V2b = c("GATA2","GATA3","TAL1"),
-  MN =  c("MNX1","ISL1","LHX3","ISL2"))
+  MN =  c("MNX1","ISL1","LHX3","ISL2", "SLC18A3"))
 
 prog <- list(dp1_3 =  c("PAX6","IRX3","IRX5","MSX1","PAX3","PAX7"),
   dp4 = c("PAX6","IRX3","IRX5","GSX1","PAX3","PAX7"),
