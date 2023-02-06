@@ -1,9 +1,11 @@
 ---
-title: "Seurat workflow of Gg_NT_ctrl_1 (with SoupX and ddqc)"
+title: "Seurat workflow of Gg_ctrl_1"
 author: "Fabio Sacher"
-date: "20.01.2023"
+date: "06.02.2023"
 output:
   html_document:
+    toc: TRUE
+    toc_float: TRUE
     df_print: paged
   html_notebook:
     fig_height: 7
@@ -39,10 +41,10 @@ gnames<- modplots::gnames
 # here we need to load all the datasets that will be part of our analysis
 my.samples <- list()
 
-my.samples[[1]] <- readRDS("~/test/NT_test_soupx_ddqcR/control1_ddqc_250123.rds")
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/ctrl1_filtered_060223.rds")
 
 #The sample name, will  be used in plots and files
-my.samplename <- "Gg_NT_ctrl_1"
+my.samplename <- "Gg_ctrl_1"
 ```
 
 Date: `r format(Sys.Date(), "%d.%m.%y")`
@@ -114,7 +116,7 @@ cell cycle scoring
 
 ```{r , message=FALSE, warning=FALSE, echo = T, results = 'hide'}
 # Load the orhtology table
-ortho_gg_mm_v102 <- readRDS("~/Neuraltube/robjects/ortho_gg_mm_v102.rds") 
+ortho_gg_mm_v102 <- readRDS("~/spinal_cord_paper/data/ortho_gg_mm_v102.rds") 
 
 colnames(ortho_gg_mm_v102) <- c(
   "GG_gene_ID",
@@ -464,6 +466,68 @@ rm(my.plots, emb, meta)
 
 The MT percent plot is log1p scaled since there were a few outlier cells with up to 40 percent of mitochondrial fractions. They are not filtered out because of their high UMI (> median(UMI)) content.
 
+# DV domain plots
+
+To identify the different DV domains of the neuron and progenitor clusters, we plot their specific markers.
+
+```{r DV-dom}
+neurons <- list(dI1 = c("LHX2","LHX9","BARHL1","BARHL2","POU4F1"),
+  dI2 = c("LHX1","LHX5","POU4F1"),
+  dI3 = c("ISL1","TLX3","DRGX","POU4F1"),
+  dI4 = c("LBX1","PAX2","LHX1","LHX5"),
+  dI5 = c("LBX1","LMX1B","TLX3","DRGX","POU4F1"),
+  dI6 = c("LBX1","PAX2","LHX1","LHX5"),
+  V0 = c("EVX1","PAX2","LHX1","LHX5"),
+  V1 = c("EN1","PAX2","LHX1","LHX5"),
+  V2a = c("VSX1","SOX14","LHX3"),
+  V2b = c("GATA2","GATA3","TAL1"),
+  MN =  c("MNX1","ISL1","LHX3","ISL2"))
+
+prog <- list(dp1_3 =  c("PAX6","IRX3","IRX5","MSX1","PAX3","PAX7"),
+  dp4 = c("PAX6","IRX3","IRX5","GSX1","PAX3","PAX7"),
+  dp5 = c("PAX6","IRX3","IRX5","DBX2","GSX1","PAX3","PAX7"),
+  dp6 = c("PAX6","IRX3","IRX5","DBX2","LEUTX","PAX3","PAX7"),
+  p0 = c("PAX6","IRX3","IRX5","DBX2","LEUTX"),
+  p1 = c("PAX6","IRX3","IRX5","DBX2","PRDM12"),
+  p2 = c("PAX6","IRX3","IRX5","FOXN4","NKX6-1"),
+  pMN = c("PAX6","OLIG2","NKX6-1"),
+  p3 = c("NKX2-8","NKX2-2","NKX6-1"))
+
+# allows to use mFeaturePlot with lapply
+feat_list_plot <- function(x) {
+ plot <- modplots::mFeaturePlot(my.se, my.features = x,
+                       gnames = gnames, size = 0.2, return = TRUE)
+ return(plot)
+}
+
+tsne_dim <- TSNEPlot(
+  my.se,
+  reduction = "tsne",
+  cols = rainbow(length(levels(my.ID))),
+  pt.size = 0.01,
+  label.size = 1,
+  label = TRUE
+) +
+  ggplot2::theme(legend.position = "none")
+
+plots_prog <- lapply(prog, feat_list_plot)
+plots_neur <- lapply(neurons, feat_list_plot)
+
+
+pdf(paste0("~/spinal_cord_paper/figures/DV_prog_domain_",my.samplename ,".pdf"), width = 7, height = 5)
+  for (j in names(prog)) {
+    plots_prog[[j]][["tsne"]] <- tsne_dim
+    gridExtra::grid.arrange(grobs = plots_prog[[j]], ncol = 3, top = j)
+  }
+dev.off()
+
+pdf(paste0("~/spinal_cord_paper/figures/DV_neur_domain_",my.samplename ,".pdf"), width = 7, height = 5)
+  for (j in names(neurons)) {
+    plots_neur[[j]][["tsne"]] <- tsne_dim
+    gridExtra::grid.arrange(grobs = plots_neur[[j]], ncol = 3, top = j)
+  }
+  dev.off()
+```
 
 # DE analysis
 
@@ -505,17 +569,20 @@ DoHeatmap(my.se, semrk1$Gene.stable.ID)
 
 ```{r saving, message=FALSE, warning=FALSE, echo = T}
 
-saveRDS(my.se, paste0("~/test/NT_test_soupx_ddqcR/",my.samplename,"_seurat_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(my.se, paste0("~/spinal_cord_paper/data/",my.samplename,"_seurat_",format(Sys.Date(), "%d%m%y"),".rds"))
 
 write.table(semarkers, sep = "\t", row.names = T, col.names = T,
-            file = paste0("~/test/NT_test_soupx_ddqcR/",my.samplename,"_fullDE_",format(Sys.Date(), "%d%m%y"),".txt"), quote = F)
+            file = paste0("~/spinal_cord_paper/data/",my.samplename,"_fullDE_",format(Sys.Date(), "%d%m%y"),".txt"), quote = F)
 
 write.table(semrk10, sep = "\t", row.names = T, col.names = T,
-            file = paste0("~/test/NT_test_soupx_ddqcR/",my.samplename,"_top10DE_",format(Sys.Date(), "%d%m%y"),".txt"), quote = F)
+            file = paste0("~/spinal_cord_paper/data/",my.samplename,"_top10DE_",format(Sys.Date(), "%d%m%y"),".txt"), quote = F)
 
 ```
 
 ```{r}
+# Date and time of Rendering
+Sys.time()
+
 sessionInfo()
 ```
 
