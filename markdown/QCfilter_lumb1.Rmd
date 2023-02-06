@@ -118,6 +118,7 @@ data[["percent.mt"]] <-  PercentageFeatureSet(data, features = mt)
 gnames <- modplots::gnames
 
 rb <- gnames[grep("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA", gnames$Gene.name), "Gene.stable.ID"]
+rb <- rb[rb %in% rownames(data)]
 
 data[["percent.rb"]] <- PercentageFeatureSet(data, features = rb)
 ```
