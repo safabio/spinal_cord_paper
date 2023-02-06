@@ -47,7 +47,7 @@ library(ggdendro)
 
 gnames <- modplots::gnames
 # load the integrated seurat
-my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_NT_ctrl_integrated_060223.rds")
+my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_ctrl_integrated_060223.rds")
 
 my.int@project.name <- "Gg_ctrl_int"
 
