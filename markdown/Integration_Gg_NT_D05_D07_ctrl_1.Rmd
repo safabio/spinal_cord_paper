@@ -30,9 +30,9 @@ library(magrittr)
 ```{r, load data}
 my.samples <- list()
 
-my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_D05_ctrl_seurat_060223.rds")
-my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_D07_ctrl_seurat_060223.rds")
-my.samples[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_060223.rds")
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_D05_ctrl_seurat_070223.rds")
+my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_D07_ctrl_seurat_070223.rds")
+my.samples[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_070223.rds")
 
 names(my.samples) <- c("Gg_D05_ctrl", "Gg_D07_ctrl", "Gg_ctrl_1")
 
