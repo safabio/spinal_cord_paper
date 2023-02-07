@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 
 #SBATCH --job-name=scWGCNA_ctrl_lumb_poly_and_devel_int
