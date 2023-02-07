@@ -283,7 +283,7 @@ Here we need to manually input how the dimensions we will use. Ca. 20 are usual 
 
 ```{r PCAdims, message=FALSE, warning=FALSE, echo = T}
 
-my.dimensions=1:16
+my.dimensions=1:22
 
 ```
 
