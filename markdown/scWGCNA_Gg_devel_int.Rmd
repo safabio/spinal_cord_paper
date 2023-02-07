@@ -131,13 +131,21 @@ To check the results module by module, we report some GO terms and individual pl
 
 ```{r GO analysis, fig.height=10, fig.width=6, message=FALSE}
 
+# GeneID.PathID and PathID.Path.Name are obtained as following:
+# 
+# GeneID.PathID <- limma::getGeneKEGGLinks("gga", convert=FALSE)
+# save(GeneID.PathID, file = "~/spinal_cord_paper/data/gga_KEGG_gene_pathway.Rda")
+# PathID.PathName <- limma::getKEGGPathwayNames("gga", remove.qualifier=TRUE)
+# save(PathID.PathName, file = "~/spinal_cord_paper/data/gga_KEGG_path_name.Rda")
+
+load("~/spinal_cord_paper/data/gga_KEGG_gene_pathway.Rda")
+load("~/spinal_cord_paper/data/gga_KEGG_path_name.Rda")
+
 my.gouni = rownames(my.se[["RNA"]]@counts)[which(apply(my.se[["RNA"]]@counts, 1, function(x) length(which(x >0))) > 0)]
   
 #Get the ENSEMBL to ENTREZ list from the BioMart
-library(paste0("org.",my.sp,".eg.db"),character.only = T)
-my.ENS2EG = get(paste0("org.",my.sp,".egENSEMBL2EG"), pos = paste0("package:org.",my.sp,".eg.db"))
-  
-IDs=as.list(my.ENS2EG)
+library(org.Gg.eg.db)
+IDs=as.list(org.Gg.egENSEMBL2EG)
 
 #Create two lists, one for the DEGs and one for the GOs
 dewg = list()
@@ -148,11 +156,11 @@ kewg = list()
 # A loop that goes through the DEG files we created earlier
 for(i in seq(length(names(my.scWGCNA$modules)))){ #as many clusters as we have
    dewg[[i]] = my.scWGCNA$module.genes[[i]] #Read the table
-   ex = sapply(dewg[[i]], function(x) AnnotationDbi::exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
+   ex = sapply(dewg[[i]], function(x) AnnotationDbi::exists(x, org.Gg.egENSEMBL2EG)) #Which genes have an ENTREZ?
     dewg[[i]] = dewg[[i]][ex] #Only those genes
     dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
     gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni])) #The GO analysis
-    kewg[[i]] = limma::kegga(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni]))
+    kewg[[i]] = limma::kegga(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni]), gene.pathway = GeneID.PathID, pathway.names = PathID.PathName)
 }
   
 keggpath=list()
@@ -368,6 +376,9 @@ saveRDS(keggpath, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_KE
 
 
 ```{r, sessionInfo}
+# Date and time of Rendering
+Sys.time()
+
 sessionInfo()
 ```
 
