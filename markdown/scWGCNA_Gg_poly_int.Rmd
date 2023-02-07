@@ -370,8 +370,8 @@ dev.off()
 ```{r dsave-pcells-and-scWGCNA-object}
 saveRDS(my.pcells, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_pseudocells_",format(Sys.Date(), "%d%m%y"),".rds"))
 saveRDS(my.scWGCNA, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_scWGCNA_",format(Sys.Date(), "%d%m%y"),".rds"))
-saveRDS(goterms, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_GOTerms_",format(Sys.Date(), "%d%m%y"),".rds"))
-saveRDS(keggpath, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_KEGGPath_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(goterms, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_module_GOTerms_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(keggpath, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_module_KEGGPath_",format(Sys.Date(), "%d%m%y"),".rds"))
 ```
 
 
