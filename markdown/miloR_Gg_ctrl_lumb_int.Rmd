@@ -1,0 +1,273 @@
+---
+title: "Milo workflow on Gg_ctrl_lumb_int"
+author: "Fabio Sacher"
+date: "07.02.2023"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r warning=FALSE, message=FALSE}
+library(miloR, quietly = TRUE)
+library(SingleCellExperiment, quietly = TRUE)
+library(scater, quietly = TRUE)
+library(dplyr)
+library(patchwork)
+library(Seurat)
+library(stringr)
+library(patchwork)
+library(ggplot2)
+```
+
+# Introduction
+
+Milo is a tool for analysis of complex single cell datasets generated from replicated multi-condition experiments, which detects changes in composition between conditions. While differential abundance (DA) is commonly quantified in discrete cell clusters, Milo uses partally overlapping neighbourhoods of cells on a KNN graph. Starting from a graph that faithfully recapitulates the biology of the cell population, Milo analysis consists of 3 steps:
+
+  -  Sampling of representative neighbourhoods
+  -  Testing for differential abundance of conditions in all neighbourhoods
+  -  Accounting for multiple hypothesis testing using a weighted FDR procedure that accounts for the overlap of neighbourhoods
+
+In this vignette we will elaborate on how these steps are implemented in the miloR package.
+
+# From Seurat object
+
+The Seurat package includes a converter to SingleCellExperiment.
+```{r seurat-object}
+
+my.seed <- 07022023
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_070223.rds")
+
+my.se$cond <- substr(my.se$orig.ident, 7, 10)
+# represents the sequencing batch as well
+my.se$batch <- substr(my.se$orig.ident, 7, 12) 
+
+dim1 <- DimPlot(my.se,
+                reduction = "tsne",
+                group.by = "seurat_clusters", 
+                label = TRUE) + NoLegend()
+dim1
+
+dim2 <- DimPlot(my.se,
+                reduction = "umap",
+                group.by = "seurat_clusters",
+                label = TRUE) + NoLegend()
+dim2
+
+my.sce <- as.SingleCellExperiment(my.se)
+my.milo <- Milo(my.sce)
+```
+
+# Pre-processing
+
+For DA analysis we need to construct an undirected KNN graph of single-cells. Standard single-cell analysis pipelines usually do this from distances in PCA. We normalize and calculate principal components using scater. I also run UMAP for visualization purposes.
+
+```{r pre-processing}
+pca <- plotPCA(my.milo)
+tsne <- plotTSNE(my.milo)
+
+pca
+tsne
+
+my.milo
+```
+
+# Construct KNN graph
+
+We need to add the KNN graph to the Milo object. This is stored in the graph slot, in igraph format. The miloR package includes functionality to build and store the graph from the PCA dimensions stored in the reducedDim slot.
+
+```{r knn-graph}
+set.seed(my.seed)
+my.milo <- buildGraph(my.milo, k = 10, d = 30)
+```
+
+# 1. Defining representative neighbourhoods
+
+We define the neighbourhood of a cell, the index, as the group of cells connected by an edge in the KNN graph to the index cell. For efficiency, we don’t test for DA in the neighbourhood of every cell, but we sample as indices a subset of representative cells, using a KNN sampling algorithm used by Gut et al. 2015.
+
+For sampling you need to define a few parameters:
+
+    prop: the proportion of cells to randomly sample to start with (usually 0.1 - 0.2 is sufficient)
+    k: the k to use for KNN refinement (we recommend using the same k used for KNN graph building)
+    d: the number of reduced dimensions to use for KNN refinement (we recommend using the same d used for KNN graph building)
+    refined indicated whether you want to use the sampling refinement algorith, or just pick cells at random. The default and recommended way to go is to use refinement. The only situation in which you might consider using random instead, is if you have batch corrected your data with a graph based correction algorithm, such as BBKNN, but the results of DA testing will be suboptimal.
+
+```{r nhoods}
+set.seed(my.seed)
+my.milo <- makeNhoods(my.milo, prop = 0.1, k = 10, d=30, refined = TRUE)
+```
+
+Once we have defined neighbourhoods, it’s good to take a look at how big the neighbourhoods are (i.e. how many cells form each neighbourhood). This affects the power of DA testing. We can check this out using the plotNhoodSizeHist function. Empirically, we found it’s best to have a distribution peaking between 50 and 100. Otherwise you might consider rerunning makeNhoods increasing k and/or prop (here the distribution looks ludicrous because it’s a small dataset).
+
+```{r nhood-size-dist}
+plotNhoodSizeHist(my.milo)
+```
+
+## Counting cells in neighbourhoods
+
+Now we have to count how many cells from each sample are in each neighbourhood. We need to use the cell metadata and specify which column contains the sample information.
+
+```{r ncells-nhood}
+my.milo <- countCells(
+              my.milo,
+              meta.data = data.frame(colData(my.milo)),
+              sample = "orig.ident"
+              )
+```
+
+This adds to the Milo object a n \times m matrix, where n is the number of neighbourhoods and m
+
+is the number of experimental samples. Values indicate the number of cells from each sample counted in a neighbourhood. This count matrix will be used for DA testing.
+
+```{r inspect-nhhod-matrix}
+head(nhoodCounts(my.milo))
+```
+
+## Differential abundance testing
+
+Now we are all set to test for differential abundance in neighbourhoods. We implement this hypothesis testing in a generalized linear model (GLM) framework, specifically using the Negative Binomial GLM implementation in edgeR.
+
+We first need to think about our experimental design. The design matrix should match samples to a condition of interest. In this case the Condition is the covariate we are going to test for.
+
+```{r desing-DA-testing} 
+my.design <- data.frame(colData(my.milo))[,c("orig.ident", "cond", "batch")]
+my.design <- distinct(my.design)
+rownames(my.design) <- my.design[, "orig.ident"]
+
+my.design
+```
+
+Milo uses an adaptation of the Spatial FDR correction introduced by cydar, which accounts for the overlap between neighbourhoods. Specifically, each hypothesis test P-value is weighted by the reciprocal of the kth nearest neighbour distance. To use this statistic we first need to store the distances between nearest neighbors in the Milo object.
+
+```{r nhood-distance}
+my.milo <- calcNhoodDistance(my.milo, d=30)
+```
+
+Now we can do the test, explicitly defining our experimental design. We want to test for differences between experimental contitions.
+
+```{r test-nhood}
+da.results <- testNhoods(my.milo, design = ~ cond, design.df = my.design)
+```
+
+This calculates a Fold-change and corrected P-value for each neighbourhood, which indicates wheather there is significant differential abundance between conditions.
+
+```{r results}
+da.results %>%
+  arrange(- SpatialFDR) %>%
+  head()
+```
+
+```{r plot-results}
+res_1 <- ggplot(da.results, aes(PValue)) + 
+  geom_histogram(bins=50) + 
+  geom_vline(xintercept = 0.05)
+res_1
+```
+
+```{r plot-resuts2}
+res_2 <- ggplot(da.results, aes(logFC, -log10(SpatialFDR))) + 
+  geom_point() +
+  geom_hline(yintercept = 1) ## Mark significance threshold (10% FDR)
+res_2
+```
+
+## Visualize neighbourhoods displaying DA
+
+To visualize DA results, we build an abstracted graph of neighbourhoods that we can superimpose on the single-cell embedding.
+
+```{r nhood-graph}
+set.seed(my.seed)
+my.milo <- buildNhoodGraph(my.milo)
+```
+
+```{r plot-nhood-graph-tsne}
+DimPlot(my.se,
+        reduction = "tsne",
+        group.by = "cond") + 
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
+  plot_layout(guides="collect")
+```
+
+```{r plot-nhood-graph-umap}
+DimPlot(my.se,
+        reduction = "umap",
+        group.by = "cond") + 
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "UMAP") +
+  plot_layout(guides="collect")
+```
+
+## annotate neighbourhoods
+
+We might also be interested in visualizing wheather DA is particularly evident in certain cell types. To do this, we assign a cell type label to each neighbourhood by finding the most abundant cell type within cells in each neighbourhood. We can label neighbourhoods in the results data.frame using the function annotateNhoods. This also saves the fraction of cells harbouring the label.
+
+```{r annotate-nhoods}
+da.results <- annotateNhoods(my.milo, da.results, coldata_col = "seurat_clusters")
+head(da.results)
+```
+
+While neighbourhoods tend to be homogeneous, we can define a threshold for celltype_fraction to exclude neighbourhoods that are a mix of cell types.
+
+```{r celltype-fration-plot}
+ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)
+```
+
+```{r fraction-threshold}
+da.results$seurat_clusters <- ifelse(da.results$seurat_clusters_fraction < 0.95, "Mixed", da.results$seurat_clusters)
+```
+
+Plot logFC of the nhoods by cell type (cluster):
+
+```{r DA-beeswarm}
+plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0)
+```
+
+#export
+
+```{r export}
+saveRDS(my.milo, paste0("~/spinal_cord_paper/output/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".rds"))
+
+# pdf export figures
+pdf(paste0("~/spinal_cord_paper/figures/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".pdf"), width = 5, height = 4)
+
+dim1 + ggtitle(my.se@project.name)
+dim2 + ggtitle(my.se@project.name)
+pca + ggtitle(my.se@project.name)
+res_1
+res_2
+DimPlot(my.se,
+        reduction = "tsne",
+        group.by = "cond")
+plotNhoodGraphDA(my.milo,
+                 da.results,
+                 alpha=0.9,
+                 layout = "TSNE") 
+
+DimPlot(my.se,
+        reduction = "umap",
+        group.by = "cond")
+plotNhoodGraphDA(my.milo,
+                 da.results,
+                 alpha=0.9,
+                 layout = "UMAP")
+plotNhoodSizeHist(my.milo)
+
+ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)
+
+plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0)
+dev.off()
+```
+
+
+```{r sessionInfo}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
+
+
