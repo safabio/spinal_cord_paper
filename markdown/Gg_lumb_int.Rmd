@@ -3,13 +3,13 @@ title: "Seurat workflow of the integrated Gg lumb 1 and 2 data"
 author: "Fabio Sacher"
 date: "06.02.2023"
 output:
-  html_notebook:
-    fig_height: 7
-    fig_width: 8
   html_document:
     toc: TRUE
     toc_float: TRUE
     df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
 editor_options:
   chunk_output_type: inline
 ---
@@ -47,7 +47,7 @@ library(ggdendro)
 
 gnames <- modplots::gnames
 # load the integrated seurat
-my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_lumb_integrated_060223.rds")
+my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_lumb_integrated_070223.rds")
 
 my.int@project.name <- "Gg_lumb_int"
 
@@ -362,13 +362,13 @@ prog <- list(dp1_3 =  c("PAX6","IRX3","IRX5","MSX1","PAX3","PAX7"),
 
 # allows to use mFeaturePlot with lapply
 feat_list_plot <- function(x) {
- plot <- modplots::mFeaturePlot(my.se, my.features = x,
+ plot <- modplots::mFeaturePlot(my.int, my.features = x,
                        gnames = gnames, size = 0.2, return = TRUE)
  return(plot)
 }
 
 tsne_dim <- TSNEPlot(
-  my.se,
+  my.int,
   reduction = "tsne",
   cols = rainbow(length(levels(my.ID))),
   pt.size = 0.01,
@@ -381,14 +381,14 @@ plots_prog <- lapply(prog, feat_list_plot)
 plots_neur <- lapply(neurons, feat_list_plot)
 
 
-pdf(paste0("~/spinal_cord_paper/figures/DV_prog_domain_",my.samplename ,".pdf"), width = 7, height = 5)
+pdf(paste0("~/spinal_cord_paper/figures/DV_prog_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
   for (j in names(prog)) {
     plots_prog[[j]][["tsne"]] <- tsne_dim
     gridExtra::grid.arrange(grobs = plots_prog[[j]], ncol = 3, top = j)
   }
 dev.off()
 
-pdf(paste0("~/spinal_cord_paper/figures/DV_neur_domain_",my.samplename ,".pdf"), width = 7, height = 5)
+pdf(paste0("~/spinal_cord_paper/figures/DV_neur_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
   for (j in names(neurons)) {
     plots_neur[[j]][["tsne"]] <- tsne_dim
     gridExtra::grid.arrange(grobs = plots_neur[[j]], ncol = 3, top = j)
