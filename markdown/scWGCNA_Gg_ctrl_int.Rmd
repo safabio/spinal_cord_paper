@@ -1,0 +1,373 @@
+---
+title: "scWGCNA  workflow Gg_ctrl_int (ctrl_1 and ctrl_2)"
+author: "Fabio Sacher"
+date: "07.02.2023"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+library(scWGCNA)
+library(Seurat)
+library(gridExtra)
+library(ggplot2)
+```
+
+## Load the seurat object
+
+```{r}
+# load seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_070223.rds")
+
+DefaultAssay(my.se) <- "SCT"
+my.se <- RunPCA(my.se,
+       features = rownames(my.se[["SCT"]]@scale.data),
+       verbose = FALSE)
+
+my.se
+
+# set variable features for SCT assay
+my.se[["SCT"]]@var.features <- my.se[["integrated"]]@var.features
+
+# set reduction for plots 
+my.reduction <- "tsne"
+
+my.sp <-  "Gg"
+
+# dimplot
+dim_pl <- DimPlot(
+  my.se,
+  reduction = my.reduction,
+  label = TRUE,
+  label.size = 5
+  ) +
+  ggtitle(paste0(my.se@project.name, " scWGCNA modules")) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# var features for scWGCNA
+var.feat <- my.se[["SCT"]]@var.features
+
+# gnames (important: rownames == IDs)
+my.gnames <- modplots::gnames
+
+```
+
+
+## calculate pseudocells 
+
+```{r}
+my.pcells = calculate.pseudocells(s.cells = my.se, # Single cells in Seurat object
+                                          seeds=0.2, # Fraction of cells to use as seeds to aggregate pseudocells
+                                          nn = 10, # Number of neighbors to aggregate
+                                          reduction = "pca", # Reduction to use
+                                          dims = 1:10) 
+```
+
+## scWGCNA
+
+```{r ,warning = FALSE}
+my.scWGCNA = run.scWGCNA(p.cells = my.pcells, # Pseudocells (recommended), or Seurat single cells
+                                 s.cells = my.se, # single cells in Seurat format
+                                 is.pseudocell = T, 
+                                 features = var.feat)
+```
+
+## plot modules
+
+```{r}
+# Plot the gene / modules dendrogram
+scW.p.dendro(scWGCNA.data = my.scWGCNA)
+```
+
+## avg expression
+
+```{r, fig.height=10}
+my.eigengenes.pc = scW.eigen(modules = my.scWGCNA, seurat = my.se)
+
+module_expression <- scW.p.expression(
+                        s.cells = my.se, # Single cells in Seurat format
+                        scWGCNA.data = my.scWGCNA, # scWGCNA list dataset
+                        modules = "all", # Which modules to plot?
+                        reduction = my.reduction, # Which reduction to plot?
+                        ncol = 3
+                        ) 
+
+```
+
+## create networks
+```{r}
+# First generate the networks in the scWCGNA object
+my.scWGCNA = scWGCNA.networks(scWGCNA.data = my.scWGCNA)
+
+# plot all module network 
+module_plots <- list()
+for (i in seq(length(my.scWGCNA[["modules"]]))) {
+  module_plots[[i]] <- scW.p.network(
+      my.scWGCNA,
+      module = i,
+      gnames = my.gnames
+      )
+}
+```
+
+## go term analysis
+
+```{r}
+#Look at the membership tables
+names(my.scWGCNA$modules)
+
+```
+
+
+To check the results module by module, we report some GO terms and individual plots, with module sizes and gene names. First the GO terms analyses
+
+```{r GO analysis, fig.height=10, fig.width=6, message=FALSE}
+
+my.gouni = rownames(my.se[["RNA"]]@counts)[which(apply(my.se[["RNA"]]@counts, 1, function(x) length(which(x >0))) > 0)]
+  
+#Get the ENSEMBL to ENTREZ list from the BioMart
+library(paste0("org.",my.sp,".eg.db"),character.only = T)
+my.ENS2EG = get(paste0("org.",my.sp,".egENSEMBL2EG"), pos = paste0("package:org.",my.sp,".eg.db"))
+  
+IDs=as.list(my.ENS2EG)
+
+#Create two lists, one for the DEGs and one for the GOs
+dewg = list()
+gowg = list()
+kewg = list()
+
+  
+# A loop that goes through the DEG files we created earlier
+for(i in seq(length(names(my.scWGCNA$modules)))){ #as many clusters as we have
+   dewg[[i]] = my.scWGCNA$module.genes[[i]] #Read the table
+   ex = sapply(dewg[[i]], function(x) AnnotationDbi::exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
+    dewg[[i]] = dewg[[i]][ex] #Only those genes
+    dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
+    gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni])) #The GO analysis
+    kewg[[i]] = limma::kegga(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni]))
+}
+  
+keggpath=list()
+goterms=list()
+
+for (i in seq(length(names(my.scWGCNA$modules)))) {
+  #### TopGO terms ####
+  toplot=limma::topGO(gowg[[i]], n= 50, ontology = c("BP"))
+
+  #Change to character and then back to factor, to keep the order from TopGO
+  toplot$Term = as.character(toplot$Term)
+  toplot$Term = factor(toplot$Term, levels = unique(toplot$Term))
+
+  goterms[[i]]=toplot
+  
+  rm(toplot)
+
+  #### TopKEGG pathways ####
+  toplot=limma::topKEGG(kewg[[i]], n= 50)
+
+  #Change to character and then back to factor, to keep the order from TopGO
+  toplot$Pathway = as.character(toplot$Pathway)
+  toplot$Pathway = factor(toplot$Pathway, levels = unique(toplot$Pathway))
+  
+  keggpath[[i]]=toplot
+}
+
+#TO make the acutal plot we're having, we combine all the GOs
+g.plot = data.frame()
+topterms = data.frame()
+
+for (i in seq(length(goterms))) {
+  topterms = goterms[[i]][1:5,]
+  topterms$cluster = i
+  g.plot = rbind(g.plot, topterms)
+}
+
+g.plot$cluster = as.factor(g.plot$cluster)
+
+g.plot$Term = droplevels(g.plot$Term)
+my.terms = nchar(levels(g.plot$Term))>45
+my.gterms = strtrim(levels(g.plot$Term), 45)
+my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
+levels(g.plot$Term) = my.gterms
+  
+  
+my.terms = nchar(as.character(g.plot$Term))>45
+my.gterms = strtrim(g.plot$Term, 45)
+my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
+
+top5Go <- ggplot2::ggplot(g.plot, ggplot2::aes(x=Term, y=-log10(P.DE), fill=cluster)) +
+    ggplot2::geom_point(ggplot2::aes(shape = cluster), size = 3) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1)) +
+    ggplot2::labs(x="GO Term", y="-log10 p. value") +
+    ggplot2::scale_fill_manual(name = "Module",
+                        labels = names(my.scWGCNA$modules),
+                        values = stringr::str_remove_all(names(my.scWGCNA$modules), "^.*\\_")) +
+    ggplot2::scale_shape_manual(name = "Module",
+                         labels = names(my.scWGCNA$modules),
+                         values = rep(c(21,22,23,24,25),20)) +
+    ggplot2::coord_flip()
+
+```
+
+```{r keggplots}
+#TO make the acutal plot we're having, we combine all the GOs
+k.plot = data.frame()
+toppath = data.frame()
+
+for (i in seq(length(keggpath))) {
+  toppath = keggpath[[i]][1:5,]
+  toppath$cluster = i
+  k.plot = rbind(k.plot, toppath)
+}
+
+k.plot$cluster = as.factor(k.plot$cluster)
+
+k.plot$Pathway = droplevels(k.plot$Pathway)
+my.paths = nchar(levels(k.plot$Pathway))>45
+my.kpaths = strtrim(levels(k.plot$Pathway), 45)
+my.kpaths[my.paths] = paste0(my.kpaths[my.paths],"...")
+levels(k.plot$Pathway) = my.kpaths
+  
+  
+my.paths = nchar(as.character(k.plot$Pathway))>45
+my.kpaths = strtrim(k.plot$Pathway, 45)
+my.kpaths[my.paths] = paste0(my.kpaths[my.paths],"...")
+
+top5kegg <- ggplot2::ggplot(k.plot, ggplot2::aes(x=Pathway, y=-log10(P.DE), fill=cluster)) +
+    ggplot2::geom_point(ggplot2::aes(shape = cluster), size = 3) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1)) +
+    ggplot2::labs(x="KEGG pathway", y="-log10 p. value") +
+    ggplot2::scale_fill_manual(name = "Module",
+                        labels = names(my.scWGCNA$modules),
+                        values = stringr::str_remove_all(names(my.scWGCNA$modules), "^.*\\_")) +
+    ggplot2::scale_shape_manual(name = "Module",
+                         labels = names(my.scWGCNA$modules),
+                         values = rep(c(21,22,23,24,25),20)) +
+    ggplot2::scale_y_log10() +
+    ggplot2::coord_flip()
+```
+
+
+And here the report of each of the modules
+
+```{r results per module, fig.height=9, fig.width=8, results="asis"}
+
+gtable1 <- list()
+gtable2 <- list()
+myplot <- list()
+
+# Go trhough the modules
+for(i in seq(length(names(my.scWGCNA$modules)))){
+  
+  # A table is done, where we put the genes names that are making-up the module, in rows of 10. We fill the las row with empty spaces
+  gtable1[[i]] = data.frame(
+    matrix(
+      c(my.gnames[my.scWGCNA$module.genes[[i]],2][order(my.eigengenes.pc$Gene.Module.Membership[my.scWGCNA$module.genes[[i]],i], decreasing = T)],
+                                  rep(" ", 8-length(my.gnames[my.scWGCNA$module.genes[[i]],2])%%8 )),
+      ncol = 8, byrow = T
+      )
+    )
+  colnames(gtable1[[i]]) = rep("", 8)
+  gtable1[[i]] <- gridExtra::tableGrob(gtable1[[i]], theme = ttheme_default(base_size = 7))
+
+  
+    # Another table, where we put the top 10 GO terms, in two columns
+  gtable2[[i]] = data.frame( goterms[[i]][1:10,])
+  gtable2[[i]][,5] = as.character(signif(gtable2[[i]][,5],4))
+  colnames(gtable2[[i]]) = c("Term", "Ont", "N", "n", "Adj. p-value")
+  gtable2[[i]] <- gridExtra::tableGrob(gtable2[[i]])
+}
+
+```
+
+```{r pathways per module, fig.height=9, fig.width=8, results="asis"}
+
+ktable1 <- list()
+ktable2 <- list()
+myplot <- list()
+
+# Go trhough the modules
+for(i in seq(length(names(my.scWGCNA$modules)))){
+  
+  # A table is done, where we put the genes names that are making-up the module, in rows of 10. We fill the last row with empty spaces
+  ktable1[[i]] = data.frame(
+    matrix(
+      c(my.gnames[my.scWGCNA$module.genes[[i]],2][order(my.eigengenes.pc$Gene.Module.Membership[my.scWGCNA$module.genes[[i]],i], decreasing = T)],
+                                  rep(" ", 8-length(my.gnames[my.scWGCNA$module.genes[[i]],2])%%8 )),
+      ncol = 8, byrow = T
+      )
+    )
+  colnames(ktable1[[i]]) = rep("", 8)
+  ktable1[[i]] <- gridExtra::tableGrob(ktable1[[i]], theme = ttheme_default(base_size = 7))
+
+ 
+    # Another table, where we put the top 10 GO terms, in two columns
+  ktable2[[i]] = data.frame(keggpath[[i]][1:10,])
+  ktable2[[i]][,4] = as.character(signif(ktable2[[i]][,4],4))
+  colnames(ktable2[[i]]) = c("Pathway", "N", "DE", "P.DE")
+  ktable2[[i]] <- gridExtra::tableGrob(ktable2[[i]])
+}
+
+```
+
+## plot report
+
+```{r fig.height=10, fig.width=10}
+
+pdf(paste0("~/spinal_cord_paper/figures/", my.se@project.name, "_scWGCNA_modules.pdf"), width = 10, height = 10)
+ # Dimplot
+ dim_pl
+ # go analysis
+ top5Go
+ top5kegg
+ gridExtra::grid.arrange(module_expression)
+ # module expression
+ for (i in seq(length(names(my.scWGCNA$modules)))) {
+   gridExtra::grid.arrange(module_plots[[i]])
+   gridExtra::grid.arrange(gtable1[[i]])
+   gridExtra::grid.arrange(gtable2[[i]])
+   gridExtra::grid.arrange(ktable2[[i]])
+ }
+dev.off()
+```
+
+
+## module expression pdf
+
+```{r module-exp-pdf}
+m.plots <- list()
+
+for (i in seq(length(my.scWGCNA$modules))) {
+  m.plots[[i]] <- scW.p.expression(s.cells = my.se,
+                                   scWGCNA.data = my.scWGCNA,
+                                   modules = i) + theme_minimal() + NoLegend() 
+}
+
+pdf(paste0("~/spinal_cord_paper/figures/", my.se@project.name, "_scWGCNA_module_expression.pdf"), width = 10, height = 10)
+gridExtra::marrangeGrob(m.plots, nrow = 2, ncol = 2)
+dev.off()
+```
+
+
+## save objects
+
+```{r dsave-pcells-and-scWGCNA-object}
+saveRDS(my.pcells, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_pseudocells_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(my.scWGCNA, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_scWGCNA_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(goterms, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_GOTerms_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(keggpath, paste0("~/spinal_cord_paper/output/", my.se@project.name, "_KEGGPath_",format(Sys.Date(), "%d%m%y"),".rds"))
+```
+
+
+```{r, sessionInfo}
+sessionInfo()
+```
+
