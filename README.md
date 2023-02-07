@@ -2,6 +2,8 @@
 
 This repository contains the code to recreate the findings in our current publication " " xxx.
 
+We calculate the tSNE embeddings with the FTF (Fast Fourier Transform) accerelated Interpolation-based t-SNE [FIt-SNE](https://github.com/KlugerLab/FIt-SNE) developed by the Kluger lab. Install it to a directory to your machine following their instruction.
+
 The Initial QC filtering and seurat object creation markdown files are rendered using an array job in the scripts/ directory. Use the following order:
 
 -   ***QCfilter_array.sh***: initial removal of ambient RNA, quality control and filtering with SoupX and ddqcR.
@@ -12,3 +14,4 @@ The Initial QC filtering and seurat object creation markdown files are rendered 
     -   lumbar: lumb_1 and lumb_2
     -   polydactyl: poly_1 and poly_2
 -   ***Seurat_Gg_NT_int_array.sh***: create and analyse the integrated seurat objects, run dimensionality reduction, markter detection and plot markers for cluster annotation.
+-   ***Seurat_ctrl_lumb_ctrl_poly_integration_array.sh***: Integration and analysis of the brachial & lumbar (ctrl_1, ctrl_2, lumb_1, & lumb_2), and brachial & poly (ctrl_1, ctrl_2, poly_1, & poly_2). The get an individual, combined pipeline since the time and memory allocation are higher.
