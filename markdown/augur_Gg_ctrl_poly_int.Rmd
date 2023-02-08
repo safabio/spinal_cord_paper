@@ -1,0 +1,93 @@
+---
+title: "ctrl vs poly int cell type prioritisation with augur"
+author: "Fabio Sacher"
+date: "08.02.2023"
+data:
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries, warning = FALSE, message=FALSE}
+# devtools::install_github("neurorestore/Augur")
+library(Augur)
+library(Seurat)
+library(magrittr)
+library(ggplot2)
+library(patchwork)
+library(viridis)
+```
+
+# Data set
+
+Keep in mind, the integration of the brach and poly data is called uncut!
+
+```{r data-set}
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds")
+# following issue #5 (github) we use the RNA assay. 
+DefaultAssay(my.se) <- "RNA"
+
+DimPlot(my.se, reduction = "tsne", label = TRUE)
+
+```
+
+# Augur
+
+```{r augur-def}
+expr <- my.se[["RNA"]]@data
+
+my.se@meta.data <- my.se@meta.data %>% 
+  dplyr::rename(cell_type = seurat_clusters) %>% 
+  dplyr::mutate(label = as.factor(substr(orig.ident, 1, 4)))
+meta <- my.se@meta.data
+
+augur_seurat = calculate_auc(my.se, n_threads = 8)
+
+save(augur_seurat, file = paste0("~/spinal_cord_paper/output/", my.se@project.name,"_augur.Rda"))
+```
+
+# Results
+
+Cluster 25 is missing (motor neurons), since only ctrl cells are present! 
+
+```{r}
+
+augur_seurat$AUC
+range(augur_seurat$AUC$auc)
+
+lolli_seurat <- plot_lollipop(augur_seurat)
+
+lolli_seurat
+
+```
+
+```{r}
+
+tsne_seurat <- plot_umap(
+  augur_seurat,
+  my.se,
+  reduction = "tsne",
+  palette = "inferno",
+  top_n = nrow(augur_seurat$AUC)
+)
+
+tsne_seurat
+```
+
+```{r}
+pdf(paste0("~/spinal_cord_paper/figures/", my.se@project.name,"_augur_prios_tsne.pdf"), width = 10, height = 5)
+tsne_seurat
+dev.off()
+```
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
