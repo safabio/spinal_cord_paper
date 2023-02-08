@@ -4,6 +4,8 @@ author: "Fabio Sacher"
 date: "07.02.2023"
 output:
   html_document:
+    toc: TRUE
+    toc_float: TRUE
     df_print: paged
   html_notebook:
     fig_height: 7
@@ -43,9 +45,9 @@ my.seed <- 07022023
 
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds")
 
-my.se$cond <- substr(my.se$orig.ident, 7, 10)
+my.se$cond <- substr(my.se$orig.ident, 1, 4)
 # represents the sequencing batch as well
-my.se$batch <- substr(my.se$orig.ident, 7, 12) 
+my.se$batch <- my.se$orig.ident
 
 dim1 <- DimPlot(my.se,
                 reduction = "tsne",

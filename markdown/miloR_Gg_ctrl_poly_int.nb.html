@@ -1766,8 +1766,9 @@ pre code {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShtaWxvUiwgcXVpZXRseSA9IFRSVUUpXG5saWJyYXJ5KFNpbmdsZUNlbGxFeHBlcmltZW50LCBxdWlldGx5ID0gVFJVRSlcbmxpYnJhcnkoc2NhdGVyLCBxdWlldGx5ID0gVFJVRSlcbmxpYnJhcnkoZHBseXIpXG5saWJyYXJ5KHBhdGNod29yaylcbmxpYnJhcnkoU2V1cmF0KVxubGlicmFyeShzdHJpbmdyKVxubGlicmFyeShwYXRjaHdvcmspXG5saWJyYXJ5KGdncGxvdDIpXG5gYGAifQ== -->
-<pre class="r"><code>library(miloR, quietly = TRUE)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxubGlicmFyeShtaWxvUiwgcXVpZXRseSA9IFRSVUUpXG5saWJyYXJ5KFNpbmdsZUNlbGxFeHBlcmltZW50LCBxdWlldGx5ID0gVFJVRSlcbmxpYnJhcnkoc2NhdGVyLCBxdWlldGx5ID0gVFJVRSlcbmxpYnJhcnkoZHBseXIpXG5saWJyYXJ5KHBhdGNod29yaylcbmxpYnJhcnkoU2V1cmF0KVxubGlicmFyeShzdHJpbmdyKVxubGlicmFyeShwYXRjaHdvcmspXG5saWJyYXJ5KGdncGxvdDIpXG5gYGBcbmBgYCJ9 -->
+<pre class="r"><code>```r
+library(miloR, quietly = TRUE)
 library(SingleCellExperiment, quietly = TRUE)
 library(scater, quietly = TRUE)
 library(dplyr)
@@ -1776,318 +1777,574 @@ library(Seurat)
 library(stringr)
 library(patchwork)
 library(ggplot2)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<div id="introduction" class="section level1">
-<h1>Introduction</h1>
-<p>Milo is a tool for analysis of complex single cell datasets generated
-from replicated multi-condition experiments, which detects changes in
-composition between conditions. While differential abundance (DA) is
-commonly quantified in discrete cell clusters, Milo uses partally
-overlapping neighbourhoods of cells on a KNN graph. Starting from a
-graph that faithfully recapitulates the biology of the cell population,
-Milo analysis consists of 3 steps:</p>
-<ul>
-<li>Sampling of representative neighbourhoods</li>
-<li>Testing for differential abundance of conditions in all
-neighbourhoods</li>
-<li>Accounting for multiple hypothesis testing using a weighted FDR
-procedure that accounts for the overlap of neighbourhoods</li>
-</ul>
-<p>In this vignette we will elaborate on how these steps are implemented
-in the miloR package.</p>
-</div>
-<div id="from-seurat-object" class="section level1">
-<h1>From Seurat object</h1>
-<p>The Seurat package includes a converter to SingleCellExperiment.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5teS5zZWVkIDwtIDA3MDIyMDIzXG5cbm15LnNlIDwtIHJlYWRSRFMoXCJ+L3NwaW5hbF9jb3JkX3BhcGVyL2RhdGEvR2dfY3RybF9wb2x5X2ludF9zZXVyYXRfMDcwMjIzLnJkc1wiKVxuXG5teS5zZSRjb25kIDwtIHN1YnN0cihteS5zZSRvcmlnLmlkZW50LCA3LCAxMClcbiMgcmVwcmVzZW50cyB0aGUgc2VxdWVuY2luZyBiYXRjaCBhcyB3ZWxsXG5teS5zZSRiYXRjaCA8LSBzdWJzdHIobXkuc2Ukb3JpZy5pZGVudCwgNywgMTIpIFxuXG5kaW0xIDwtIERpbVBsb3QobXkuc2UsXG4gICAgICAgICAgICAgICAgcmVkdWN0aW9uID0gXCJ0c25lXCIsXG4gICAgICAgICAgICAgICAgZ3JvdXAuYnkgPSBcInNldXJhdF9jbHVzdGVyc1wiLCBcbiAgICAgICAgICAgICAgICBsYWJlbCA9IFRSVUUpICsgTm9MZWdlbmQoKVxuZGltMVxuXG5kaW0yIDwtIERpbVBsb3QobXkuc2UsXG4gICAgICAgICAgICAgICAgcmVkdWN0aW9uID0gXCJ1bWFwXCIsXG4gICAgICAgICAgICAgICAgZ3JvdXAuYnkgPSBcInNldXJhdF9jbHVzdGVyc1wiLFxuICAgICAgICAgICAgICAgIGxhYmVsID0gVFJVRSkgKyBOb0xlZ2VuZCgpXG5kaW0yXG5cbm15LnNjZSA8LSBhcy5TaW5nbGVDZWxsRXhwZXJpbWVudChteS5zZSlcbm15Lm1pbG8gPC0gTWlsbyhteS5zY2UpXG5gYGAifQ== -->
-<pre class="r"><code>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Introduction
+
+Milo is a tool for analysis of complex single cell datasets generated from replicated multi-condition experiments, which detects changes in composition between conditions. While differential abundance (DA) is commonly quantified in discrete cell clusters, Milo uses partally overlapping neighbourhoods of cells on a KNN graph. Starting from a graph that faithfully recapitulates the biology of the cell population, Milo analysis consists of 3 steps:
+
+  -  Sampling of representative neighbourhoods
+  -  Testing for differential abundance of conditions in all neighbourhoods
+  -  Accounting for multiple hypothesis testing using a weighted FDR procedure that accounts for the overlap of neighbourhoods
+
+In this vignette we will elaborate on how these steps are implemented in the miloR package.
+
+# From Seurat object
+
+The Seurat package includes a converter to SingleCellExperiment.
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuXG5teS5zZWVkIDwtIDA3MDIyMDIzXG5cbm15LnNlIDwtIHJlYWRSRFMoXFx+L3NwaW5hbF9jb3JkX3BhcGVyL2RhdGEvR2dfY3RybF9wb2x5X2ludF9zZXVyYXRfMDcwMjIzLnJkc1xcKVxuXG5teS5zZSRjb25kIDwtIHN1YnN0cihteS5zZSRvcmlnLmlkZW50LCA3LCAxMClcbiMgcmVwcmVzZW50cyB0aGUgc2VxdWVuY2luZyBiYXRjaCBhcyB3ZWxsXG5teS5zZSRiYXRjaCA8LSBzdWJzdHIobXkuc2Ukb3JpZy5pZGVudCwgNywgMTIpIFxuXG5kaW0xIDwtIERpbVBsb3QobXkuc2UsXG4gICAgICAgICAgICAgICAgcmVkdWN0aW9uID0gXFx0c25lXFwsXG4gICAgICAgICAgICAgICAgZ3JvdXAuYnkgPSBcXHNldXJhdF9jbHVzdGVyc1xcLCBcbiAgICAgICAgICAgICAgICBsYWJlbCA9IFRSVUUpICsgTm9MZWdlbmQoKVxuZGltMVxuXG5kaW0yIDwtIERpbVBsb3QobXkuc2UsXG4gICAgICAgICAgICAgICAgcmVkdWN0aW9uID0gXFx1bWFwXFwsXG4gICAgICAgICAgICAgICAgZ3JvdXAuYnkgPSBcXHNldXJhdF9jbHVzdGVyc1xcLFxuICAgICAgICAgICAgICAgIGxhYmVsID0gVFJVRSkgKyBOb0xlZ2VuZCgpXG5kaW0yXG5cbm15LnNjZSA8LSBhcy5TaW5nbGVDZWxsRXhwZXJpbWVudChteS5zZSlcbm15Lm1pbG8gPC0gTWlsbyhteS5zY2UpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+
 my.seed &lt;- 07022023
 
-my.se &lt;- readRDS(&quot;~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds&quot;)
+my.se &lt;- readRDS(\~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds\)
 
 my.se$cond &lt;- substr(my.se$orig.ident, 7, 10)
 # represents the sequencing batch as well
 my.se$batch &lt;- substr(my.se$orig.ident, 7, 12) 
 
 dim1 &lt;- DimPlot(my.se,
-                reduction = &quot;tsne&quot;,
-                group.by = &quot;seurat_clusters&quot;, 
+                reduction = \tsne\,
+                group.by = \seurat_clusters\, 
                 label = TRUE) + NoLegend()
 dim1
 
 dim2 &lt;- DimPlot(my.se,
-                reduction = &quot;umap&quot;,
-                group.by = &quot;seurat_clusters&quot;,
+                reduction = \umap\,
+                group.by = \seurat_clusters\,
                 label = TRUE) + NoLegend()
 dim2
 
 my.sce &lt;- as.SingleCellExperiment(my.se)
 my.milo &lt;- Milo(my.sce)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="pre-processing" class="section level1">
-<h1>Pre-processing</h1>
-<p>For DA analysis we need to construct an undirected KNN graph of
-single-cells. Standard single-cell analysis pipelines usually do this
-from distances in PCA. We normalize and calculate principal components
-using scater. I also run UMAP for visualization purposes.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGNhIDwtIHBsb3RQQ0EobXkubWlsbylcbnRzbmUgPC0gcGxvdFRTTkUobXkubWlsbylcblxucGNhXG50c25lXG5cbm15Lm1pbG9cbmBgYCJ9 -->
-<pre class="r"><code>pca &lt;- plotPCA(my.milo)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Pre-processing
+
+For DA analysis we need to construct an undirected KNN graph of single-cells. Standard single-cell analysis pipelines usually do this from distances in PCA. We normalize and calculate principal components using scater. I also run UMAP for visualization purposes.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucGNhIDwtIHBsb3RQQ0EobXkubWlsbylcbnRzbmUgPC0gcGxvdFRTTkUobXkubWlsbylcblxucGNhXG50c25lXG5cbm15Lm1pbG9cbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+pca &lt;- plotPCA(my.milo)
 tsne &lt;- plotTSNE(my.milo)
 
 pca
 tsne
 
 my.milo</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="construct-knn-graph" class="section level1">
-<h1>Construct KNN graph</h1>
-<p>We need to add the KNN graph to the Milo object. This is stored in
-the graph slot, in igraph format. The miloR package includes
-functionality to build and store the graph from the PCA dimensions
-stored in the reducedDim slot.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gYnVpbGRHcmFwaChteS5taWxvLCBrID0gMTAsIGQgPSAzMClcbmBgYCJ9 -->
-<pre class="r"><code>set.seed(my.seed)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Construct KNN graph
+
+We need to add the KNN graph to the Milo object. This is stored in the graph slot, in igraph format. The miloR package includes functionality to build and store the graph from the PCA dimensions stored in the reducedDim slot.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gYnVpbGRHcmFwaChteS5taWxvLCBrID0gMTAsIGQgPSAzMClcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+set.seed(my.seed)
 my.milo &lt;- buildGraph(my.milo, k = 10, d = 30)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="defining-representative-neighbourhoods" class="section level1">
-<h1>1. Defining representative neighbourhoods</h1>
-<p>We define the neighbourhood of a cell, the index, as the group of
-cells connected by an edge in the KNN graph to the index cell. For
-efficiency, we don’t test for DA in the neighbourhood of every cell, but
-we sample as indices a subset of representative cells, using a KNN
-sampling algorithm used by Gut et al. 2015.</p>
-<p>For sampling you need to define a few parameters:</p>
-<pre><code>prop: the proportion of cells to randomly sample to start with (usually 0.1 - 0.2 is sufficient)
-k: the k to use for KNN refinement (we recommend using the same k used for KNN graph building)
-d: the number of reduced dimensions to use for KNN refinement (we recommend using the same d used for KNN graph building)
-refined indicated whether you want to use the sampling refinement algorith, or just pick cells at random. The default and recommended way to go is to use refinement. The only situation in which you might consider using random instead, is if you have batch corrected your data with a graph based correction algorithm, such as BBKNN, but the results of DA testing will be suboptimal.</code></pre>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gbWFrZU5ob29kcyhteS5taWxvLCBwcm9wID0gMC4xLCBrID0gMTAsIGQ9MzAsIHJlZmluZWQgPSBUUlVFKVxuYGBgIn0= -->
-<pre class="r"><code>set.seed(my.seed)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# 1. Defining representative neighbourhoods
+
+We define the neighbourhood of a cell, the index, as the group of cells connected by an edge in the KNN graph to the index cell. For efficiency, we don’t test for DA in the neighbourhood of every cell, but we sample as indices a subset of representative cells, using a KNN sampling algorithm used by Gut et al. 2015.
+
+For sampling you need to define a few parameters:
+
+    prop: the proportion of cells to randomly sample to start with (usually 0.1 - 0.2 is sufficient)
+    k: the k to use for KNN refinement (we recommend using the same k used for KNN graph building)
+    d: the number of reduced dimensions to use for KNN refinement (we recommend using the same d used for KNN graph building)
+    refined indicated whether you want to use the sampling refinement algorith, or just pick cells at random. The default and recommended way to go is to use refinement. The only situation in which you might consider using random instead, is if you have batch corrected your data with a graph based correction algorithm, such as BBKNN, but the results of DA testing will be suboptimal.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gbWFrZU5ob29kcyhteS5taWxvLCBwcm9wID0gMC4xLCBrID0gMTAsIGQ9MzAsIHJlZmluZWQgPSBUUlVFKVxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+set.seed(my.seed)
 my.milo &lt;- makeNhoods(my.milo, prop = 0.1, k = 10, d=30, refined = TRUE)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Once we have defined neighbourhoods, it’s good to take a look at how
-big the neighbourhoods are (i.e. how many cells form each
-neighbourhood). This affects the power of DA testing. We can check this
-out using the plotNhoodSizeHist function. Empirically, we found it’s
-best to have a distribution peaking between 50 and 100. Otherwise you
-might consider rerunning makeNhoods increasing k and/or prop (here the
-distribution looks ludicrous because it’s a small dataset).</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdE5ob29kU2l6ZUhpc3QobXkubWlsbylcbmBgYCJ9 -->
-<pre class="r"><code>plotNhoodSizeHist(my.milo)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<div id="counting-cells-in-neighbourhoods" class="section level2">
-<h2>Counting cells in neighbourhoods</h2>
-<p>Now we have to count how many cells from each sample are in each
-neighbourhood. We need to use the cell metadata and specify which column
-contains the sample information.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubXkubWlsbyA8LSBjb3VudENlbGxzKFxuICAgICAgICAgICAgICBteS5taWxvLFxuICAgICAgICAgICAgICBtZXRhLmRhdGEgPSBkYXRhLmZyYW1lKGNvbERhdGEobXkubWlsbykpLFxuICAgICAgICAgICAgICBzYW1wbGUgPSBcIm9yaWcuaWRlbnRcIlxuICAgICAgICAgICAgICApXG5gYGAifQ== -->
-<pre class="r"><code>my.milo &lt;- countCells(
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+Once we have defined neighbourhoods, it’s good to take a look at how big the neighbourhoods are (i.e. how many cells form each neighbourhood). This affects the power of DA testing. We can check this out using the plotNhoodSizeHist function. Empirically, we found it’s best to have a distribution peaking between 50 and 100. Otherwise you might consider rerunning makeNhoods increasing k and/or prop (here the distribution looks ludicrous because it’s a small dataset).
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucGxvdE5ob29kU2l6ZUhpc3QobXkubWlsbylcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+plotNhoodSizeHist(my.milo)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+## Counting cells in neighbourhoods
+
+Now we have to count how many cells from each sample are in each neighbourhood. We need to use the cell metadata and specify which column contains the sample information.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxubXkubWlsbyA8LSBjb3VudENlbGxzKFxuICAgICAgICAgICAgICBteS5taWxvLFxuICAgICAgICAgICAgICBtZXRhLmRhdGEgPSBkYXRhLmZyYW1lKGNvbERhdGEobXkubWlsbykpLFxuICAgICAgICAgICAgICBzYW1wbGUgPSBcXG9yaWcuaWRlbnRcXFxuICAgICAgICAgICAgICApXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+my.milo &lt;- countCells(
               my.milo,
               meta.data = data.frame(colData(my.milo)),
-              sample = &quot;orig.ident&quot;
+              sample = \orig.ident\
               )</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>This adds to the Milo object a n m matrix, where n is the number of
-neighbourhoods and m</p>
-<p>is the number of experimental samples. Values indicate the number of
-cells from each sample counted in a neighbourhood. This count matrix
-will be used for DA testing.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGVhZChuaG9vZENvdW50cyhteS5taWxvKSlcbmBgYCJ9 -->
-<pre class="r"><code>head(nhoodCounts(my.milo))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="differential-abundance-testing" class="section level2">
-<h2>Differential abundance testing</h2>
-<p>Now we are all set to test for differential abundance in
-neighbourhoods. We implement this hypothesis testing in a generalized
-linear model (GLM) framework, specifically using the Negative Binomial
-GLM implementation in edgeR.</p>
-<p>We first need to think about our experimental design. The design
-matrix should match samples to a condition of interest. In this case the
-Condition is the covariate we are going to test for.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubXkuZGVzaWduIDwtIGRhdGEuZnJhbWUoY29sRGF0YShteS5taWxvKSlbLGMoXCJvcmlnLmlkZW50XCIsIFwiY29uZFwiLCBcImJhdGNoXCIpXVxubXkuZGVzaWduIDwtIGRpc3RpbmN0KG15LmRlc2lnbilcbnJvd25hbWVzKG15LmRlc2lnbikgPC0gbXkuZGVzaWduWywgXCJvcmlnLmlkZW50XCJdXG5cbm15LmRlc2lnblxuYGBgIn0= -->
-<pre class="r"><code>my.design &lt;- data.frame(colData(my.milo))[,c(&quot;orig.ident&quot;, &quot;cond&quot;, &quot;batch&quot;)]
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+This adds to the Milo object a n \times m matrix, where n is the number of neighbourhoods and m
+
+is the number of experimental samples. Values indicate the number of cells from each sample counted in a neighbourhood. This count matrix will be used for DA testing.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuaGVhZChuaG9vZENvdW50cyhteS5taWxvKSlcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+head(nhoodCounts(my.milo))</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+## Differential abundance testing
+
+Now we are all set to test for differential abundance in neighbourhoods. We implement this hypothesis testing in a generalized linear model (GLM) framework, specifically using the Negative Binomial GLM implementation in edgeR.
+
+We first need to think about our experimental design. The design matrix should match samples to a condition of interest. In this case the Condition is the covariate we are going to test for.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxubXkuZGVzaWduIDwtIGRhdGEuZnJhbWUoY29sRGF0YShteS5taWxvKSlbLGMoXFxvcmlnLmlkZW50XFwsIFxcY29uZFxcLCBcXGJhdGNoXFwpXVxubXkuZGVzaWduIDwtIGRpc3RpbmN0KG15LmRlc2lnbilcbnJvd25hbWVzKG15LmRlc2lnbikgPC0gbXkuZGVzaWduWywgXFxvcmlnLmlkZW50XFxdXG5cbm15LmRlc2lnblxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+my.design &lt;- data.frame(colData(my.milo))[,c(\orig.ident\, \cond\, \batch\)]
 my.design &lt;- distinct(my.design)
-rownames(my.design) &lt;- my.design[, &quot;orig.ident&quot;]
+rownames(my.design) &lt;- my.design[, \orig.ident\]
 
 my.design</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Milo uses an adaptation of the Spatial FDR correction introduced by
-cydar, which accounts for the overlap between neighbourhoods.
-Specifically, each hypothesis test P-value is weighted by the reciprocal
-of the kth nearest neighbour distance. To use this statistic we first
-need to store the distances between nearest neighbors in the Milo
-object.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubXkubWlsbyA8LSBjYWxjTmhvb2REaXN0YW5jZShteS5taWxvLCBkPTMwKVxuYGBgIn0= -->
-<pre class="r"><code>my.milo &lt;- calcNhoodDistance(my.milo, d=30)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Now we can do the test, explicitly defining our experimental design.
-We want to test for differences between experimental contitions.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGEucmVzdWx0cyA8LSB0ZXN0Tmhvb2RzKG15Lm1pbG8sIGRlc2lnbiA9IH4gY29uZCwgZGVzaWduLmRmID0gbXkuZGVzaWduKVxuYGBgIn0= -->
-<pre class="r"><code>da.results &lt;- testNhoods(my.milo, design = ~ cond, design.df = my.design)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>This calculates a Fold-change and corrected P-value for each
-neighbourhood, which indicates wheather there is significant
-differential abundance between conditions.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGEucmVzdWx0cyAlPiVcbiAgYXJyYW5nZSgtIFNwYXRpYWxGRFIpICU+JVxuICBoZWFkKClcbmBgYCJ9 -->
-<pre class="r"><code>da.results %&gt;%
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+Milo uses an adaptation of the Spatial FDR correction introduced by cydar, which accounts for the overlap between neighbourhoods. Specifically, each hypothesis test P-value is weighted by the reciprocal of the kth nearest neighbour distance. To use this statistic we first need to store the distances between nearest neighbors in the Milo object.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxubXkubWlsbyA8LSBjYWxjTmhvb2REaXN0YW5jZShteS5taWxvLCBkPTMwKVxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+my.milo &lt;- calcNhoodDistance(my.milo, d=30)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+Now we can do the test, explicitly defining our experimental design. We want to test for differences between experimental contitions.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZGEucmVzdWx0cyA8LSB0ZXN0Tmhvb2RzKG15Lm1pbG8sIGRlc2lnbiA9IH4gY29uZCwgZGVzaWduLmRmID0gbXkuZGVzaWduKVxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+da.results &lt;- testNhoods(my.milo, design = ~ cond, design.df = my.design)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+This calculates a Fold-change and corrected P-value for each neighbourhood, which indicates wheather there is significant differential abundance between conditions.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZGEucmVzdWx0cyAlPiVcbiAgYXJyYW5nZSgtIFNwYXRpYWxGRFIpICU+JVxuICBoZWFkKClcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+da.results %&gt;%
   arrange(- SpatialFDR) %&gt;%
   head()</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzXzEgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhQVmFsdWUpKSArIFxuICBnZW9tX2hpc3RvZ3JhbShiaW5zPTUwKSArIFxuICBnZW9tX3ZsaW5lKHhpbnRlcmNlcHQgPSAwLjA1KVxucmVzXzFcbmBgYCJ9 -->
-<pre class="r"><code>res_1 &lt;- ggplot(da.results, aes(PValue)) + 
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucmVzXzEgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhQVmFsdWUpKSArIFxuICBnZW9tX2hpc3RvZ3JhbShiaW5zPTUwKSArIFxuICBnZW9tX3ZsaW5lKHhpbnRlcmNlcHQgPSAwLjA1KVxucmVzXzFcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+res_1 &lt;- ggplot(da.results, aes(PValue)) + 
   geom_histogram(bins=50) + 
   geom_vline(xintercept = 0.05)
 res_1</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzXzIgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhsb2dGQywgLWxvZzEwKFNwYXRpYWxGRFIpKSkgKyBcbiAgZ2VvbV9wb2ludCgpICtcbiAgZ2VvbV9obGluZSh5aW50ZXJjZXB0ID0gMSkgIyMgTWFyayBzaWduaWZpY2FuY2UgdGhyZXNob2xkICgxMCUgRkRSKVxucmVzXzJcbmBgYCJ9 -->
-<pre class="r"><code>res_2 &lt;- ggplot(da.results, aes(logFC, -log10(SpatialFDR))) + 
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucmVzXzIgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhsb2dGQywgLWxvZzEwKFNwYXRpYWxGRFIpKSkgKyBcbiAgZ2VvbV9wb2ludCgpICtcbiAgZ2VvbV9obGluZSh5aW50ZXJjZXB0ID0gMSkgIyMgTWFyayBzaWduaWZpY2FuY2UgdGhyZXNob2xkICgxMCUgRkRSKVxucmVzXzJcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+res_2 &lt;- ggplot(da.results, aes(logFC, -log10(SpatialFDR))) + 
   geom_point() +
   geom_hline(yintercept = 1) ## Mark significance threshold (10% FDR)
 res_2</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="visualize-neighbourhoods-displaying-da" class="section level2">
-<h2>Visualize neighbourhoods displaying DA</h2>
-<p>To visualize DA results, we build an abstracted graph of
-neighbourhoods that we can superimpose on the single-cell embedding.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gYnVpbGROaG9vZEdyYXBoKG15Lm1pbG8pXG5gYGAifQ== -->
-<pre class="r"><code>set.seed(my.seed)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+## Visualize neighbourhoods displaying DA
+
+To visualize DA results, we build an abstracted graph of neighbourhoods that we can superimpose on the single-cell embedding.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuc2V0LnNlZWQobXkuc2VlZClcbm15Lm1pbG8gPC0gYnVpbGROaG9vZEdyYXBoKG15Lm1pbG8pXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+set.seed(my.seed)
 my.milo &lt;- buildNhoodGraph(my.milo)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXCJ0c25lXCIsXG4gICAgICAgIGdyb3VwLmJ5ID0gXCJjb25kXCIpICsgXG4gIHBsb3ROaG9vZEdyYXBoREEobXkubWlsbywgZGEucmVzdWx0cywgYWxwaGE9MC45LCBsYXlvdXQgPSBcIlRTTkVcIikgK1xuICBwbG90X2xheW91dChndWlkZXM9XCJjb2xsZWN0XCIpXG5gYGAifQ== -->
-<pre class="r"><code>DimPlot(my.se,
-        reduction = &quot;tsne&quot;,
-        group.by = &quot;cond&quot;) + 
-  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = &quot;TSNE&quot;) +
-  plot_layout(guides=&quot;collect&quot;)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXCJ1bWFwXCIsXG4gICAgICAgIGdyb3VwLmJ5ID0gXCJjb25kXCIpICsgXG4gIHBsb3ROaG9vZEdyYXBoREEobXkubWlsbywgZGEucmVzdWx0cywgYWxwaGE9MC45LCBsYXlvdXQgPSBcIlVNQVBcIikgK1xuICBwbG90X2xheW91dChndWlkZXM9XCJjb2xsZWN0XCIpXG5gYGAifQ== -->
-<pre class="r"><code>DimPlot(my.se,
-        reduction = &quot;umap&quot;,
-        group.by = &quot;cond&quot;) + 
-  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = &quot;UMAP&quot;) +
-  plot_layout(guides=&quot;collect&quot;)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="annotate-neighbourhoods" class="section level2">
-<h2>annotate neighbourhoods</h2>
-<p>We might also be interested in visualizing wheather DA is
-particularly evident in certain cell types. To do this, we assign a cell
-type label to each neighbourhood by finding the most abundant cell type
-within cells in each neighbourhood. We can label neighbourhoods in the
-results data.frame using the function annotateNhoods. This also saves
-the fraction of cells harbouring the label.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGEucmVzdWx0cyA8LSBhbm5vdGF0ZU5ob29kcyhteS5taWxvLCBkYS5yZXN1bHRzLCBjb2xkYXRhX2NvbCA9IFwic2V1cmF0X2NsdXN0ZXJzXCIpXG5oZWFkKGRhLnJlc3VsdHMpXG5gYGAifQ== -->
-<pre class="r"><code>da.results &lt;- annotateNhoods(my.milo, da.results, coldata_col = &quot;seurat_clusters&quot;)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXFx0c25lXFwsXG4gICAgICAgIGdyb3VwLmJ5ID0gXFxjb25kXFwpICsgXG4gIHBsb3ROaG9vZEdyYXBoREEobXkubWlsbywgZGEucmVzdWx0cywgYWxwaGE9MC45LCBsYXlvdXQgPSBcXFRTTkVcXCkgK1xuICBwbG90X2xheW91dChndWlkZXM9XFxjb2xsZWN0XFwpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+DimPlot(my.se,
+        reduction = \tsne\,
+        group.by = \cond\) + 
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = \TSNE\) +
+  plot_layout(guides=\collect\)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXFx1bWFwXFwsXG4gICAgICAgIGdyb3VwLmJ5ID0gXFxjb25kXFwpICsgXG4gIHBsb3ROaG9vZEdyYXBoREEobXkubWlsbywgZGEucmVzdWx0cywgYWxwaGE9MC45LCBsYXlvdXQgPSBcXFVNQVBcXCkgK1xuICBwbG90X2xheW91dChndWlkZXM9XFxjb2xsZWN0XFwpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+DimPlot(my.se,
+        reduction = \umap\,
+        group.by = \cond\) + 
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = \UMAP\) +
+  plot_layout(guides=\collect\)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+## annotate neighbourhoods
+
+We might also be interested in visualizing wheather DA is particularly evident in certain cell types. To do this, we assign a cell type label to each neighbourhood by finding the most abundant cell type within cells in each neighbourhood. We can label neighbourhoods in the results data.frame using the function annotateNhoods. This also saves the fraction of cells harbouring the label.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZGEucmVzdWx0cyA8LSBhbm5vdGF0ZU5ob29kcyhteS5taWxvLCBkYS5yZXN1bHRzLCBjb2xkYXRhX2NvbCA9IFxcc2V1cmF0X2NsdXN0ZXJzXFwpXG5oZWFkKGRhLnJlc3VsdHMpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+da.results &lt;- annotateNhoods(my.milo, da.results, coldata_col = \seurat_clusters\)
 head(da.results)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>While neighbourhoods tend to be homogeneous, we can define a
-threshold for celltype_fraction to exclude neighbourhoods that are a mix
-of cell types.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhzZXVyYXRfY2x1c3RlcnNfZnJhY3Rpb24pKSArIGdlb21faGlzdG9ncmFtKGJpbnM9NTApXG5gYGAifQ== -->
-<pre class="r"><code>ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGEucmVzdWx0cyRzZXVyYXRfY2x1c3RlcnMgPC0gaWZlbHNlKGRhLnJlc3VsdHMkc2V1cmF0X2NsdXN0ZXJzX2ZyYWN0aW9uIDwgMC45NSwgXCJNaXhlZFwiLCBkYS5yZXN1bHRzJHNldXJhdF9jbHVzdGVycylcbmBgYCJ9 -->
-<pre class="r"><code>da.results$seurat_clusters &lt;- ifelse(da.results$seurat_clusters_fraction &lt; 0.95, &quot;Mixed&quot;, da.results$seurat_clusters)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Plot logFC of the nhoods by cell type (cluster):</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSBcInNldXJhdF9jbHVzdGVyc1wiLCBhbHBoYT0xLjApXG5gYGAifQ== -->
-<pre class="r"><code>plotDAbeeswarm(da.results, group.by = &quot;seurat_clusters&quot;, alpha=1.0)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>#export</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2F2ZVJEUyhteS5taWxvLCBwYXN0ZTAoXCJ+L3NwaW5hbF9jb3JkX3BhcGVyL291dHB1dC9cIixteS5zZUBwcm9qZWN0Lm5hbWUgLFwiX21pbG9fXCIsZm9ybWF0KFN5cy5EYXRlKCksIFwiJWQlbSV5XCIpLFwiLnJkc1wiKSlcblxuIyBwZGYgZXhwb3J0IGZpZ3VyZXNcbnBkZihwYXN0ZTAoXCJ+L3NwaW5hbF9jb3JkX3BhcGVyL2ZpZ3VyZXMvXCIsbXkuc2VAcHJvamVjdC5uYW1lICxcIl9taWxvX1wiLGZvcm1hdChTeXMuRGF0ZSgpLCBcIiVkJW0leVwiKSxcIi5wZGZcIiksIHdpZHRoID0gNSwgaGVpZ2h0ID0gNClcblxuZGltMSArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKVxuZGltMiArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKVxucGNhICsgZ2d0aXRsZShteS5zZUBwcm9qZWN0Lm5hbWUpXG5yZXNfMVxucmVzXzJcbkRpbVBsb3QobXkuc2UsXG4gICAgICAgIHJlZHVjdGlvbiA9IFwidHNuZVwiLFxuICAgICAgICBncm91cC5ieSA9IFwiY29uZFwiKVxucGxvdE5ob29kR3JhcGhEQShteS5taWxvLFxuICAgICAgICAgICAgICAgICBkYS5yZXN1bHRzLFxuICAgICAgICAgICAgICAgICBhbHBoYT0wLjksXG4gICAgICAgICAgICAgICAgIGxheW91dCA9IFwiVFNORVwiKSBcblxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXCJ1bWFwXCIsXG4gICAgICAgIGdyb3VwLmJ5ID0gXCJjb25kXCIpXG5wbG90Tmhvb2RHcmFwaERBKG15Lm1pbG8sXG4gICAgICAgICAgICAgICAgIGRhLnJlc3VsdHMsXG4gICAgICAgICAgICAgICAgIGFscGhhPTAuOSxcbiAgICAgICAgICAgICAgICAgbGF5b3V0ID0gXCJVTUFQXCIpXG5wbG90Tmhvb2RTaXplSGlzdChteS5taWxvKVxuXG5nZ3Bsb3QoZGEucmVzdWx0cywgYWVzKHNldXJhdF9jbHVzdGVyc19mcmFjdGlvbikpICsgZ2VvbV9oaXN0b2dyYW0oYmlucz01MClcblxucGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSBcInNldXJhdF9jbHVzdGVyc1wiLCBhbHBoYT0xLjApXG5kZXYub2ZmKClcbmBgYCJ9 -->
-<pre class="r"><code>saveRDS(my.milo, paste0(&quot;~/spinal_cord_paper/output/&quot;,my.se@project.name ,&quot;_milo_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+While neighbourhoods tend to be homogeneous, we can define a threshold for celltype_fraction to exclude neighbourhoods that are a mix of cell types.
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhzZXVyYXRfY2x1c3RlcnNfZnJhY3Rpb24pKSArIGdlb21faGlzdG9ncmFtKGJpbnM9NTApXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZGEucmVzdWx0cyRzZXVyYXRfY2x1c3RlcnMgPC0gaWZlbHNlKGRhLnJlc3VsdHMkc2V1cmF0X2NsdXN0ZXJzX2ZyYWN0aW9uIDwgMC45NSwgXFxNaXhlZFxcLCBkYS5yZXN1bHRzJHNldXJhdF9jbHVzdGVycylcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+da.results$seurat_clusters &lt;- ifelse(da.results$seurat_clusters_fraction &lt; 0.95, \Mixed\, da.results$seurat_clusters)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+Plot logFC of the nhoods by cell type (cluster):
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSBcXHNldXJhdF9jbHVzdGVyc1xcLCBhbHBoYT0xLjApXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+plotDAbeeswarm(da.results, group.by = \seurat_clusters\, alpha=1.0)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+#export
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuc2F2ZVJEUyhteS5taWxvLCBwYXN0ZTAoXFx+L3NwaW5hbF9jb3JkX3BhcGVyL291dHB1dC9cXCxteS5zZUBwcm9qZWN0Lm5hbWUgLFxcX21pbG9fXFwsZm9ybWF0KFN5cy5EYXRlKCksIFxcJWQlbSV5XFwpLFxcLnJkc1xcKSlcblxuIyBwZGYgZXhwb3J0IGZpZ3VyZXNcbnBkZihwYXN0ZTAoXFx+L3NwaW5hbF9jb3JkX3BhcGVyL2ZpZ3VyZXMvXFwsbXkuc2VAcHJvamVjdC5uYW1lICxcXF9taWxvX1xcLGZvcm1hdChTeXMuRGF0ZSgpLCBcXCVkJW0leVxcKSxcXC5wZGZcXCksIHdpZHRoID0gNSwgaGVpZ2h0ID0gNClcblxuZGltMSArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKVxuZGltMiArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKVxucGNhICsgZ2d0aXRsZShteS5zZUBwcm9qZWN0Lm5hbWUpXG5yZXNfMVxucmVzXzJcbkRpbVBsb3QobXkuc2UsXG4gICAgICAgIHJlZHVjdGlvbiA9IFxcdHNuZVxcLFxuICAgICAgICBncm91cC5ieSA9IFxcY29uZFxcKVxucGxvdE5ob29kR3JhcGhEQShteS5taWxvLFxuICAgICAgICAgICAgICAgICBkYS5yZXN1bHRzLFxuICAgICAgICAgICAgICAgICBhbHBoYT0wLjksXG4gICAgICAgICAgICAgICAgIGxheW91dCA9IFxcVFNORVxcKSBcblxuRGltUGxvdChteS5zZSxcbiAgICAgICAgcmVkdWN0aW9uID0gXFx1bWFwXFwsXG4gICAgICAgIGdyb3VwLmJ5ID0gXFxjb25kXFwpXG5wbG90Tmhvb2RHcmFwaERBKG15Lm1pbG8sXG4gICAgICAgICAgICAgICAgIGRhLnJlc3VsdHMsXG4gICAgICAgICAgICAgICAgIGFscGhhPTAuOSxcbiAgICAgICAgICAgICAgICAgbGF5b3V0ID0gXFxVTUFQXFwpXG5wbG90Tmhvb2RTaXplSGlzdChteS5taWxvKVxuXG5nZ3Bsb3QoZGEucmVzdWx0cywgYWVzKHNldXJhdF9jbHVzdGVyc19mcmFjdGlvbikpICsgZ2VvbV9oaXN0b2dyYW0oYmlucz01MClcblxucGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSBcXHNldXJhdF9jbHVzdGVyc1xcLCBhbHBoYT0xLjApXG5kZXYub2ZmKClcbmBgYFxuYGBgIn0= --&gt;
+
+```r
+```r
+saveRDS(my.milo, paste0(\~/spinal_cord_paper/output/\,my.se@project.name ,\_milo_\,format(Sys.Date(), \%d%m%y\),\.rds\))
 
 # pdf export figures
-pdf(paste0(&quot;~/spinal_cord_paper/figures/&quot;,my.se@project.name ,&quot;_milo_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.pdf&quot;), width = 5, height = 4)
+pdf(paste0(\~/spinal_cord_paper/figures/\,my.se@project.name ,\_milo_\,format(Sys.Date(), \%d%m%y\),\.pdf\), width = 5, height = 4)
 
 dim1 + ggtitle(my.se@project.name)
 dim2 + ggtitle(my.se@project.name)
@@ -2095,44 +2352,58 @@ pca + ggtitle(my.se@project.name)
 res_1
 res_2
 DimPlot(my.se,
-        reduction = &quot;tsne&quot;,
-        group.by = &quot;cond&quot;)
+        reduction = \tsne\,
+        group.by = \cond\)
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = &quot;TSNE&quot;) 
+                 layout = \TSNE\) 
 
 DimPlot(my.se,
-        reduction = &quot;umap&quot;,
-        group.by = &quot;cond&quot;)
+        reduction = \umap\,
+        group.by = \cond\)
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = &quot;UMAP&quot;)
+                 layout = \UMAP\)
 plotNhoodSizeHist(my.milo)
 
 ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)
 
-plotDAbeeswarm(da.results, group.by = &quot;seurat_clusters&quot;, alpha=1.0)
+plotDAbeeswarm(da.results, group.by = \seurat_clusters\, alpha=1.0)
 dev.off()</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBEYXRlIGFuZCB0aW1lIG9mIFJlbmRlcmluZ1xuU3lzLnRpbWUoKVxuXG5zZXNzaW9uSW5mbygpXG5gYGAifQ== -->
-<pre class="r"><code># Date and time of Rendering
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuIyBEYXRlIGFuZCB0aW1lIG9mIFJlbmRlcmluZ1xuU3lzLnRpbWUoKVxuXG5zZXNzaW9uSW5mbygpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+# Date and time of Rendering
 Sys.time()
 
 sessionInfo()</code></pre>
+<p>```</p>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
-</div>
-</div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiTWlsbyB3b3JrZmxvdyBvbiBHZ19jdHJsX3BvbHlfaW50IgphdXRob3I6ICJGYWJpbyBTYWNoZXIiCmRhdGU6ICIwNy4wMi4yMDIzIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGRmX3ByaW50OiBwYWdlZAogIGh0bWxfbm90ZWJvb2s6CiAgICBmaWdfaGVpZ2h0OiA3CiAgICBmaWdfd2lkdGg6IDgKZWRpdG9yX29wdGlvbnM6CiAgY2h1bmtfb3V0cHV0X3R5cGU6IGlubGluZQotLS0KCmBgYHtyIHdhcm5pbmc9RkFMU0UsIG1lc3NhZ2U9RkFMU0V9CmxpYnJhcnkobWlsb1IsIHF1aWV0bHkgPSBUUlVFKQpsaWJyYXJ5KFNpbmdsZUNlbGxFeHBlcmltZW50LCBxdWlldGx5ID0gVFJVRSkKbGlicmFyeShzY2F0ZXIsIHF1aWV0bHkgPSBUUlVFKQpsaWJyYXJ5KGRwbHlyKQpsaWJyYXJ5KHBhdGNod29yaykKbGlicmFyeShTZXVyYXQpCmxpYnJhcnkoc3RyaW5ncikKbGlicmFyeShwYXRjaHdvcmspCmxpYnJhcnkoZ2dwbG90MikKYGBgCgojIEludHJvZHVjdGlvbgoKTWlsbyBpcyBhIHRvb2wgZm9yIGFuYWx5c2lzIG9mIGNvbXBsZXggc2luZ2xlIGNlbGwgZGF0YXNldHMgZ2VuZXJhdGVkIGZyb20gcmVwbGljYXRlZCBtdWx0aS1jb25kaXRpb24gZXhwZXJpbWVudHMsIHdoaWNoIGRldGVjdHMgY2hhbmdlcyBpbiBjb21wb3NpdGlvbiBiZXR3ZWVuIGNvbmRpdGlvbnMuIFdoaWxlIGRpZmZlcmVudGlhbCBhYnVuZGFuY2UgKERBKSBpcyBjb21tb25seSBxdWFudGlmaWVkIGluIGRpc2NyZXRlIGNlbGwgY2x1c3RlcnMsIE1pbG8gdXNlcyBwYXJ0YWxseSBvdmVybGFwcGluZyBuZWlnaGJvdXJob29kcyBvZiBjZWxscyBvbiBhIEtOTiBncmFwaC4gU3RhcnRpbmcgZnJvbSBhIGdyYXBoIHRoYXQgZmFpdGhmdWxseSByZWNhcGl0dWxhdGVzIHRoZSBiaW9sb2d5IG9mIHRoZSBjZWxsIHBvcHVsYXRpb24sIE1pbG8gYW5hbHlzaXMgY29uc2lzdHMgb2YgMyBzdGVwczoKCiAgLSAgU2FtcGxpbmcgb2YgcmVwcmVzZW50YXRpdmUgbmVpZ2hib3VyaG9vZHMKICAtICBUZXN0aW5nIGZvciBkaWZmZXJlbnRpYWwgYWJ1bmRhbmNlIG9mIGNvbmRpdGlvbnMgaW4gYWxsIG5laWdoYm91cmhvb2RzCiAgLSAgQWNjb3VudGluZyBmb3IgbXVsdGlwbGUgaHlwb3RoZXNpcyB0ZXN0aW5nIHVzaW5nIGEgd2VpZ2h0ZWQgRkRSIHByb2NlZHVyZSB0aGF0IGFjY291bnRzIGZvciB0aGUgb3ZlcmxhcCBvZiBuZWlnaGJvdXJob29kcwoKSW4gdGhpcyB2aWduZXR0ZSB3ZSB3aWxsIGVsYWJvcmF0ZSBvbiBob3cgdGhlc2Ugc3RlcHMgYXJlIGltcGxlbWVudGVkIGluIHRoZSBtaWxvUiBwYWNrYWdlLgoKIyBGcm9tIFNldXJhdCBvYmplY3QKClRoZSBTZXVyYXQgcGFja2FnZSBpbmNsdWRlcyBhIGNvbnZlcnRlciB0byBTaW5nbGVDZWxsRXhwZXJpbWVudC4KYGBge3Igc2V1cmF0LW9iamVjdH0KCm15LnNlZWQgPC0gMDcwMjIwMjMKCm15LnNlIDwtIHJlYWRSRFMoIn4vc3BpbmFsX2NvcmRfcGFwZXIvZGF0YS9HZ19jdHJsX3BvbHlfaW50X3NldXJhdF8wNzAyMjMucmRzIikKCm15LnNlJGNvbmQgPC0gc3Vic3RyKG15LnNlJG9yaWcuaWRlbnQsIDcsIDEwKQojIHJlcHJlc2VudHMgdGhlIHNlcXVlbmNpbmcgYmF0Y2ggYXMgd2VsbApteS5zZSRiYXRjaCA8LSBzdWJzdHIobXkuc2Ukb3JpZy5pZGVudCwgNywgMTIpIAoKZGltMSA8LSBEaW1QbG90KG15LnNlLAogICAgICAgICAgICAgICAgcmVkdWN0aW9uID0gInRzbmUiLAogICAgICAgICAgICAgICAgZ3JvdXAuYnkgPSAic2V1cmF0X2NsdXN0ZXJzIiwgCiAgICAgICAgICAgICAgICBsYWJlbCA9IFRSVUUpICsgTm9MZWdlbmQoKQpkaW0xCgpkaW0yIDwtIERpbVBsb3QobXkuc2UsCiAgICAgICAgICAgICAgICByZWR1Y3Rpb24gPSAidW1hcCIsCiAgICAgICAgICAgICAgICBncm91cC5ieSA9ICJzZXVyYXRfY2x1c3RlcnMiLAogICAgICAgICAgICAgICAgbGFiZWwgPSBUUlVFKSArIE5vTGVnZW5kKCkKZGltMgoKbXkuc2NlIDwtIGFzLlNpbmdsZUNlbGxFeHBlcmltZW50KG15LnNlKQpteS5taWxvIDwtIE1pbG8obXkuc2NlKQpgYGAKCiMgUHJlLXByb2Nlc3NpbmcKCkZvciBEQSBhbmFseXNpcyB3ZSBuZWVkIHRvIGNvbnN0cnVjdCBhbiB1bmRpcmVjdGVkIEtOTiBncmFwaCBvZiBzaW5nbGUtY2VsbHMuIFN0YW5kYXJkIHNpbmdsZS1jZWxsIGFuYWx5c2lzIHBpcGVsaW5lcyB1c3VhbGx5IGRvIHRoaXMgZnJvbSBkaXN0YW5jZXMgaW4gUENBLiBXZSBub3JtYWxpemUgYW5kIGNhbGN1bGF0ZSBwcmluY2lwYWwgY29tcG9uZW50cyB1c2luZyBzY2F0ZXIuIEkgYWxzbyBydW4gVU1BUCBmb3IgdmlzdWFsaXphdGlvbiBwdXJwb3Nlcy4KCmBgYHtyIHByZS1wcm9jZXNzaW5nfQpwY2EgPC0gcGxvdFBDQShteS5taWxvKQp0c25lIDwtIHBsb3RUU05FKG15Lm1pbG8pCgpwY2EKdHNuZQoKbXkubWlsbwpgYGAKCiMgQ29uc3RydWN0IEtOTiBncmFwaAoKV2UgbmVlZCB0byBhZGQgdGhlIEtOTiBncmFwaCB0byB0aGUgTWlsbyBvYmplY3QuIFRoaXMgaXMgc3RvcmVkIGluIHRoZSBncmFwaCBzbG90LCBpbiBpZ3JhcGggZm9ybWF0LiBUaGUgbWlsb1IgcGFja2FnZSBpbmNsdWRlcyBmdW5jdGlvbmFsaXR5IHRvIGJ1aWxkIGFuZCBzdG9yZSB0aGUgZ3JhcGggZnJvbSB0aGUgUENBIGRpbWVuc2lvbnMgc3RvcmVkIGluIHRoZSByZWR1Y2VkRGltIHNsb3QuCgpgYGB7ciBrbm4tZ3JhcGh9CnNldC5zZWVkKG15LnNlZWQpCm15Lm1pbG8gPC0gYnVpbGRHcmFwaChteS5taWxvLCBrID0gMTAsIGQgPSAzMCkKYGBgCgojIDEuIERlZmluaW5nIHJlcHJlc2VudGF0aXZlIG5laWdoYm91cmhvb2RzCgpXZSBkZWZpbmUgdGhlIG5laWdoYm91cmhvb2Qgb2YgYSBjZWxsLCB0aGUgaW5kZXgsIGFzIHRoZSBncm91cCBvZiBjZWxscyBjb25uZWN0ZWQgYnkgYW4gZWRnZSBpbiB0aGUgS05OIGdyYXBoIHRvIHRoZSBpbmRleCBjZWxsLiBGb3IgZWZmaWNpZW5jeSwgd2UgZG9u4oCZdCB0ZXN0IGZvciBEQSBpbiB0aGUgbmVpZ2hib3VyaG9vZCBvZiBldmVyeSBjZWxsLCBidXQgd2Ugc2FtcGxlIGFzIGluZGljZXMgYSBzdWJzZXQgb2YgcmVwcmVzZW50YXRpdmUgY2VsbHMsIHVzaW5nIGEgS05OIHNhbXBsaW5nIGFsZ29yaXRobSB1c2VkIGJ5IEd1dCBldCBhbC4gMjAxNS4KCkZvciBzYW1wbGluZyB5b3UgbmVlZCB0byBkZWZpbmUgYSBmZXcgcGFyYW1ldGVyczoKCiAgICBwcm9wOiB0aGUgcHJvcG9ydGlvbiBvZiBjZWxscyB0byByYW5kb21seSBzYW1wbGUgdG8gc3RhcnQgd2l0aCAodXN1YWxseSAwLjEgLSAwLjIgaXMgc3VmZmljaWVudCkKICAgIGs6IHRoZSBrIHRvIHVzZSBmb3IgS05OIHJlZmluZW1lbnQgKHdlIHJlY29tbWVuZCB1c2luZyB0aGUgc2FtZSBrIHVzZWQgZm9yIEtOTiBncmFwaCBidWlsZGluZykKICAgIGQ6IHRoZSBudW1iZXIgb2YgcmVkdWNlZCBkaW1lbnNpb25zIHRvIHVzZSBmb3IgS05OIHJlZmluZW1lbnQgKHdlIHJlY29tbWVuZCB1c2luZyB0aGUgc2FtZSBkIHVzZWQgZm9yIEtOTiBncmFwaCBidWlsZGluZykKICAgIHJlZmluZWQgaW5kaWNhdGVkIHdoZXRoZXIgeW91IHdhbnQgdG8gdXNlIHRoZSBzYW1wbGluZyByZWZpbmVtZW50IGFsZ29yaXRoLCBvciBqdXN0IHBpY2sgY2VsbHMgYXQgcmFuZG9tLiBUaGUgZGVmYXVsdCBhbmQgcmVjb21tZW5kZWQgd2F5IHRvIGdvIGlzIHRvIHVzZSByZWZpbmVtZW50LiBUaGUgb25seSBzaXR1YXRpb24gaW4gd2hpY2ggeW91IG1pZ2h0IGNvbnNpZGVyIHVzaW5nIHJhbmRvbSBpbnN0ZWFkLCBpcyBpZiB5b3UgaGF2ZSBiYXRjaCBjb3JyZWN0ZWQgeW91ciBkYXRhIHdpdGggYSBncmFwaCBiYXNlZCBjb3JyZWN0aW9uIGFsZ29yaXRobSwgc3VjaCBhcyBCQktOTiwgYnV0IHRoZSByZXN1bHRzIG9mIERBIHRlc3Rpbmcgd2lsbCBiZSBzdWJvcHRpbWFsLgoKYGBge3Igbmhvb2RzfQpzZXQuc2VlZChteS5zZWVkKQpteS5taWxvIDwtIG1ha2VOaG9vZHMobXkubWlsbywgcHJvcCA9IDAuMSwgayA9IDEwLCBkPTMwLCByZWZpbmVkID0gVFJVRSkKYGBgCgpPbmNlIHdlIGhhdmUgZGVmaW5lZCBuZWlnaGJvdXJob29kcywgaXTigJlzIGdvb2QgdG8gdGFrZSBhIGxvb2sgYXQgaG93IGJpZyB0aGUgbmVpZ2hib3VyaG9vZHMgYXJlIChpLmUuIGhvdyBtYW55IGNlbGxzIGZvcm0gZWFjaCBuZWlnaGJvdXJob29kKS4gVGhpcyBhZmZlY3RzIHRoZSBwb3dlciBvZiBEQSB0ZXN0aW5nLiBXZSBjYW4gY2hlY2sgdGhpcyBvdXQgdXNpbmcgdGhlIHBsb3ROaG9vZFNpemVIaXN0IGZ1bmN0aW9uLiBFbXBpcmljYWxseSwgd2UgZm91bmQgaXTigJlzIGJlc3QgdG8gaGF2ZSBhIGRpc3RyaWJ1dGlvbiBwZWFraW5nIGJldHdlZW4gNTAgYW5kIDEwMC4gT3RoZXJ3aXNlIHlvdSBtaWdodCBjb25zaWRlciByZXJ1bm5pbmcgbWFrZU5ob29kcyBpbmNyZWFzaW5nIGsgYW5kL29yIHByb3AgKGhlcmUgdGhlIGRpc3RyaWJ1dGlvbiBsb29rcyBsdWRpY3JvdXMgYmVjYXVzZSBpdOKAmXMgYSBzbWFsbCBkYXRhc2V0KS4KCmBgYHtyIG5ob29kLXNpemUtZGlzdH0KcGxvdE5ob29kU2l6ZUhpc3QobXkubWlsbykKYGBgCgojIyBDb3VudGluZyBjZWxscyBpbiBuZWlnaGJvdXJob29kcwoKTm93IHdlIGhhdmUgdG8gY291bnQgaG93IG1hbnkgY2VsbHMgZnJvbSBlYWNoIHNhbXBsZSBhcmUgaW4gZWFjaCBuZWlnaGJvdXJob29kLiBXZSBuZWVkIHRvIHVzZSB0aGUgY2VsbCBtZXRhZGF0YSBhbmQgc3BlY2lmeSB3aGljaCBjb2x1bW4gY29udGFpbnMgdGhlIHNhbXBsZSBpbmZvcm1hdGlvbi4KCmBgYHtyIG5jZWxscy1uaG9vZH0KbXkubWlsbyA8LSBjb3VudENlbGxzKAogICAgICAgICAgICAgIG15Lm1pbG8sCiAgICAgICAgICAgICAgbWV0YS5kYXRhID0gZGF0YS5mcmFtZShjb2xEYXRhKG15Lm1pbG8pKSwKICAgICAgICAgICAgICBzYW1wbGUgPSAib3JpZy5pZGVudCIKICAgICAgICAgICAgICApCmBgYAoKVGhpcyBhZGRzIHRvIHRoZSBNaWxvIG9iamVjdCBhIG4gXHRpbWVzIG0gbWF0cml4LCB3aGVyZSBuIGlzIHRoZSBudW1iZXIgb2YgbmVpZ2hib3VyaG9vZHMgYW5kIG0KCmlzIHRoZSBudW1iZXIgb2YgZXhwZXJpbWVudGFsIHNhbXBsZXMuIFZhbHVlcyBpbmRpY2F0ZSB0aGUgbnVtYmVyIG9mIGNlbGxzIGZyb20gZWFjaCBzYW1wbGUgY291bnRlZCBpbiBhIG5laWdoYm91cmhvb2QuIFRoaXMgY291bnQgbWF0cml4IHdpbGwgYmUgdXNlZCBmb3IgREEgdGVzdGluZy4KCmBgYHtyIGluc3BlY3Qtbmhob2QtbWF0cml4fQpoZWFkKG5ob29kQ291bnRzKG15Lm1pbG8pKQpgYGAKCiMjIERpZmZlcmVudGlhbCBhYnVuZGFuY2UgdGVzdGluZwoKTm93IHdlIGFyZSBhbGwgc2V0IHRvIHRlc3QgZm9yIGRpZmZlcmVudGlhbCBhYnVuZGFuY2UgaW4gbmVpZ2hib3VyaG9vZHMuIFdlIGltcGxlbWVudCB0aGlzIGh5cG90aGVzaXMgdGVzdGluZyBpbiBhIGdlbmVyYWxpemVkIGxpbmVhciBtb2RlbCAoR0xNKSBmcmFtZXdvcmssIHNwZWNpZmljYWxseSB1c2luZyB0aGUgTmVnYXRpdmUgQmlub21pYWwgR0xNIGltcGxlbWVudGF0aW9uIGluIGVkZ2VSLgoKV2UgZmlyc3QgbmVlZCB0byB0aGluayBhYm91dCBvdXIgZXhwZXJpbWVudGFsIGRlc2lnbi4gVGhlIGRlc2lnbiBtYXRyaXggc2hvdWxkIG1hdGNoIHNhbXBsZXMgdG8gYSBjb25kaXRpb24gb2YgaW50ZXJlc3QuIEluIHRoaXMgY2FzZSB0aGUgQ29uZGl0aW9uIGlzIHRoZSBjb3ZhcmlhdGUgd2UgYXJlIGdvaW5nIHRvIHRlc3QgZm9yLgoKYGBge3IgZGVzaW5nLURBLXRlc3Rpbmd9IApteS5kZXNpZ24gPC0gZGF0YS5mcmFtZShjb2xEYXRhKG15Lm1pbG8pKVssYygib3JpZy5pZGVudCIsICJjb25kIiwgImJhdGNoIildCm15LmRlc2lnbiA8LSBkaXN0aW5jdChteS5kZXNpZ24pCnJvd25hbWVzKG15LmRlc2lnbikgPC0gbXkuZGVzaWduWywgIm9yaWcuaWRlbnQiXQoKbXkuZGVzaWduCmBgYAoKTWlsbyB1c2VzIGFuIGFkYXB0YXRpb24gb2YgdGhlIFNwYXRpYWwgRkRSIGNvcnJlY3Rpb24gaW50cm9kdWNlZCBieSBjeWRhciwgd2hpY2ggYWNjb3VudHMgZm9yIHRoZSBvdmVybGFwIGJldHdlZW4gbmVpZ2hib3VyaG9vZHMuIFNwZWNpZmljYWxseSwgZWFjaCBoeXBvdGhlc2lzIHRlc3QgUC12YWx1ZSBpcyB3ZWlnaHRlZCBieSB0aGUgcmVjaXByb2NhbCBvZiB0aGUga3RoIG5lYXJlc3QgbmVpZ2hib3VyIGRpc3RhbmNlLiBUbyB1c2UgdGhpcyBzdGF0aXN0aWMgd2UgZmlyc3QgbmVlZCB0byBzdG9yZSB0aGUgZGlzdGFuY2VzIGJldHdlZW4gbmVhcmVzdCBuZWlnaGJvcnMgaW4gdGhlIE1pbG8gb2JqZWN0LgoKYGBge3Igbmhvb2QtZGlzdGFuY2V9Cm15Lm1pbG8gPC0gY2FsY05ob29kRGlzdGFuY2UobXkubWlsbywgZD0zMCkKYGBgCgpOb3cgd2UgY2FuIGRvIHRoZSB0ZXN0LCBleHBsaWNpdGx5IGRlZmluaW5nIG91ciBleHBlcmltZW50YWwgZGVzaWduLiBXZSB3YW50IHRvIHRlc3QgZm9yIGRpZmZlcmVuY2VzIGJldHdlZW4gZXhwZXJpbWVudGFsIGNvbnRpdGlvbnMuCgpgYGB7ciB0ZXN0LW5ob29kfQpkYS5yZXN1bHRzIDwtIHRlc3ROaG9vZHMobXkubWlsbywgZGVzaWduID0gfiBjb25kLCBkZXNpZ24uZGYgPSBteS5kZXNpZ24pCmBgYAoKVGhpcyBjYWxjdWxhdGVzIGEgRm9sZC1jaGFuZ2UgYW5kIGNvcnJlY3RlZCBQLXZhbHVlIGZvciBlYWNoIG5laWdoYm91cmhvb2QsIHdoaWNoIGluZGljYXRlcyB3aGVhdGhlciB0aGVyZSBpcyBzaWduaWZpY2FudCBkaWZmZXJlbnRpYWwgYWJ1bmRhbmNlIGJldHdlZW4gY29uZGl0aW9ucy4KCmBgYHtyIHJlc3VsdHN9CmRhLnJlc3VsdHMgJT4lCiAgYXJyYW5nZSgtIFNwYXRpYWxGRFIpICU+JQogIGhlYWQoKQpgYGAKCmBgYHtyIHBsb3QtcmVzdWx0c30KcmVzXzEgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhQVmFsdWUpKSArIAogIGdlb21faGlzdG9ncmFtKGJpbnM9NTApICsgCiAgZ2VvbV92bGluZSh4aW50ZXJjZXB0ID0gMC4wNSkKcmVzXzEKYGBgCgpgYGB7ciBwbG90LXJlc3V0czJ9CnJlc18yIDwtIGdncGxvdChkYS5yZXN1bHRzLCBhZXMobG9nRkMsIC1sb2cxMChTcGF0aWFsRkRSKSkpICsgCiAgZ2VvbV9wb2ludCgpICsKICBnZW9tX2hsaW5lKHlpbnRlcmNlcHQgPSAxKSAjIyBNYXJrIHNpZ25pZmljYW5jZSB0aHJlc2hvbGQgKDEwJSBGRFIpCnJlc18yCmBgYAoKIyMgVmlzdWFsaXplIG5laWdoYm91cmhvb2RzIGRpc3BsYXlpbmcgREEKClRvIHZpc3VhbGl6ZSBEQSByZXN1bHRzLCB3ZSBidWlsZCBhbiBhYnN0cmFjdGVkIGdyYXBoIG9mIG5laWdoYm91cmhvb2RzIHRoYXQgd2UgY2FuIHN1cGVyaW1wb3NlIG9uIHRoZSBzaW5nbGUtY2VsbCBlbWJlZGRpbmcuCgpgYGB7ciBuaG9vZC1ncmFwaH0Kc2V0LnNlZWQobXkuc2VlZCkKbXkubWlsbyA8LSBidWlsZE5ob29kR3JhcGgobXkubWlsbykKYGBgCgpgYGB7ciBwbG90LW5ob29kLWdyYXBoLXRzbmV9CkRpbVBsb3QobXkuc2UsCiAgICAgICAgcmVkdWN0aW9uID0gInRzbmUiLAogICAgICAgIGdyb3VwLmJ5ID0gImNvbmQiKSArIAogIHBsb3ROaG9vZEdyYXBoREEobXkubWlsbywgZGEucmVzdWx0cywgYWxwaGE9MC45LCBsYXlvdXQgPSAiVFNORSIpICsKICBwbG90X2xheW91dChndWlkZXM9ImNvbGxlY3QiKQpgYGAKCmBgYHtyIHBsb3Qtbmhvb2QtZ3JhcGgtdW1hcH0KRGltUGxvdChteS5zZSwKICAgICAgICByZWR1Y3Rpb24gPSAidW1hcCIsCiAgICAgICAgZ3JvdXAuYnkgPSAiY29uZCIpICsgCiAgcGxvdE5ob29kR3JhcGhEQShteS5taWxvLCBkYS5yZXN1bHRzLCBhbHBoYT0wLjksIGxheW91dCA9ICJVTUFQIikgKwogIHBsb3RfbGF5b3V0KGd1aWRlcz0iY29sbGVjdCIpCmBgYAoKIyMgYW5ub3RhdGUgbmVpZ2hib3VyaG9vZHMKCldlIG1pZ2h0IGFsc28gYmUgaW50ZXJlc3RlZCBpbiB2aXN1YWxpemluZyB3aGVhdGhlciBEQSBpcyBwYXJ0aWN1bGFybHkgZXZpZGVudCBpbiBjZXJ0YWluIGNlbGwgdHlwZXMuIFRvIGRvIHRoaXMsIHdlIGFzc2lnbiBhIGNlbGwgdHlwZSBsYWJlbCB0byBlYWNoIG5laWdoYm91cmhvb2QgYnkgZmluZGluZyB0aGUgbW9zdCBhYnVuZGFudCBjZWxsIHR5cGUgd2l0aGluIGNlbGxzIGluIGVhY2ggbmVpZ2hib3VyaG9vZC4gV2UgY2FuIGxhYmVsIG5laWdoYm91cmhvb2RzIGluIHRoZSByZXN1bHRzIGRhdGEuZnJhbWUgdXNpbmcgdGhlIGZ1bmN0aW9uIGFubm90YXRlTmhvb2RzLiBUaGlzIGFsc28gc2F2ZXMgdGhlIGZyYWN0aW9uIG9mIGNlbGxzIGhhcmJvdXJpbmcgdGhlIGxhYmVsLgoKYGBge3IgYW5ub3RhdGUtbmhvb2RzfQpkYS5yZXN1bHRzIDwtIGFubm90YXRlTmhvb2RzKG15Lm1pbG8sIGRhLnJlc3VsdHMsIGNvbGRhdGFfY29sID0gInNldXJhdF9jbHVzdGVycyIpCmhlYWQoZGEucmVzdWx0cykKYGBgCgpXaGlsZSBuZWlnaGJvdXJob29kcyB0ZW5kIHRvIGJlIGhvbW9nZW5lb3VzLCB3ZSBjYW4gZGVmaW5lIGEgdGhyZXNob2xkIGZvciBjZWxsdHlwZV9mcmFjdGlvbiB0byBleGNsdWRlIG5laWdoYm91cmhvb2RzIHRoYXQgYXJlIGEgbWl4IG9mIGNlbGwgdHlwZXMuCgpgYGB7ciBjZWxsdHlwZS1mcmF0aW9uLXBsb3R9CmdncGxvdChkYS5yZXN1bHRzLCBhZXMoc2V1cmF0X2NsdXN0ZXJzX2ZyYWN0aW9uKSkgKyBnZW9tX2hpc3RvZ3JhbShiaW5zPTUwKQpgYGAKCmBgYHtyIGZyYWN0aW9uLXRocmVzaG9sZH0KZGEucmVzdWx0cyRzZXVyYXRfY2x1c3RlcnMgPC0gaWZlbHNlKGRhLnJlc3VsdHMkc2V1cmF0X2NsdXN0ZXJzX2ZyYWN0aW9uIDwgMC45NSwgIk1peGVkIiwgZGEucmVzdWx0cyRzZXVyYXRfY2x1c3RlcnMpCmBgYAoKUGxvdCBsb2dGQyBvZiB0aGUgbmhvb2RzIGJ5IGNlbGwgdHlwZSAoY2x1c3Rlcik6CgpgYGB7ciBEQS1iZWVzd2FybX0KcGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSAic2V1cmF0X2NsdXN0ZXJzIiwgYWxwaGE9MS4wKQpgYGAKCiNleHBvcnQKCmBgYHtyIGV4cG9ydH0Kc2F2ZVJEUyhteS5taWxvLCBwYXN0ZTAoIn4vc3BpbmFsX2NvcmRfcGFwZXIvb3V0cHV0LyIsbXkuc2VAcHJvamVjdC5uYW1lICwiX21pbG9fIixmb3JtYXQoU3lzLkRhdGUoKSwgIiVkJW0leSIpLCIucmRzIikpCgojIHBkZiBleHBvcnQgZmlndXJlcwpwZGYocGFzdGUwKCJ+L3NwaW5hbF9jb3JkX3BhcGVyL2ZpZ3VyZXMvIixteS5zZUBwcm9qZWN0Lm5hbWUgLCJfbWlsb18iLGZvcm1hdChTeXMuRGF0ZSgpLCAiJWQlbSV5IiksIi5wZGYiKSwgd2lkdGggPSA1LCBoZWlnaHQgPSA0KQoKZGltMSArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKQpkaW0yICsgZ2d0aXRsZShteS5zZUBwcm9qZWN0Lm5hbWUpCnBjYSArIGdndGl0bGUobXkuc2VAcHJvamVjdC5uYW1lKQpyZXNfMQpyZXNfMgpEaW1QbG90KG15LnNlLAogICAgICAgIHJlZHVjdGlvbiA9ICJ0c25lIiwKICAgICAgICBncm91cC5ieSA9ICJjb25kIikKcGxvdE5ob29kR3JhcGhEQShteS5taWxvLAogICAgICAgICAgICAgICAgIGRhLnJlc3VsdHMsCiAgICAgICAgICAgICAgICAgYWxwaGE9MC45LAogICAgICAgICAgICAgICAgIGxheW91dCA9ICJUU05FIikgCgpEaW1QbG90KG15LnNlLAogICAgICAgIHJlZHVjdGlvbiA9ICJ1bWFwIiwKICAgICAgICBncm91cC5ieSA9ICJjb25kIikKcGxvdE5ob29kR3JhcGhEQShteS5taWxvLAogICAgICAgICAgICAgICAgIGRhLnJlc3VsdHMsCiAgICAgICAgICAgICAgICAgYWxwaGE9MC45LAogICAgICAgICAgICAgICAgIGxheW91dCA9ICJVTUFQIikKcGxvdE5ob29kU2l6ZUhpc3QobXkubWlsbykKCmdncGxvdChkYS5yZXN1bHRzLCBhZXMoc2V1cmF0X2NsdXN0ZXJzX2ZyYWN0aW9uKSkgKyBnZW9tX2hpc3RvZ3JhbShiaW5zPTUwKQoKcGxvdERBYmVlc3dhcm0oZGEucmVzdWx0cywgZ3JvdXAuYnkgPSAic2V1cmF0X2NsdXN0ZXJzIiwgYWxwaGE9MS4wKQpkZXYub2ZmKCkKYGBgCgoKYGBge3Igc2Vzc2lvbkluZm99CiMgRGF0ZSBhbmQgdGltZSBvZiBSZW5kZXJpbmcKU3lzLnRpbWUoKQoKc2Vzc2lvbkluZm8oKQpgYGAKCgo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiTWlsbyB3b3JrZmxvdyBvbiBHZ19jdHJsX3BvbHlfaW50IgphdXRob3I6ICJGYWJpbyBTYWNoZXIiCmRhdGU6ICIwNy4wMi4yMDIzIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIHRvYzogVFJVRQogICAgdG9jX2Zsb2F0OiBUUlVFCiAgICBkZl9wcmludDogcGFnZWQKICBodG1sX25vdGVib29rOgogICAgZmlnX2hlaWdodDogNwogICAgZmlnX3dpZHRoOiA4CmVkaXRvcl9vcHRpb25zOgogIGNodW5rX291dHB1dF90eXBlOiBpbmxpbmUKLS0tCgpgYGB7ciB3YXJuaW5nPUZBTFNFLCBtZXNzYWdlPUZBTFNFfQpsaWJyYXJ5KG1pbG9SLCBxdWlldGx5ID0gVFJVRSkKbGlicmFyeShTaW5nbGVDZWxsRXhwZXJpbWVudCwgcXVpZXRseSA9IFRSVUUpCmxpYnJhcnkoc2NhdGVyLCBxdWlldGx5ID0gVFJVRSkKbGlicmFyeShkcGx5cikKbGlicmFyeShwYXRjaHdvcmspCmxpYnJhcnkoU2V1cmF0KQpsaWJyYXJ5KHN0cmluZ3IpCmxpYnJhcnkocGF0Y2h3b3JrKQpsaWJyYXJ5KGdncGxvdDIpCmBgYAoKIyBJbnRyb2R1Y3Rpb24KCk1pbG8gaXMgYSB0b29sIGZvciBhbmFseXNpcyBvZiBjb21wbGV4IHNpbmdsZSBjZWxsIGRhdGFzZXRzIGdlbmVyYXRlZCBmcm9tIHJlcGxpY2F0ZWQgbXVsdGktY29uZGl0aW9uIGV4cGVyaW1lbnRzLCB3aGljaCBkZXRlY3RzIGNoYW5nZXMgaW4gY29tcG9zaXRpb24gYmV0d2VlbiBjb25kaXRpb25zLiBXaGlsZSBkaWZmZXJlbnRpYWwgYWJ1bmRhbmNlIChEQSkgaXMgY29tbW9ubHkgcXVhbnRpZmllZCBpbiBkaXNjcmV0ZSBjZWxsIGNsdXN0ZXJzLCBNaWxvIHVzZXMgcGFydGFsbHkgb3ZlcmxhcHBpbmcgbmVpZ2hib3VyaG9vZHMgb2YgY2VsbHMgb24gYSBLTk4gZ3JhcGguIFN0YXJ0aW5nIGZyb20gYSBncmFwaCB0aGF0IGZhaXRoZnVsbHkgcmVjYXBpdHVsYXRlcyB0aGUgYmlvbG9neSBvZiB0aGUgY2VsbCBwb3B1bGF0aW9uLCBNaWxvIGFuYWx5c2lzIGNvbnNpc3RzIG9mIDMgc3RlcHM6CgogIC0gIFNhbXBsaW5nIG9mIHJlcHJlc2VudGF0aXZlIG5laWdoYm91cmhvb2RzCiAgLSAgVGVzdGluZyBmb3IgZGlmZmVyZW50aWFsIGFidW5kYW5jZSBvZiBjb25kaXRpb25zIGluIGFsbCBuZWlnaGJvdXJob29kcwogIC0gIEFjY291bnRpbmcgZm9yIG11bHRpcGxlIGh5cG90aGVzaXMgdGVzdGluZyB1c2luZyBhIHdlaWdodGVkIEZEUiBwcm9jZWR1cmUgdGhhdCBhY2NvdW50cyBmb3IgdGhlIG92ZXJsYXAgb2YgbmVpZ2hib3VyaG9vZHMKCkluIHRoaXMgdmlnbmV0dGUgd2Ugd2lsbCBlbGFib3JhdGUgb24gaG93IHRoZXNlIHN0ZXBzIGFyZSBpbXBsZW1lbnRlZCBpbiB0aGUgbWlsb1IgcGFja2FnZS4KCiMgRnJvbSBTZXVyYXQgb2JqZWN0CgpUaGUgU2V1cmF0IHBhY2thZ2UgaW5jbHVkZXMgYSBjb252ZXJ0ZXIgdG8gU2luZ2xlQ2VsbEV4cGVyaW1lbnQuCmBgYHtyIHNldXJhdC1vYmplY3R9CgpteS5zZWVkIDwtIDA3MDIyMDIzCgpteS5zZSA8LSByZWFkUkRTKCJ+L3NwaW5hbF9jb3JkX3BhcGVyL2RhdGEvR2dfY3RybF9wb2x5X2ludF9zZXVyYXRfMDcwMjIzLnJkcyIpCgpteS5zZSRjb25kIDwtIHN1YnN0cihteS5zZSRvcmlnLmlkZW50LCAxLCA0KQojIHJlcHJlc2VudHMgdGhlIHNlcXVlbmNpbmcgYmF0Y2ggYXMgd2VsbApteS5zZSRiYXRjaCA8LSBteS5zZSRvcmlnLmlkZW50CgpkaW0xIDwtIERpbVBsb3QobXkuc2UsCiAgICAgICAgICAgICAgICByZWR1Y3Rpb24gPSAidHNuZSIsCiAgICAgICAgICAgICAgICBncm91cC5ieSA9ICJzZXVyYXRfY2x1c3RlcnMiLCAKICAgICAgICAgICAgICAgIGxhYmVsID0gVFJVRSkgKyBOb0xlZ2VuZCgpCmRpbTEKCmRpbTIgPC0gRGltUGxvdChteS5zZSwKICAgICAgICAgICAgICAgIHJlZHVjdGlvbiA9ICJ1bWFwIiwKICAgICAgICAgICAgICAgIGdyb3VwLmJ5ID0gInNldXJhdF9jbHVzdGVycyIsCiAgICAgICAgICAgICAgICBsYWJlbCA9IFRSVUUpICsgTm9MZWdlbmQoKQpkaW0yCgpteS5zY2UgPC0gYXMuU2luZ2xlQ2VsbEV4cGVyaW1lbnQobXkuc2UpCm15Lm1pbG8gPC0gTWlsbyhteS5zY2UpCmBgYAoKIyBQcmUtcHJvY2Vzc2luZwoKRm9yIERBIGFuYWx5c2lzIHdlIG5lZWQgdG8gY29uc3RydWN0IGFuIHVuZGlyZWN0ZWQgS05OIGdyYXBoIG9mIHNpbmdsZS1jZWxscy4gU3RhbmRhcmQgc2luZ2xlLWNlbGwgYW5hbHlzaXMgcGlwZWxpbmVzIHVzdWFsbHkgZG8gdGhpcyBmcm9tIGRpc3RhbmNlcyBpbiBQQ0EuIFdlIG5vcm1hbGl6ZSBhbmQgY2FsY3VsYXRlIHByaW5jaXBhbCBjb21wb25lbnRzIHVzaW5nIHNjYXRlci4gSSBhbHNvIHJ1biBVTUFQIGZvciB2aXN1YWxpemF0aW9uIHB1cnBvc2VzLgoKYGBge3IgcHJlLXByb2Nlc3Npbmd9CnBjYSA8LSBwbG90UENBKG15Lm1pbG8pCnRzbmUgPC0gcGxvdFRTTkUobXkubWlsbykKCnBjYQp0c25lCgpteS5taWxvCmBgYAoKIyBDb25zdHJ1Y3QgS05OIGdyYXBoCgpXZSBuZWVkIHRvIGFkZCB0aGUgS05OIGdyYXBoIHRvIHRoZSBNaWxvIG9iamVjdC4gVGhpcyBpcyBzdG9yZWQgaW4gdGhlIGdyYXBoIHNsb3QsIGluIGlncmFwaCBmb3JtYXQuIFRoZSBtaWxvUiBwYWNrYWdlIGluY2x1ZGVzIGZ1bmN0aW9uYWxpdHkgdG8gYnVpbGQgYW5kIHN0b3JlIHRoZSBncmFwaCBmcm9tIHRoZSBQQ0EgZGltZW5zaW9ucyBzdG9yZWQgaW4gdGhlIHJlZHVjZWREaW0gc2xvdC4KCmBgYHtyIGtubi1ncmFwaH0Kc2V0LnNlZWQobXkuc2VlZCkKbXkubWlsbyA8LSBidWlsZEdyYXBoKG15Lm1pbG8sIGsgPSAxMCwgZCA9IDMwKQpgYGAKCiMgMS4gRGVmaW5pbmcgcmVwcmVzZW50YXRpdmUgbmVpZ2hib3VyaG9vZHMKCldlIGRlZmluZSB0aGUgbmVpZ2hib3VyaG9vZCBvZiBhIGNlbGwsIHRoZSBpbmRleCwgYXMgdGhlIGdyb3VwIG9mIGNlbGxzIGNvbm5lY3RlZCBieSBhbiBlZGdlIGluIHRoZSBLTk4gZ3JhcGggdG8gdGhlIGluZGV4IGNlbGwuIEZvciBlZmZpY2llbmN5LCB3ZSBkb27igJl0IHRlc3QgZm9yIERBIGluIHRoZSBuZWlnaGJvdXJob29kIG9mIGV2ZXJ5IGNlbGwsIGJ1dCB3ZSBzYW1wbGUgYXMgaW5kaWNlcyBhIHN1YnNldCBvZiByZXByZXNlbnRhdGl2ZSBjZWxscywgdXNpbmcgYSBLTk4gc2FtcGxpbmcgYWxnb3JpdGhtIHVzZWQgYnkgR3V0IGV0IGFsLiAyMDE1LgoKRm9yIHNhbXBsaW5nIHlvdSBuZWVkIHRvIGRlZmluZSBhIGZldyBwYXJhbWV0ZXJzOgoKICAgIHByb3A6IHRoZSBwcm9wb3J0aW9uIG9mIGNlbGxzIHRvIHJhbmRvbWx5IHNhbXBsZSB0byBzdGFydCB3aXRoICh1c3VhbGx5IDAuMSAtIDAuMiBpcyBzdWZmaWNpZW50KQogICAgazogdGhlIGsgdG8gdXNlIGZvciBLTk4gcmVmaW5lbWVudCAod2UgcmVjb21tZW5kIHVzaW5nIHRoZSBzYW1lIGsgdXNlZCBmb3IgS05OIGdyYXBoIGJ1aWxkaW5nKQogICAgZDogdGhlIG51bWJlciBvZiByZWR1Y2VkIGRpbWVuc2lvbnMgdG8gdXNlIGZvciBLTk4gcmVmaW5lbWVudCAod2UgcmVjb21tZW5kIHVzaW5nIHRoZSBzYW1lIGQgdXNlZCBmb3IgS05OIGdyYXBoIGJ1aWxkaW5nKQogICAgcmVmaW5lZCBpbmRpY2F0ZWQgd2hldGhlciB5b3Ugd2FudCB0byB1c2UgdGhlIHNhbXBsaW5nIHJlZmluZW1lbnQgYWxnb3JpdGgsIG9yIGp1c3QgcGljayBjZWxscyBhdCByYW5kb20uIFRoZSBkZWZhdWx0IGFuZCByZWNvbW1lbmRlZCB3YXkgdG8gZ28gaXMgdG8gdXNlIHJlZmluZW1lbnQuIFRoZSBvbmx5IHNpdHVhdGlvbiBpbiB3aGljaCB5b3UgbWlnaHQgY29uc2lkZXIgdXNpbmcgcmFuZG9tIGluc3RlYWQsIGlzIGlmIHlvdSBoYXZlIGJhdGNoIGNvcnJlY3RlZCB5b3VyIGRhdGEgd2l0aCBhIGdyYXBoIGJhc2VkIGNvcnJlY3Rpb24gYWxnb3JpdGhtLCBzdWNoIGFzIEJCS05OLCBidXQgdGhlIHJlc3VsdHMgb2YgREEgdGVzdGluZyB3aWxsIGJlIHN1Ym9wdGltYWwuCgpgYGB7ciBuaG9vZHN9CnNldC5zZWVkKG15LnNlZWQpCm15Lm1pbG8gPC0gbWFrZU5ob29kcyhteS5taWxvLCBwcm9wID0gMC4xLCBrID0gMTAsIGQ9MzAsIHJlZmluZWQgPSBUUlVFKQpgYGAKCk9uY2Ugd2UgaGF2ZSBkZWZpbmVkIG5laWdoYm91cmhvb2RzLCBpdOKAmXMgZ29vZCB0byB0YWtlIGEgbG9vayBhdCBob3cgYmlnIHRoZSBuZWlnaGJvdXJob29kcyBhcmUgKGkuZS4gaG93IG1hbnkgY2VsbHMgZm9ybSBlYWNoIG5laWdoYm91cmhvb2QpLiBUaGlzIGFmZmVjdHMgdGhlIHBvd2VyIG9mIERBIHRlc3RpbmcuIFdlIGNhbiBjaGVjayB0aGlzIG91dCB1c2luZyB0aGUgcGxvdE5ob29kU2l6ZUhpc3QgZnVuY3Rpb24uIEVtcGlyaWNhbGx5LCB3ZSBmb3VuZCBpdOKAmXMgYmVzdCB0byBoYXZlIGEgZGlzdHJpYnV0aW9uIHBlYWtpbmcgYmV0d2VlbiA1MCBhbmQgMTAwLiBPdGhlcndpc2UgeW91IG1pZ2h0IGNvbnNpZGVyIHJlcnVubmluZyBtYWtlTmhvb2RzIGluY3JlYXNpbmcgayBhbmQvb3IgcHJvcCAoaGVyZSB0aGUgZGlzdHJpYnV0aW9uIGxvb2tzIGx1ZGljcm91cyBiZWNhdXNlIGl04oCZcyBhIHNtYWxsIGRhdGFzZXQpLgoKYGBge3Igbmhvb2Qtc2l6ZS1kaXN0fQpwbG90Tmhvb2RTaXplSGlzdChteS5taWxvKQpgYGAKCiMjIENvdW50aW5nIGNlbGxzIGluIG5laWdoYm91cmhvb2RzCgpOb3cgd2UgaGF2ZSB0byBjb3VudCBob3cgbWFueSBjZWxscyBmcm9tIGVhY2ggc2FtcGxlIGFyZSBpbiBlYWNoIG5laWdoYm91cmhvb2QuIFdlIG5lZWQgdG8gdXNlIHRoZSBjZWxsIG1ldGFkYXRhIGFuZCBzcGVjaWZ5IHdoaWNoIGNvbHVtbiBjb250YWlucyB0aGUgc2FtcGxlIGluZm9ybWF0aW9uLgoKYGBge3IgbmNlbGxzLW5ob29kfQpteS5taWxvIDwtIGNvdW50Q2VsbHMoCiAgICAgICAgICAgICAgbXkubWlsbywKICAgICAgICAgICAgICBtZXRhLmRhdGEgPSBkYXRhLmZyYW1lKGNvbERhdGEobXkubWlsbykpLAogICAgICAgICAgICAgIHNhbXBsZSA9ICJvcmlnLmlkZW50IgogICAgICAgICAgICAgICkKYGBgCgpUaGlzIGFkZHMgdG8gdGhlIE1pbG8gb2JqZWN0IGEgbiBcdGltZXMgbSBtYXRyaXgsIHdoZXJlIG4gaXMgdGhlIG51bWJlciBvZiBuZWlnaGJvdXJob29kcyBhbmQgbQoKaXMgdGhlIG51bWJlciBvZiBleHBlcmltZW50YWwgc2FtcGxlcy4gVmFsdWVzIGluZGljYXRlIHRoZSBudW1iZXIgb2YgY2VsbHMgZnJvbSBlYWNoIHNhbXBsZSBjb3VudGVkIGluIGEgbmVpZ2hib3VyaG9vZC4gVGhpcyBjb3VudCBtYXRyaXggd2lsbCBiZSB1c2VkIGZvciBEQSB0ZXN0aW5nLgoKYGBge3IgaW5zcGVjdC1uaGhvZC1tYXRyaXh9CmhlYWQobmhvb2RDb3VudHMobXkubWlsbykpCmBgYAoKIyMgRGlmZmVyZW50aWFsIGFidW5kYW5jZSB0ZXN0aW5nCgpOb3cgd2UgYXJlIGFsbCBzZXQgdG8gdGVzdCBmb3IgZGlmZmVyZW50aWFsIGFidW5kYW5jZSBpbiBuZWlnaGJvdXJob29kcy4gV2UgaW1wbGVtZW50IHRoaXMgaHlwb3RoZXNpcyB0ZXN0aW5nIGluIGEgZ2VuZXJhbGl6ZWQgbGluZWFyIG1vZGVsIChHTE0pIGZyYW1ld29yaywgc3BlY2lmaWNhbGx5IHVzaW5nIHRoZSBOZWdhdGl2ZSBCaW5vbWlhbCBHTE0gaW1wbGVtZW50YXRpb24gaW4gZWRnZVIuCgpXZSBmaXJzdCBuZWVkIHRvIHRoaW5rIGFib3V0IG91ciBleHBlcmltZW50YWwgZGVzaWduLiBUaGUgZGVzaWduIG1hdHJpeCBzaG91bGQgbWF0Y2ggc2FtcGxlcyB0byBhIGNvbmRpdGlvbiBvZiBpbnRlcmVzdC4gSW4gdGhpcyBjYXNlIHRoZSBDb25kaXRpb24gaXMgdGhlIGNvdmFyaWF0ZSB3ZSBhcmUgZ29pbmcgdG8gdGVzdCBmb3IuCgpgYGB7ciBkZXNpbmctREEtdGVzdGluZ30gCm15LmRlc2lnbiA8LSBkYXRhLmZyYW1lKGNvbERhdGEobXkubWlsbykpWyxjKCJvcmlnLmlkZW50IiwgImNvbmQiLCAiYmF0Y2giKV0KbXkuZGVzaWduIDwtIGRpc3RpbmN0KG15LmRlc2lnbikKcm93bmFtZXMobXkuZGVzaWduKSA8LSBteS5kZXNpZ25bLCAib3JpZy5pZGVudCJdCgpteS5kZXNpZ24KYGBgCgpNaWxvIHVzZXMgYW4gYWRhcHRhdGlvbiBvZiB0aGUgU3BhdGlhbCBGRFIgY29ycmVjdGlvbiBpbnRyb2R1Y2VkIGJ5IGN5ZGFyLCB3aGljaCBhY2NvdW50cyBmb3IgdGhlIG92ZXJsYXAgYmV0d2VlbiBuZWlnaGJvdXJob29kcy4gU3BlY2lmaWNhbGx5LCBlYWNoIGh5cG90aGVzaXMgdGVzdCBQLXZhbHVlIGlzIHdlaWdodGVkIGJ5IHRoZSByZWNpcHJvY2FsIG9mIHRoZSBrdGggbmVhcmVzdCBuZWlnaGJvdXIgZGlzdGFuY2UuIFRvIHVzZSB0aGlzIHN0YXRpc3RpYyB3ZSBmaXJzdCBuZWVkIHRvIHN0b3JlIHRoZSBkaXN0YW5jZXMgYmV0d2VlbiBuZWFyZXN0IG5laWdoYm9ycyBpbiB0aGUgTWlsbyBvYmplY3QuCgpgYGB7ciBuaG9vZC1kaXN0YW5jZX0KbXkubWlsbyA8LSBjYWxjTmhvb2REaXN0YW5jZShteS5taWxvLCBkPTMwKQpgYGAKCk5vdyB3ZSBjYW4gZG8gdGhlIHRlc3QsIGV4cGxpY2l0bHkgZGVmaW5pbmcgb3VyIGV4cGVyaW1lbnRhbCBkZXNpZ24uIFdlIHdhbnQgdG8gdGVzdCBmb3IgZGlmZmVyZW5jZXMgYmV0d2VlbiBleHBlcmltZW50YWwgY29udGl0aW9ucy4KCmBgYHtyIHRlc3Qtbmhvb2R9CmRhLnJlc3VsdHMgPC0gdGVzdE5ob29kcyhteS5taWxvLCBkZXNpZ24gPSB+IGNvbmQsIGRlc2lnbi5kZiA9IG15LmRlc2lnbikKYGBgCgpUaGlzIGNhbGN1bGF0ZXMgYSBGb2xkLWNoYW5nZSBhbmQgY29ycmVjdGVkIFAtdmFsdWUgZm9yIGVhY2ggbmVpZ2hib3VyaG9vZCwgd2hpY2ggaW5kaWNhdGVzIHdoZWF0aGVyIHRoZXJlIGlzIHNpZ25pZmljYW50IGRpZmZlcmVudGlhbCBhYnVuZGFuY2UgYmV0d2VlbiBjb25kaXRpb25zLgoKYGBge3IgcmVzdWx0c30KZGEucmVzdWx0cyAlPiUKICBhcnJhbmdlKC0gU3BhdGlhbEZEUikgJT4lCiAgaGVhZCgpCmBgYAoKYGBge3IgcGxvdC1yZXN1bHRzfQpyZXNfMSA8LSBnZ3Bsb3QoZGEucmVzdWx0cywgYWVzKFBWYWx1ZSkpICsgCiAgZ2VvbV9oaXN0b2dyYW0oYmlucz01MCkgKyAKICBnZW9tX3ZsaW5lKHhpbnRlcmNlcHQgPSAwLjA1KQpyZXNfMQpgYGAKCmBgYHtyIHBsb3QtcmVzdXRzMn0KcmVzXzIgPC0gZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhsb2dGQywgLWxvZzEwKFNwYXRpYWxGRFIpKSkgKyAKICBnZW9tX3BvaW50KCkgKwogIGdlb21faGxpbmUoeWludGVyY2VwdCA9IDEpICMjIE1hcmsgc2lnbmlmaWNhbmNlIHRocmVzaG9sZCAoMTAlIEZEUikKcmVzXzIKYGBgCgojIyBWaXN1YWxpemUgbmVpZ2hib3VyaG9vZHMgZGlzcGxheWluZyBEQQoKVG8gdmlzdWFsaXplIERBIHJlc3VsdHMsIHdlIGJ1aWxkIGFuIGFic3RyYWN0ZWQgZ3JhcGggb2YgbmVpZ2hib3VyaG9vZHMgdGhhdCB3ZSBjYW4gc3VwZXJpbXBvc2Ugb24gdGhlIHNpbmdsZS1jZWxsIGVtYmVkZGluZy4KCmBgYHtyIG5ob29kLWdyYXBofQpzZXQuc2VlZChteS5zZWVkKQpteS5taWxvIDwtIGJ1aWxkTmhvb2RHcmFwaChteS5taWxvKQpgYGAKCmBgYHtyIHBsb3Qtbmhvb2QtZ3JhcGgtdHNuZX0KRGltUGxvdChteS5zZSwKICAgICAgICByZWR1Y3Rpb24gPSAidHNuZSIsCiAgICAgICAgZ3JvdXAuYnkgPSAiY29uZCIpICsgCiAgcGxvdE5ob29kR3JhcGhEQShteS5taWxvLCBkYS5yZXN1bHRzLCBhbHBoYT0wLjksIGxheW91dCA9ICJUU05FIikgKwogIHBsb3RfbGF5b3V0KGd1aWRlcz0iY29sbGVjdCIpCmBgYAoKYGBge3IgcGxvdC1uaG9vZC1ncmFwaC11bWFwfQpEaW1QbG90KG15LnNlLAogICAgICAgIHJlZHVjdGlvbiA9ICJ1bWFwIiwKICAgICAgICBncm91cC5ieSA9ICJjb25kIikgKyAKICBwbG90Tmhvb2RHcmFwaERBKG15Lm1pbG8sIGRhLnJlc3VsdHMsIGFscGhhPTAuOSwgbGF5b3V0ID0gIlVNQVAiKSArCiAgcGxvdF9sYXlvdXQoZ3VpZGVzPSJjb2xsZWN0IikKYGBgCgojIyBhbm5vdGF0ZSBuZWlnaGJvdXJob29kcwoKV2UgbWlnaHQgYWxzbyBiZSBpbnRlcmVzdGVkIGluIHZpc3VhbGl6aW5nIHdoZWF0aGVyIERBIGlzIHBhcnRpY3VsYXJseSBldmlkZW50IGluIGNlcnRhaW4gY2VsbCB0eXBlcy4gVG8gZG8gdGhpcywgd2UgYXNzaWduIGEgY2VsbCB0eXBlIGxhYmVsIHRvIGVhY2ggbmVpZ2hib3VyaG9vZCBieSBmaW5kaW5nIHRoZSBtb3N0IGFidW5kYW50IGNlbGwgdHlwZSB3aXRoaW4gY2VsbHMgaW4gZWFjaCBuZWlnaGJvdXJob29kLiBXZSBjYW4gbGFiZWwgbmVpZ2hib3VyaG9vZHMgaW4gdGhlIHJlc3VsdHMgZGF0YS5mcmFtZSB1c2luZyB0aGUgZnVuY3Rpb24gYW5ub3RhdGVOaG9vZHMuIFRoaXMgYWxzbyBzYXZlcyB0aGUgZnJhY3Rpb24gb2YgY2VsbHMgaGFyYm91cmluZyB0aGUgbGFiZWwuCgpgYGB7ciBhbm5vdGF0ZS1uaG9vZHN9CmRhLnJlc3VsdHMgPC0gYW5ub3RhdGVOaG9vZHMobXkubWlsbywgZGEucmVzdWx0cywgY29sZGF0YV9jb2wgPSAic2V1cmF0X2NsdXN0ZXJzIikKaGVhZChkYS5yZXN1bHRzKQpgYGAKCldoaWxlIG5laWdoYm91cmhvb2RzIHRlbmQgdG8gYmUgaG9tb2dlbmVvdXMsIHdlIGNhbiBkZWZpbmUgYSB0aHJlc2hvbGQgZm9yIGNlbGx0eXBlX2ZyYWN0aW9uIHRvIGV4Y2x1ZGUgbmVpZ2hib3VyaG9vZHMgdGhhdCBhcmUgYSBtaXggb2YgY2VsbCB0eXBlcy4KCmBgYHtyIGNlbGx0eXBlLWZyYXRpb24tcGxvdH0KZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhzZXVyYXRfY2x1c3RlcnNfZnJhY3Rpb24pKSArIGdlb21faGlzdG9ncmFtKGJpbnM9NTApCmBgYAoKYGBge3IgZnJhY3Rpb24tdGhyZXNob2xkfQpkYS5yZXN1bHRzJHNldXJhdF9jbHVzdGVycyA8LSBpZmVsc2UoZGEucmVzdWx0cyRzZXVyYXRfY2x1c3RlcnNfZnJhY3Rpb24gPCAwLjk1LCAiTWl4ZWQiLCBkYS5yZXN1bHRzJHNldXJhdF9jbHVzdGVycykKYGBgCgpQbG90IGxvZ0ZDIG9mIHRoZSBuaG9vZHMgYnkgY2VsbCB0eXBlIChjbHVzdGVyKToKCmBgYHtyIERBLWJlZXN3YXJtfQpwbG90REFiZWVzd2FybShkYS5yZXN1bHRzLCBncm91cC5ieSA9ICJzZXVyYXRfY2x1c3RlcnMiLCBhbHBoYT0xLjApCmBgYAoKI2V4cG9ydAoKYGBge3IgZXhwb3J0fQpzYXZlUkRTKG15Lm1pbG8sIHBhc3RlMCgifi9zcGluYWxfY29yZF9wYXBlci9vdXRwdXQvIixteS5zZUBwcm9qZWN0Lm5hbWUgLCJfbWlsb18iLGZvcm1hdChTeXMuRGF0ZSgpLCAiJWQlbSV5IiksIi5yZHMiKSkKCiMgcGRmIGV4cG9ydCBmaWd1cmVzCnBkZihwYXN0ZTAoIn4vc3BpbmFsX2NvcmRfcGFwZXIvZmlndXJlcy8iLG15LnNlQHByb2plY3QubmFtZSAsIl9taWxvXyIsZm9ybWF0KFN5cy5EYXRlKCksICIlZCVtJXkiKSwiLnBkZiIpLCB3aWR0aCA9IDUsIGhlaWdodCA9IDQpCgpkaW0xICsgZ2d0aXRsZShteS5zZUBwcm9qZWN0Lm5hbWUpCmRpbTIgKyBnZ3RpdGxlKG15LnNlQHByb2plY3QubmFtZSkKcGNhICsgZ2d0aXRsZShteS5zZUBwcm9qZWN0Lm5hbWUpCnJlc18xCnJlc18yCkRpbVBsb3QobXkuc2UsCiAgICAgICAgcmVkdWN0aW9uID0gInRzbmUiLAogICAgICAgIGdyb3VwLmJ5ID0gImNvbmQiKQpwbG90Tmhvb2RHcmFwaERBKG15Lm1pbG8sCiAgICAgICAgICAgICAgICAgZGEucmVzdWx0cywKICAgICAgICAgICAgICAgICBhbHBoYT0wLjksCiAgICAgICAgICAgICAgICAgbGF5b3V0ID0gIlRTTkUiKSAKCkRpbVBsb3QobXkuc2UsCiAgICAgICAgcmVkdWN0aW9uID0gInVtYXAiLAogICAgICAgIGdyb3VwLmJ5ID0gImNvbmQiKQpwbG90Tmhvb2RHcmFwaERBKG15Lm1pbG8sCiAgICAgICAgICAgICAgICAgZGEucmVzdWx0cywKICAgICAgICAgICAgICAgICBhbHBoYT0wLjksCiAgICAgICAgICAgICAgICAgbGF5b3V0ID0gIlVNQVAiKQpwbG90Tmhvb2RTaXplSGlzdChteS5taWxvKQoKZ2dwbG90KGRhLnJlc3VsdHMsIGFlcyhzZXVyYXRfY2x1c3RlcnNfZnJhY3Rpb24pKSArIGdlb21faGlzdG9ncmFtKGJpbnM9NTApCgpwbG90REFiZWVzd2FybShkYS5yZXN1bHRzLCBncm91cC5ieSA9ICJzZXVyYXRfY2x1c3RlcnMiLCBhbHBoYT0xLjApCmRldi5vZmYoKQpgYGAKCgpgYGB7ciBzZXNzaW9uSW5mb30KIyBEYXRlIGFuZCB0aW1lIG9mIFJlbmRlcmluZwpTeXMudGltZSgpCgpzZXNzaW9uSW5mbygpCmBgYAoKCg==</div>
 
 
 
@@ -2179,7 +2450,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("miloR_Gg_ctlr_poly_int.Rmd");
+  window.initializeSourceEmbed("miloR_Gg_ctrl_poly_int.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>
