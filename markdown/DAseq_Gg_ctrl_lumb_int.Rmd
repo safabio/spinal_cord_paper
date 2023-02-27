@@ -1,0 +1,269 @@
+---
+title: "DA-seq differential abundance between ctrl and lumb"
+author: "Fabio Sacher"
+date: "27.02.2023"
+data:
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  comment = '', fig.width = 10, fig.height = 7
+)
+```
+
+```{r libraries}
+library(DAseq)
+library(Seurat)
+library(ggplot2)
+library(patchwork)
+library(stringr)
+```
+
+```{r data}
+# set the python path
+python2use <- "anaconda3/bin/python3"
+
+my.samplename <- "Gg_ctrl_lumb_int"
+
+my.se <- readRDS("spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_070223.rds")
+
+DimPlot(my.se, reduction = "tsne", label = TRUE)
+```
+
+## DA scores
+
+```{r DA-scores}
+cell.labels <- unname(substr(my.se$orig.ident, 1, 4))
+
+resp <- "lumb"
+non_resp <- "ctrl"
+
+# Get the DA scores for all cells
+da.cells <- getDAcells(
+  X = my.se@reductions$pca@cell.embeddings[, 1:30],
+  cell.labels = cell.labels,
+  labels.1 = resp, #responder labels (blue)
+  labels.2 = non_resp, # nonresponder labels (red)
+  k.vector = seq(50, 500, 50),
+  plot.embedding = my.se@reductions$tsne@cell.embeddings
+)
+
+# same for UMAP
+da.cells.u <- getDAcells(
+  X = my.se@reductions$pca@cell.embeddings[, 1:30],
+  cell.labels = cell.labels,
+  labels.1 = resp, #responder labels (blue)
+  labels.2 = non_resp, # nonresponder labels (red)
+  k.vector = seq(50, 500, 50),
+  plot.embedding = my.se@reductions$umap@cell.embeddings
+)
+```
+
+With a random permutation ofn the labels, a null distribution is generated. Min and max of the permutation DA set the default threshold.
+
+```{r inspect, fig.height=8, fig.width=16}
+# look at output
+str(da.cells[1:2])
+
+# plot the vis of the DA scores
+p1 <- da.cells$pred.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+
+p2 <- DimPlot(my.se,
+        ncol = 4,
+        reduction = "tsne",
+        pt.size = 0.1,
+        split.by = "orig.ident")
+
+p3 <- DimPlot(my.se, 
+        group.by = "orig.ident",
+        reduction = "tsne",
+        pt.size = 1)
+
+p4 <- da.cells.u$pred.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+
+p5 <- DimPlot(my.se,
+        ncol = 4,
+        reduction = "umap",
+        pt.size = 0.1,
+        split.by = "orig.ident")
+
+p6 <- DimPlot(my.se, 
+        group.by = "orig.ident",
+        reduction = "umap",
+        pt.size = 1)
+
+p2 
+
+p3 + p1
+
+p5
+
+p6 + p4
+# plot randomisation of DA scores
+da.cells$rand.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue/down) and Non-responder \"", non_resp,"\" (red/up)"))
+
+```
+
+With updateDAcells we can apply our own DA threshold to be more (or less) stringent.
+
+```{r updating}
+# update DA cells with custom threshold
+da.cells <- updateDAcells(
+  X = da.cells,
+  pred.thres = c(-0.7,0.7),
+  plot.embedding = my.se@reductions$tsne@cell.embeddings
+)
+
+# check output
+da.cells$da.cells.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+
+da.cells.u <- updateDAcells(
+  X = da.cells,
+  pred.thres = c(-0.7,0.7),
+  plot.embedding = my.se@reductions$umap@cell.embeddings
+)
+
+# check output
+da.cells.u$da.cells.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+```
+
+## Regions
+
+```{r}
+# get the contiguous regions of cells
+da.regions <- getDAregion(
+  X = my.se@reductions$pca@cell.embeddings[, 1:20],
+  da.cells = da.cells,
+  cell.labels = cell.labels,
+  labels.1 = resp,
+  labels.2 = non_resp,
+  resolution = 0.01,
+  plot.embedding = my.se@reductions$tsne@cell.embeddings,
+)
+
+str(da.regions[1:2])
+
+da.regions$da.region.plot
+
+# get the contiguous regions of cells (UMAP)
+da.regions.u <- getDAregion(
+  X = my.se@reductions$pca@cell.embeddings[, 1:20],
+  da.cells = da.cells,
+  cell.labels = cell.labels,
+  labels.1 = resp,
+  labels.2 = non_resp,
+  resolution = 0.01,
+  plot.embedding = my.se@reductions$umap@cell.embeddings,
+)
+
+da.regions.u$da.region.plot
+
+# add da regions as meta data to plot them
+my.se$da.regions <- da.regions$da.region.label
+```
+
+## Export
+
+```{r export, eval = TRUE}
+
+# cell x gene matrix
+expr <- as.matrix(my.se[["RNA"]]@data)
+
+STG.markers <- STGmarkerFinder(
+  X = expr,
+  da.regions = da.regions,
+  lambda = 1.5, n.runs = 5, return.model = T,
+  python.use = python2use
+)
+
+# wilcoxon rank sum (MAST does not work)
+Seurat.markers <-SeuratMarkerFinder(
+  object = my.se,
+  features = my.se[["integrated"]]@var.features,
+  da.slot = "da.regions",
+  da.regions.to.run = 1:(length(table(da.regions$da.region.label))-1),
+  min.pct = 0.25,
+  logfc.threshold =  0.5,
+  return.thresh = 0.05,
+  assay = "RNA"
+  )
+```
+
+Save the output:
+ 
+```{r write-files}
+
+saveRDS(da.cells, paste0("spinal_cord_paper/output/",my.samplename,"_DA_cells.rds"))
+saveRDS(da.regions, paste0("spinal_cord_paper/output/",my.samplename,"_DA_regions.rds"))
+saveRDS(da.cells.u, paste0("spinal_cord_paper/output/",my.samplename,"_DA_cells_umap.rds"))
+saveRDS(da.regions.u, paste0("spinal_cord_paper/output/",my.samplename,"_DA_regions_umap.rds"))
+saveRDS(STG.markers, paste0("spinal_cord_paper/output/",my.samplename,"_STG_markers.rds"))
+saveRDS(Seurat.markers, paste0("spinal_cord_paper/output/",my.samplename,"_Seurat_markers.rds"))
+
+```
+
+```{r pdf-export}
+pdf(paste0("spinal_cord_paper/figures/",my.samplename,"_DAseq.pdf"), width = 10, height = 10)
+DimPlot(
+  my.se,
+  group.by = "da.regions",
+  reduction = "tsne",
+  cols = c(
+    "grey",
+    rainbow(
+      length(table(da.regions$da.region.label))-1
+      )
+    ),
+  label = TRUE,
+  repel = TRUE,
+  label.size = 6
+  )+
+  ggtitle(paste0(my.samplename," DA regions"))+
+  theme(plot.title = element_text(hjust = 0.5))
+DimPlot(
+  my.se,
+  group.by = "da.regions",
+  reduction = "umap",
+  cols = c(
+    "grey",
+    rainbow(
+      length(table(da.regions$da.region.label))-1
+      )
+    ),
+  label = TRUE,
+  repel = TRUE,
+  label.size = 6
+  )+
+  ggtitle(paste0(my.samplename," DA regions"))+
+  theme(plot.title = element_text(hjust = 0.5))
+p2
+p1
+p5
+p4
+da.cells$rand.plot
+da.cells$da.cells.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+da.cells.u$da.cells.plot + 
+  ggtitle(paste0("Responder \"", resp, "\" (blue) and Non-responder \"", non_resp,"\" (red)"))
+dev.off()
+
+```
+
+
+```{r sessionInfo}
+sessionInfo()
+```
+
