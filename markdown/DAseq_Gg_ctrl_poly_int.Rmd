@@ -29,11 +29,11 @@ library(stringr)
 
 ```{r data}
 # set the python path
-python2use <- "anaconda3/bin/python3"
+python2use <- "~/anaconda3/bin/python3"
 
 my.samplename <- "Gg_ctrl_poly_int"
 
-my.se <- readRDS("spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds")
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_070223.rds")
 
 DimPlot(my.se, reduction = "tsne", label = TRUE)
 ```
@@ -206,17 +206,17 @@ Save the output:
  
 ```{r write-files}
 
-saveRDS(da.cells, paste0("spinal_cord_paper/output/",my.samplename,"_DA_cells.rds"))
-saveRDS(da.regions, paste0("spinal_cord_paper/output/",my.samplename,"_DA_regions.rds"))
-saveRDS(da.cells.u, paste0("spinal_cord_paper/output/",my.samplename,"_DA_cells_umap.rds"))
-saveRDS(da.regions.u, paste0("spinal_cord_paper/output/",my.samplename,"_DA_regions_umap.rds"))
-saveRDS(STG.markers, paste0("spinal_cord_paper/output/",my.samplename,"_STG_markers.rds"))
-saveRDS(Seurat.markers, paste0("spinal_cord_paper/output/",my.samplename,"_Seurat_markers.rds"))
+saveRDS(da.cells, paste0("~/spinal_cord_paper/output/",my.samplename,"_DA_cells.rds"))
+saveRDS(da.regions, paste0("~/spinal_cord_paper/output/",my.samplename,"_DA_regions.rds"))
+saveRDS(da.cells.u, paste0("~/spinal_cord_paper/output/",my.samplename,"_DA_cells_umap.rds"))
+saveRDS(da.regions.u, paste0("~/spinal_cord_paper/output/",my.samplename,"_DA_regions_umap.rds"))
+saveRDS(STG.markers, paste0("~/spinal_cord_paper/output/",my.samplename,"_STG_markers.rds"))
+saveRDS(Seurat.markers, paste0("~/spinal_cord_paper/output/",my.samplename,"_Seurat_markers.rds"))
 
 ```
 
 ```{r pdf-export}
-pdf(paste0("spinal_cord_paper/figures/",my.samplename,"_DAseq.pdf"), width = 10, height = 10)
+pdf(paste0("~/spinal_cord_paper/figures/",my.samplename,"_DAseq.pdf"), width = 10, height = 10)
 DimPlot(
   my.se,
   group.by = "da.regions",
@@ -264,6 +264,9 @@ dev.off()
 
 
 ```{r sessionInfo}
+# Date and time of Rendering
+Sys.time()
+
 sessionInfo()
 ```
 
