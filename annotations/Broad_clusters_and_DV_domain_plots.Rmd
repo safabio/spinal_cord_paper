@@ -1,0 +1,158 @@
+---
+title: "Broad and dorsoventral domains marker feature plots"
+author: "Fabio Sacher"
+date: "27.02.2023"
+data:
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries, warning = FALSE, message=FALSE}
+library(Seurat)
+library(modplots)
+library(dplyr)
+library(gridExtra)
+library(ggplot2)
+```
+
+# objects
+
+```{r objects}
+se_path <- c("Gg_D05_ctrl_seurat_070223",
+             "Gg_D07_ctrl_seurat_070223",
+             "Gg_ctrl_1_seurat_070223",
+             "Gg_ctrl_int_seurat_070223",
+             "Gg_lumb_int_seurat_070223",
+             "Gg_poly_int_seurat_070223",
+             "Gg_devel_int_seurat_070223",
+             "Gg_ctrl_lumb_int_seurat_070223",
+             "Gg_ctrl_poly_int_seurat_070223")
+```
+
+# functions
+
+```{r functions}
+# featureplot for list of gene vectors
+feat_list_plot <- function(x) {
+ plot <- modplots::mFeaturePlot(my.se, my.features = x,
+                       gnames = gnames, size = 0.2, return = FALSE)
+ return(plot)
+}
+
+# translate gene names to IDs
+id_list <- function(x) {
+  tmp <- gnames %>% filter(Gene.name %in% x)
+  tmp <- tmp[match(x, tmp$Gene.name),]
+  id_sorted <- tmp %>% pull(Gene.stable.ID)
+  return(id_sorted)
+}
+
+```
+
+# broad clusters
+
+```{r broad markers}
+broad <- list(broad = c("TUBB3","OLIG2","SOX9","PLP1","SHH","RSPO1","IGFBP7","CDH5","IFI30","HBBA"))
+```
+
+# DV domains
+
+```{r domain-markers}
+neurons <- list(dI1 = c("LHX2","LHX9","BARHL1","BARHL2","POU4F1"),
+  dI2 = c("LHX1","LHX5","POU4F1"),
+  dI3 = c("ISL1","TLX3","DRGX","POU4F1"),
+  dI4 = c("LBX1","PAX2","LHX1","LHX5"),
+  dI5 = c("LBX1","LMX1B","TLX3","DRGX","POU4F1"),
+  dI6 = c("LBX1","PAX2","LHX1","LHX5"),
+  V0 = c("EVX1","PAX2","LHX1","LHX5"),
+  V1 = c("EN1","PAX2","LHX1","LHX5"),
+  V2a = c("VSX1","SOX14","LHX3"),
+  V2b = c("GATA2","GATA3","TAL1"),
+  MN =  c("MNX1","ISL1","LHX3","ISL2"))
+
+prog <- list(dp1_3 =  c("PAX6","IRX3","IRX5","MSX1","PAX3","PAX7"),
+  dp4 = c("PAX6","IRX3","IRX5","GSX1","PAX3","PAX7"),
+  dp5 = c("PAX6","IRX3","IRX5","DBX2","GSX1","PAX3","PAX7"),
+  dp6 = c("PAX6","IRX3","IRX5","DBX2","LEUTX","PAX3","PAX7"),
+  p0 = c("PAX6","IRX3","IRX5","DBX2","LEUTX"),
+  p1 = c("PAX6","IRX3","IRX5","DBX2","PRDM12"),
+  p2 = c("PAX6","IRX3","IRX5","FOXN4","NKX6-1"),
+  pMN = c("PAX6","OLIG2","NKX6-1"),
+  p3 = c("NKX2-8","NKX2-2","NKX6-1"))
+
+```
+
+# get IDs
+
+```{r}
+broad_ids <- lapply(broad, id_list)
+neuron_ids <- lapply(neurons, id_list)
+prog_ids <- lapply(prog, id_list)
+```
+
+# plot
+
+```{r featureplots}
+gnames <- modplots::gnames
+
+tsne_plots <- list()
+plots_broad <- list()
+plots_prog <- list()
+plots_neur <- list()
+
+for (i in se_path) {
+  print(i)
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", i, ".rds"))
+  DefaultAssay(my.se) <- "SCT"
+  
+  tsne_plots[[i]] <- TSNEPlot(my.se,
+                              reduction = "tsne",
+                              pt.size = 0.01,
+                              label.size = 1,
+                              label = TRUE) + 
+                      ggplot2::theme(legend.position = "none")
+  plots_broad[[i]] <- lapply(broad, feat_list_plot)
+  plots_prog[[i]] <- lapply(prog, feat_list_plot)
+  plots_neur[[i]] <- lapply(neurons, feat_list_plot)
+  rm(my.se)
+}
+
+```
+
+# export
+
+```{r plotting}
+
+for (i in se_path) {
+  pdf(paste0("~/spinal_cord_paper/annotations/figures/Broad_",i ,".pdf"), width = 10, height = 8)
+    grid.arrange(grobs = plots_broad[[i]], top = "broad")
+  dev.off()
+  
+  pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_prog_domain_",i ,".pdf"), width = 7, height = 5)
+    for (j in names(prog)) {
+      grid.arrange(plots_prog[[i]][[j]], top = j)
+    }
+  dev.off()
+  
+  pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_neur_domain_",i ,".pdf"), width = 7, height = 5)
+    for (j in names(neurons)) {
+      grid.arrange(plots_neur[[i]][[j]], top = j)
+    }
+  dev.off()
+}
+
+
+```
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
