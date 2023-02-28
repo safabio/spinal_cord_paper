@@ -1,0 +1,177 @@
+---
+title: "Seurat workflow of Gg_ctrl_1"
+author: "Fabio Sacher"
+date: "06.02.2023"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  comment = '', fig.width = 10, fig.height = 7
+)
+```
+
+```{r libraries, warning = FALSE, message = FALSE, echo = T, results = 'hide'}
+library(Seurat)
+library(stringr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r seurat-objects}
+se_path <- c("Gg_D05_ctrl_seurat_070223",
+             "Gg_D07_ctrl_seurat_070223",
+             "Gg_ctrl_1_seurat_070223",
+             "Gg_ctrl_int_seurat_070223",
+             "Gg_lumb_int_seurat_070223",
+             "Gg_poly_int_seurat_070223",
+             "Gg_ctrl_lumb_int_seurat_070223",
+             "Gg_ctrl_poly_int_seurat_070223")
+```
+
+```{r cluster-annotations}
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
+
+```
+
+
+```{r}
+tsne_plots <- list()
+cell_numbers <- list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+     stop("Number of clusters must be identical!")
+  }
+  
+  my.se 
+  
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number) 
+    
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    column_to_rownames("rowname")
+  
+  # colors to plot
+  broad_cols <- clust_col %>% 
+    filter(broad_cluster %in% annot$broad) %>% 
+    pull(color)
+  
+  # plot
+  tsne_plots[[i]] <- DimPlot(
+    object = my.se,
+    reduction = "tsne",
+    group.by = "broad",
+    cols = broad_cols,
+    label = TRUE,
+    label.size = 5
+    ) +
+    ggtitle(NULL)+
+    theme_void() +
+    NoLegend() +
+    annotate(
+      "text",
+      label = paste0("broad ", se_path[i]),
+      x = 0,
+      y = 0,
+      angle = 45
+    )
+  
+  # prepare bar plot
+  cell_numbers[[i]] <- data.frame(table(my.se$broad),
+                                  sample = factor(my.se@project.name)) %>%
+    dplyr::mutate(sample_size = sum(Freq))
+
+}
+
+rm(my.se, annot)
+
+names(tsne_plots) <- str_remove_all(se_path, "_seurat_\\d{6}")
+names(cell_numbers) <- str_remove_all(se_path, "_seurat_\\d{6}")
+
+tmp <- do.call(rbind, cell_numbers) %>%
+  mutate(rel = Freq/sample_size) %>%
+      rev()
+
+tmp$Var1 <- factor(
+  tmp$Var1,
+  levels =
+    c("progenitors",
+      "FP",
+      "RP",
+      "neurons",
+      "OPC",
+      "MFOL",
+      "pericytes",
+      "microglia",
+      "blood",
+      "vasculature"
+      )
+)
+```
+
+```{r bar-plots}
+
+order_col <- match(levels(tmp$Var1), clust_col$broad_cluster)
+
+bar <- ggplot(tmp, aes(
+    x = sample,
+    y = rel,
+    fill = factor(Var1, levels = rev(levels(Var1)))
+  )) +
+  geom_bar(stat = "identity",
+           position = "stack") +
+  scale_fill_manual(values = rev(clust_col$color[order_col])) +
+  labs(fill = "Cell types") +
+  ggtitle("relative cell numbers of broad clusters")
+
+bar
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/bar_plots.pdf",
+  width = 10,
+  plot = bar,
+  device = "pdf"
+)
+```
+
+```{r tsne-plots, fig.width = 10, fig.height = 10}
+
+grid.arrange(grobs = tsne_plots)
+
+ggsave(
+   filename = "~/spinal_cord_paper/figures/tsne_plots.pdf",
+   width = 7, height = 7,
+   plot = marrangeGrob(tsne_plots, nrow=1, ncol=1, top = NULL)
+)
+
+```
+
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
