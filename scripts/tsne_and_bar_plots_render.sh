@@ -7,7 +7,7 @@
 #SBATCH --mem=20G
 #SBATCH --mail-user=fabio.sacher@unibas.ch
 #SBATCH --mail-type=ALL
-#SBATCH --output ./slurm_out/%x.out
+#SBATCH --output ./slurm_out/%x-%j.out
 
 
 module purge
