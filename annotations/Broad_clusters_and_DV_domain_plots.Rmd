@@ -41,7 +41,7 @@ se_path <- c("Gg_D05_ctrl_seurat_070223",
 # featureplot for list of gene vectors
 feat_list_plot <- function(x) {
  plot <- modplots::mFeaturePlot(my.se, my.features = x,
-                       gnames = gnames, size = 0.2, return = FALSE)
+                       gnames = gnames, size = 0.2, return = TRUE)
  return(plot)
 }
 
@@ -98,7 +98,7 @@ prog_ids <- lapply(prog, id_list)
 
 # plot
 
-```{r featureplots}
+```{r featureplots, }
 gnames <- modplots::gnames
 
 tsne_plots <- list()
@@ -131,18 +131,18 @@ for (i in se_path) {
 
 for (i in se_path) {
   pdf(paste0("~/spinal_cord_paper/annotations/figures/Broad_",i ,".pdf"), width = 10, height = 8)
-    grid.arrange(grobs = plots_broad[[i]], top = "broad")
+    grid.arrange(grobs = plots_broad[[i]][["broad"]], top = "broad")
   dev.off()
   
   pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_prog_domain_",i ,".pdf"), width = 7, height = 5)
     for (j in names(prog)) {
-      grid.arrange(plots_prog[[i]][[j]], top = j)
+      grid.arrange(grobs = plots_prog[[i]][[j]], top = j)
     }
   dev.off()
   
   pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_neur_domain_",i ,".pdf"), width = 7, height = 5)
     for (j in names(neurons)) {
-      grid.arrange(plots_neur[[i]][[j]], top = j)
+      grid.arrange(grobs = plots_neur[[i]][[j]], top = j)
     }
   dev.off()
 }

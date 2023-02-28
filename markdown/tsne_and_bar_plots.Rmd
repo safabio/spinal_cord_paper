@@ -1,7 +1,7 @@
 ---
-title: "Seurat workflow of Gg_ctrl_1"
+title: "tsne and bar plots"
 author: "Fabio Sacher"
-date: "06.02.2023"
+date: "28.02.2023"
 output:
   html_document:
     df_print: paged
