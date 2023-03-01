@@ -1,0 +1,162 @@
+---
+title: "comparative scWGCNA v1.0.0 workflow Gg_lumb_int with ctrl_int and poly_int"
+author: "Fabio Sacher"
+date: "01.03.2023"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+library(scWGCNA)
+library(Seurat)
+library(gridExtra)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+source("~/spinal_cord_paper/scripts/scWGCNA_modplots.R")
+```
+
+```{r load-data}
+# reference scWGCNA data
+lumb_int_scWGCNA <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_070223.rds")
+
+# # load module annotation
+# mod_annot <- read.delim("~/spinal_cord_paper/data/scWGCNA_Gg_lumb_int_module_annotation.txt",sep = ",")
+# 
+# knitr::kable(mod_annot)
+
+# samples to compare on
+Gg_samp <- c("Gg_ctrl_int", "Gg_poly_int")
+
+# Gg = 1, Mm = 3
+samples_sp <- c(1, 1)
+
+# load samples
+ctrl <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_070223.rds")
+poly <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_070223.rds")
+
+
+# concat and name list of samples
+samples <- list(ctrl, poly)
+names(samples) <- Gg_samp
+
+#ortho table is gnames for it is only intraspec. comparisons
+gnames<- modplots::gnames %>%
+  dplyr::rename(gene = Gene.stable.ID) %>%
+  dplyr::rename(name = Gene.name)
+
+ortho <- gnames
+
+```
+
+## Pseudocells
+
+```{r calc-pseudocells}
+
+ps <- list()
+
+for (i in names(samples)) {
+  ps[[i]] <- calculate.pseudocells(samples[[i]], dims = 1:10)
+}
+
+```
+
+## scWWGCNA compare
+
+```{r scWGNA-compare, warning = FALSE}
+
+# We then run the comparative analysis
+Gg_lumb_int_comp <- scWGNA.compare(
+          scWGCNA.data = lumb_int_scWGCNA,
+          test.list = ps,
+          test.names = Gg_samp,
+          ortho = ortho, # not needed unless reference and tests have different gene names
+          ortho.sp = samples_sp
+          )
+
+```
+
+```{r module-frac}
+knitr::kable(Gg_lumb_int_comp$misc$modulefrac)
+
+# non-orthologous
+Gg_lumb_int_comp$misc$geneslost[[1]] <- Gg_lumb_int_comp$misc$geneslost[[1]] %>%
+  dplyr::left_join(gnames, by = "gene")
+head(Gg_lumb_int_comp$misc$geneslost[[1]])
+# non-expressed
+Gg_lumb_int_comp$misc$geneslost[[2]] <- Gg_lumb_int_comp$misc$geneslost[[2]] %>%
+  dplyr::left_join(gnames, by = "gene")
+head(Gg_lumb_int_comp$misc$geneslost[[2]])
+
+```
+
+```{r gene-barplot, fig.height=10,fig.width=6}
+# We can also plot these fractions as barplots, for each module we used for comparisons
+scW.p.modulefrac.mod(Gg_lumb_int_comp)
+``` 
+
+Here, we can plot 4 different aspects, the zscore of the overall preservation, which according to the original authors of WGCNA, is understood as a threshold. Values under 2 mean no evidence of preservation in the test sample, over 10 mean strong evidence of preservation. Moreover, we can plot the median rank, which we can use to compare the preservation of the different modules. And, to go into details of the modules, we can plot the zscore of density and connectivity preservation.
+
+```{r preservation, fig.height = 7, fig.width=15}
+scW.p.preservation(scWGCNA.comp.data = Gg_lumb_int_comp,
+                   to.plot=c("preservation", "median.rank"))
+
+scW.p.preservation.mod(scWGCNA.comp.data = Gg_lumb_int_comp,
+                       pt.style = c(24, 22),
+                      to.plot=c("preservation", "median.rank"))
+```
+
+```{r density-connectivity, fig.height = 7, fig.width=15}
+scW.p.preservation(scWGCNA.comp.data = Gg_lumb_int_comp,
+                   to.plot=c("density", "connectivity"))
+
+scW.p.preservation.mod(scWGCNA.comp.data = Gg_lumb_int_comp,
+                       pt.style = c(24, 22),
+                   to.plot=c("density", "connectivity"))
+```
+
+
+```{r pdf, warning=FALSE}
+
+pdf('~/spinal_cord_paper/figures/Gg_lumb_int_comp_scWGCNA.pdf', width = 17)
+scW.p.modulefrac.mod(Gg_lumb_int_comp)
+scW.p.preservation(scWGCNA.comp.data = Gg_lumb_int_comp,
+                   to.plot=c("preservation", "median.rank"))
+
+scW.p.preservation.mod(scWGCNA.comp.data = Gg_lumb_int_comp,
+                       pt.style = c(24, 22),
+                   to.plot=c("preservation", "median.rank"))
+
+scW.p.preservation(scWGCNA.comp.data = Gg_lumb_int_comp,
+                   to.plot=c("density", "connectivity"))
+
+scW.p.preservation.mod(scWGCNA.comp.data = Gg_lumb_int_comp,
+                       pt.style = c(24, 22),
+                   to.plot=c("density", "connectivity"))
+dev.off()
+
+```
+
+
+```{r}
+saveRDS(Gg_lumb_int_comp, "~/spinal_cord_paper/output/Gg_lumb_int_comp_scWGCNA.rds")
+```
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
+
+
+
+
