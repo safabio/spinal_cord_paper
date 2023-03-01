@@ -1,6 +1,6 @@
 # Spinal cord paper
 
-This repository contains the code to recreate the findings in our current publication " " xxx.
+This repository contains the code to recreate the results and figures of our current publication " " xxx.
 
 We calculate the tSNE embeddings with the FTF (Fast Fourier Transform) accerelated Interpolation-based t-SNE [FIt-SNE](https://github.com/KlugerLab/FIt-SNE) developed by the Kluger lab. Install it to a directory to your machine following their instruction.
 
