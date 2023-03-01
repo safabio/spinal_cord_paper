@@ -20,6 +20,8 @@ Cluster annotation is guided by marker gene expression:
 
 -   ***Broad_clusters_and_DV_domain_plots_render.sh***: Plots marker gene expression of all data sets and exports them to annotations/figures by slurming *annotations/Broad_clusters_and_DV_domain_plots_render.Rmd*.
 
+## scWGNCA
+
 Module construction and co-expression analysis is done with [scWGCNA](https://github.com/CFeregrino/scWGCNA). The markdown scripts are again called with and array job:
 
 -   ***scWGCNA_array.sh***: Run scWGCNA on the integrated ctrl, lumb, poly, and devel data sets. Produces the Gg_*_int_scWGCNA_modules and _modules_expression.pdf plots.
@@ -27,6 +29,8 @@ Module construction and co-expression analysis is done with [scWGCNA](https://gi
 Next we run the comparative scWGCNA pipeline to calculate module conservation between the data sets:
 
 -   ***comparative_scWGCNA_array.sh***: compares each data set's modules with the other two data sets. Produces the "Gg_*_int_comp_scWGCNA.pdf" plots.
+
+## DA (differential abundance)
 
 Differential abundance is calculated with [DAseq](https://github.com/KlugerLab/DAseq) and [miloR](https://github.com/MarioniLab/miloR). Again the scripts are called with separate array jobs:
 
