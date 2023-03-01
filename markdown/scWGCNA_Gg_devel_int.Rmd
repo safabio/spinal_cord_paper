@@ -57,7 +57,7 @@ var.feat <- my.se[["SCT"]]@var.features
 
 # gnames (important: rownames == IDs)
 my.gnames <- modplots::gnames
-
+rownames(my.gnames) <- my.gnames$Gene.stable.ID
 ```
 
 

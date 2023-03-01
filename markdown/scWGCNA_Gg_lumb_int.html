@@ -2813,6 +2813,7 @@ var.feat &lt;- my.se[[&quot;SCT&quot;]]@var.features
 # gnames (important: rownames == IDs)
 my.gnames &lt;- modplots::gnames</code></pre>
 <pre><code>## </code></pre>
+<pre class="r"><code>rownames(my.gnames) &lt;- my.gnames$Gene.stable.ID</code></pre>
 </div>
 <div id="calculate-pseudocells" class="section level2">
 <h2>calculate pseudocells</h2>
@@ -3152,46 +3153,10 @@ for(i in seq(length(names(my.scWGCNA$modules)))){
    gridExtra::grid.arrange(gtable2[[i]])
    gridExtra::grid.arrange(ktable2[[i]])
  }</code></pre>
-<pre><code>## Warning: Removed 106 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 197 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 185 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 71 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 45 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 36 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 26 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 27 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 31 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 46 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 41 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 135 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 79 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 61 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 62 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 59 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 58 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 81 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 13 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 65 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 32 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 18 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 28 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 84 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 18 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 79 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 125 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 52 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 29 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 76 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 25 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 29 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 19 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 28 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 78 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 273 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 27 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 30 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 156 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 21 rows containing missing values (geom_label).</code></pre>
+<pre><code>## Warning: Removed 1 rows containing missing values (geom_label).
+## Removed 1 rows containing missing values (geom_label).
+## Removed 1 rows containing missing values (geom_label).</code></pre>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_label).</code></pre>
 <pre class="r"><code>dev.off()</code></pre>
 <pre><code>## png 
 ##   2</code></pre>
@@ -3216,11 +3181,11 @@ gridExtra::marrangeGrob(m.plots, nrow = 2, ncol = 2)</code></pre>
 <h2>save objects</h2>
 <pre class="r"><code>saveRDS(my.pcells, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_pseudocells_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
 saveRDS(my.scWGCNA, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_scWGCNA_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
-saveRDS(goterms, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_GOTerms_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
-saveRDS(keggpath, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_KEGGPath_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))</code></pre>
+saveRDS(goterms, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_module_GOTerms_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
+saveRDS(keggpath, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_module_KEGGPath_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))</code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2023-02-07 16:54:05 CET&quot;</code></pre>
+<pre><code>## [1] &quot;2023-03-01 14:11:42 CET&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.1.0 (2021-05-18)
 ## Platform: x86_64-pc-linux-gnu (64-bit)

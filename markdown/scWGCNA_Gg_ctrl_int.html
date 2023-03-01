@@ -2813,6 +2813,7 @@ var.feat &lt;- my.se[[&quot;SCT&quot;]]@var.features
 # gnames (important: rownames == IDs)
 my.gnames &lt;- modplots::gnames</code></pre>
 <pre><code>## </code></pre>
+<pre class="r"><code>rownames(my.gnames) &lt;- my.gnames$Gene.stable.ID</code></pre>
 </div>
 <div id="calculate-pseudocells" class="section level2">
 <h2>calculate pseudocells</h2>
@@ -3156,26 +3157,9 @@ for(i in seq(length(names(my.scWGCNA$modules)))){
    gridExtra::grid.arrange(gtable2[[i]])
    gridExtra::grid.arrange(ktable2[[i]])
  }</code></pre>
-<pre><code>## Warning: Removed 128 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 266 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 198 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 59 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 160 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 78 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 41 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 53 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 35 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 34 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 85 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 55 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 95 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 80 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 158 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 21 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 61 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 75 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 771 rows containing missing values (geom_label).</code></pre>
-<pre><code>## Warning: Removed 189 rows containing missing values (geom_label).</code></pre>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_label).</code></pre>
+<pre><code>## Warning: Removed 1 rows containing missing values (geom_label).
+## Removed 1 rows containing missing values (geom_label).</code></pre>
 <pre class="r"><code>dev.off()</code></pre>
 <pre><code>## png 
 ##   2</code></pre>
@@ -3200,11 +3184,11 @@ gridExtra::marrangeGrob(m.plots, nrow = 2, ncol = 2)</code></pre>
 <h2>save objects</h2>
 <pre class="r"><code>saveRDS(my.pcells, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_pseudocells_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
 saveRDS(my.scWGCNA, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_scWGCNA_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
-saveRDS(goterms, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_GOTerms_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
-saveRDS(keggpath, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_KEGGPath_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))</code></pre>
+saveRDS(goterms, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_module_GOTerms_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
+saveRDS(keggpath, paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name, &quot;_module_KEGGPath_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))</code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2023-02-07 16:52:51 CET&quot;</code></pre>
+<pre><code>## [1] &quot;2023-03-01 14:11:55 CET&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.1.0 (2021-05-18)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
