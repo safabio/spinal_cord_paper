@@ -1,0 +1,287 @@
+---
+title: "GSI correlation heatmap ctrl_lumb and ctrl_poly data"
+author: "Fabio Sacher"
+date: "01.03.2023"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  comment = '', fig.width = 10, fig.height = 7
+)
+```
+
+```{r libraries, warning = FALSE, message = FALSE, echo = T, results = 'hide'}
+library(Seurat)
+library(stringr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(pheatmap)
+library(gridExtra)
+```
+
+```{r data-sets}
+se_path <- c("Gg_ctrl_int_seurat_070223",
+             "Gg_lumb_int_seurat_070223",
+             "Gg_poly_int_seurat_070223")
+
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
+  rename(broad = broad_cluster) %>% 
+  select(-marker)
+
+```
+
+# pseudobulk matrices
+
+We calulate pseudobulk matrices and normalize them with the gene specificity index, i.e. the average expression of a gene within a cluster (the pseudobulk value) divided by the average expression across all
+
+```{r calculate-gsi-tables}
+int_var <- list()
+pb_gsi <- list()
+col_table <-list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+     stop("Number of clusters must be identical!")
+  }
+  
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number) 
+  
+  # create index for color coding
+  col_table[[i]] <- annot %>%
+    left_join(clust_col, by = "broad") %>% 
+    select(c("fine", "color"))
+  
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    column_to_rownames("rowname")
+  
+  Idents(my.se) <- "fine" 
+  # integration anchors
+  int_var[[i]] <- rownames(my.se) 
+  # calculate pseudobulk
+  pseu_bulk <- as.matrix(AverageExpression(
+    my.se,
+    assays = "SCT",
+    slot = "data")[[1]])
+  
+  # individual gsi matrices
+  pb_gsi[[i]] <- pseu_bulk/rowMeans(pseu_bulk)
+
+}
+
+names(int_var) <- substr(se_path, 4, 11)
+names(pb_gsi) <- substr(se_path, 4, 11)
+names(col_table) <- substr(se_path, 4, 11)
+
+rm(my.se, annot, pseu_bulk)
+```
+
+# Ctrl lumb comparison
+
+```{r filter-for-sct-var-gene-universe-ctrl-lumb}
+univ <- intersect(int_var[["ctrl_int"]], int_var[["lumb_int"]])
+
+matrix_filt <- function(x, features) {
+  filt <- x[features,]
+  return(filt)
+}
+
+pb_gsi_univ <- lapply(pb_gsi[1:2], matrix_filt, features = univ)
+
+#set colnames
+for (i in seq(pb_gsi_univ)) {
+  colnames(pb_gsi_univ[[i]]) <- paste0(names(pb_gsi_univ)[[i]], "_", colnames(pb_gsi_univ[[i]]))
+}
+
+```
+
+```{r combine-ctrl-lumb}
+if(!identical(rownames(pb_gsi_univ[["ctrl_int"]]), rownames(pb_gsi_univ[["lumb_int"]]))) {
+  stop("Rownames are not identical!")
+}
+
+pb_gsi_univ <- do.call(cbind, pb_gsi_univ)
+dim(pb_gsi_univ)
+```
+
+## Heatmap annotations
+
+```{r annot-list-ctrl-lumb}
+
+# names and colors for the heatmap annotation
+annot_name <- data.frame(
+  "Celltypes" = colnames(pb_gsi_univ),
+  "Sample"    = substr(colnames(pb_gsi_univ),1,8),
+  row.names = colnames(pb_gsi_univ)
+  )
+
+col_table_lumb <- do.call(rbind, col_table[1:2]) %>% 
+  rownames_to_column("sample") %>% 
+  mutate(sample = substr(sample, 1,8)) %>% 
+  mutate(fine = paste(sample, fine, sep = "_"))
+
+# match color table with annotation
+col_table_lumb <- col_table_lumb[match(annot_name$Celltypes, col_table_lumb$fine),]
+
+annot_col <- list(
+  Celltypes = col_table_lumb$color,
+  Sample = c(ctrl_int = "#A4A4A4",
+             lumb_int = "#000000")
+  )
+
+names(annot_col[[1]]) <- annot_name$Celltypes
+
+```
+
+## Correlation of GSI pseudobulk expression (over ind. samples)
+
+GSI over individual samples (before cbind).
+
+```{r ind-gsi-heatmap-ctrl-lumb, fig.height=11, fig.width=12}
+
+heat_col <- colorRampPalette(colors = c("dodgerblue","dodgerblue4", "white", "red", "darkred"))
+
+toplot <- cor(pb_gsi_univ, method = "spearman")
+
+# lower limit to scale color bar
+low_limit <- 100 - abs(round(range(toplot)[1]*100))
+
+corr_heatmap <- pheatmap(toplot,revC = T,
+                 main = "Ctrl_int and Lumb_int GSI pseudobulk spearman corr\n(intersection of SCT variable features)\nGSI claculation before cbind",
+                 fontsize = 8,  
+                 color = heat_col(200)[low_limit:200],
+                 show_colnames = F, 
+                 treeheight_row = 0, 
+                 annotation_col = annot_name,
+                 annotation_colors = annot_col,
+                 annotation_legend = F,
+                 border_color = NA
+                 )
+```
+
+```{r export-ctrl-lumb}
+pdf("~/spinal_cord_paper/figures/heatmap_pearson_ctrl_lumb_int.pdf", width = 12, height = 11)
+grid.arrange(corr_heatmap[[4]])
+dev.off()
+```
+
+
+# Ctrl poly comparison
+
+```{r filter-for-sct-var-gene-universe-ctrl-poly}
+univ <- intersect(int_var[["ctrl_int"]], int_var[["poly_int"]])
+
+matrix_filt <- function(x, features) {
+  filt <- x[features,]
+  return(filt)
+}
+
+pb_gsi_univ <- lapply(pb_gsi[c(1,3)], matrix_filt, features = univ)
+
+#set colnames
+for (i in seq(pb_gsi_univ)) {
+  colnames(pb_gsi_univ[[i]]) <- paste0(names(pb_gsi_univ)[[i]], "_", colnames(pb_gsi_univ[[i]]))
+}
+
+```
+
+```{r combine-poly-lumb}
+if(!identical(rownames(pb_gsi_univ[["ctrl_int"]]), rownames(pb_gsi_univ[["poly_int"]]))) {
+  stop("Rownames are not identical!")
+}
+
+pb_gsi_univ <- do.call(cbind, pb_gsi_univ)
+dim(pb_gsi_univ)
+```
+
+## Heatmap annotations
+
+```{r annot-list-ctrl-poly}
+
+# names and colors for the heatmap annotation
+annot_name <- data.frame(
+  "Celltypes" = colnames(pb_gsi_univ),
+  "Sample"    = substr(colnames(pb_gsi_univ),1,8),
+  row.names = colnames(pb_gsi_univ)
+  )
+
+col_table_poly <- do.call(rbind, col_table[c(1,3)]) %>% 
+  rownames_to_column("sample") %>% 
+  mutate(sample = substr(sample, 1,8)) %>% 
+  mutate(fine = paste(sample, fine, sep = "_"))
+
+# match color table with annotation
+col_table_poly <- col_table_poly[match(annot_name$Celltypes, col_table_poly$fine),]
+
+annot_col <- list(
+  Celltypes = col_table_poly$color,
+  Sample = c(ctrl_int = "#A4A4A4",
+             poly_int = "#000000")
+  )
+
+names(annot_col[[1]]) <- annot_name$Celltypes
+
+```
+
+## Correlation of GSI pseudobulk expression (over ind. samples)
+
+GSI over individual samples (before cbind).
+
+```{r ind-gsi-heatmap-ctrl-poly, fig.height=11, fig.width=12}
+
+heat_col <- colorRampPalette(colors = c("dodgerblue","dodgerblue4", "white", "red", "darkred"))
+
+toplot <- cor(pb_gsi_univ, method = "spearman")
+
+# lower limit to scale color bar
+low_limit <- 100 - abs(round(range(toplot)[1]*100))
+
+corr_heatmap <- pheatmap(toplot,revC = T,
+                 main = "Ctrl_int and Poly_int GSI pseudobulk spearman corr\n(intersection of SCT variable features)\nGSI claculation before cbind",
+                 fontsize = 8,  
+                 color = heat_col(200)[low_limit:200],
+                 show_colnames = F, 
+                 treeheight_row = 0, 
+                 annotation_col = annot_name,
+                 annotation_colors = annot_col,
+                 annotation_legend = F,
+                 border_color = NA
+                 )
+```
+
+```{r export-ctrl-poly}
+pdf("~/spinal_cord_paper/figures/heatmap_pearson_ctrl_poly_int.pdf", width = 12, height = 11)
+grid.arrange(corr_heatmap[[4]])
+dev.off()
+```
+
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
