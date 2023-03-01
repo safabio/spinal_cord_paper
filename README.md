@@ -7,7 +7,7 @@ We calculate the tSNE embeddings with the FTF (Fast Fourier Transform) accerelat
 The Initial QC filtering and seurat object creation markdown files are rendered using an array job in the scripts/ directory. Use the following order:
 
 -   ***QCfilter_array.sh***: Initial removal of ambient RNA, quality control and filtering with [SoupX](https://github.com/constantAmateur/SoupX) and [ddqcR](https://github.com/ayshwaryas/ddqc_R).
--   ***Seurat_Gg_NT_array.sh***: create and analyse seurat objects for all the individual samples, run dimensionality reduction, marker detection and plot markers for cluster annotation.
+-   ***Seurat_Gg_NT_array.sh***: create and analyse [Seurat](https://github.com/satijalab/seurat) objects for all the individual samples, run dimensionality reduction, marker detection and plot markers for cluster annotation.
 -   ***Seurat_integration_array.sh***: Integration step of the 4 integrated data sets
     -   Devel: D05_ctrl, D07_ctrl, and ctrl_1 (day 10) brachial samples
     -   brachial: ctrl_1 and ctrl_2
