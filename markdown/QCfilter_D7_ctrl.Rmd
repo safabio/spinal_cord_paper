@@ -1,5 +1,5 @@
 ---
-title: "QC and filtering of spinal cord day 7 control with Soupx and ddqc"
+title: "QC and filtering of spinal cord day 7 control"
 author: "Fabio Sacher"
 output:
   html_document:
@@ -17,8 +17,6 @@ library(ggplot2)
 library(dplyr)
 library(scales)
 library(gridExtra)
-library(SoupX)
-library(ddqcR)
 library(cowplot)
 library(patchwork)
 ```
@@ -33,40 +31,14 @@ my.samplename = "D07_ctrl"
 
 Date: `r format(Sys.Date(), "%d.%m.%y")`
 
-This script takes raw UMIs from the 10x output, and runs some QC as well as filtering steps to remove cells which are likely dublets, very poor cells, as well as cells with hight abundance of MT read.
-
-Soupx 10 loading:
-
-```{r}
-sc = load10X(paste0(cellranger_path, "outs/"), readArgs = list(gene.column = 1))
-sc = autoEstCont(sc)
-out = adjustCounts(sc)
-```
-
-```{r soupx-inspection}
-dd = sc$metaData[colnames(sc$toc), ] %>% 
-  mutate(clusters = factor(clusters)) %>% 
-  mutate(clustersFine = factor(clustersFine))
-  
-mids = aggregate(cbind(tSNE1, tSNE2) ~ clusters, data = dd, FUN = mean)
-gg = ggplot(dd, aes(tSNE1, tSNE2)) + geom_point(aes(colour = clusters), size = 0.2) + 
-    geom_text(data = mids, aes(label = clusters)) + ggtitle(my.samplename) + 
-    guides(colour = guide_legend(override.aes = list(size = 1))) +
-    theme_cowplot()
-
-
-midsFine = aggregate(cbind(tSNE1, tSNE2) ~ clustersFine, data = dd, FUN = mean)
-ggFine = ggplot(dd, aes(tSNE1, tSNE2)) + geom_point(aes(colour = clustersFine), size = 0.2) + 
-    geom_text(data = midsFine, aes(label = clustersFine)) + ggtitle(paste0(my.samplename, " fine clusters")) + 
-    guides(colour = guide_legend(override.aes = list(size = 1))) +
-    theme_cowplot()
-gg + ggFine
-```
+This script takes raw UMIs from the 10x output, and runs some QC as well as filtering steps to remove cells which are likely doublets, very poor cells, as well as cells with hight abundance of MT read.
 
 In the following plot we can see the distribution of UMIs per cell, in this raw UMI table count
 
-```{r first-look, echo=FALSE, message=FALSE, warning=FALSE}
-ctable = out
+```{r first look, echo=FALSE, message=FALSE, warning=FALSE}
+ex = Read10X(data.dir = paste0(cellranger_path, "/outs/filtered_feature_bc_matrix/"), gene.column = 1)
+
+ctable = ex
 
 temp = data.frame(cells=colnames(ctable),UMIs=Matrix::colSums(ctable))
 ggplot(temp, aes(x=temp$UMIs)) + geom_histogram() + geom_vline(aes(xintercept=mean(temp$UMIs))) +
@@ -74,26 +46,27 @@ ggplot(temp, aes(x=temp$UMIs)) + geom_histogram() + geom_vline(aes(xintercept=me
 rm(temp)
 ```
 
-# ddqc
+We first filter out the cells that have more than 4 times the mean of the UMI counts, and less than 20% the mean. These represent the probable doublets and poor cells.
 
-Data-driven QC to prevent harsh thresholding and retain more cells or cell types. It uses separate thresholds for each cluster:
+The second filter is for mitochondrial UMIs, we get rid of cells that show that their fraction of UMIs from MT origin is higher than:   
+The median + three times the MAD (median absolute deviation). 
 
- Initial Qualtity Control (QC) is performed, when obvious low-quality cells are removed. By default those are cells with n_genes < 100 and percent_mito > 80.
+The next filter is for cells that have an unusual number of genes detected per UMI
 
-- The cells are clustered with the clustering resolution 1.3 (default)
-- Then thesholds are picked for each cluster. By default the following metrics are considered:
-    - **Number of counts/UMIs**: keep cells that have n_counts greater than median - 2 Median Absolute Deviations (MAD)
-    - **Number of genes**: keep cells that have n_genes greater than median - 2 MADs
-    - **Percent of mitochondrial transctipts**: keep cells that have percent_mito less than median + 2 MADs
-- In order to prevent the removal of healthy cells in clusters with high median n_genes and low percent_mito there are additional bounds for those thresholds:
-    - Cluster-level threshold for n_genes can't be greater than 200 (default). If it is greater, it will be set to 200.
-    - Cluster-level threshold for percent_mito can't be lower than 10 (default). If it is lower, it will be set to 10
+```{r cell filtering, message=FALSE, warning=FALSE, echo=FALSE}
 
-```{r MT_perc}
-data <- CreateSeuratObject(counts = out, project = my.samplename, min.cells = 3)
-data
+my.plots=list()
 
-mt <- c("ENSGALG00000035334", #COX3
+summary(Matrix::colSums(ctable))
+
+# Remove those cells that have more than X times the mean of UMI count
+ctable = ctable[,Matrix::colSums(ctable)<(4*summary(Matrix::colSums(ctable))[4])]
+
+#We remove the cells that have less than 20% of the reads median because they're likely false positives
+ctable = ctable[,Matrix::colSums(ctable)>(0.2*summary(Matrix::colSums(ctable))[3])]
+
+#Remove the cells that have more than 10% reads coming from mitochondrial genes
+mt=c("ENSGALG00000035334", #COX3
      "ENSGALG00000032142", #MT-CO1
      "ENSGALG00000032079", #MT-CYB
      "ENSGALG00000037838", #ND6
@@ -106,63 +79,83 @@ mt <- c("ENSGALG00000035334", #COX3
      "ENSGALG00000043768", #MT-ND2
      "ENSGALG00000042750") #MT-ND1
 
-#The mt genes
-is.mt <- (rownames(data)%in%mt)
+is.mt = (rownames(ctable)%in%mt)
+percent.mt = Matrix::colSums(ctable[is.mt, ])/Matrix::colSums(ctable)
 
-# Percentage of reads belonging to Mt genes
-data[["percent.mt"]] <-  PercentageFeatureSet(data, features = mt)
+my.threshold = median(percent.mt) + (mad(percent.mt) * 3)
+
+my.filter1=rep(1,length(percent.mt))
+my.filter1[which(percent.mt> my.threshold & Matrix::colSums(ctable) < median(Matrix::colSums(ctable)) )] = 0
+my.filter1 =as.factor(my.filter1)
+
+toplot = data.frame(mt = percent.mt, UMI = Matrix::colSums(ctable))
+my.scale = max(table(cut(toplot$mt, breaks = round(max(toplot$mt)/0.005))))
+
+my.plots[[1]] = ggplot() +
+  geom_point(mapping = aes(color=my.filter1, x=toplot$mt, y=(toplot$UMI*my.scale)/max(toplot$UMI))) +
+  geom_freqpoly(mapping = aes(x=toplot$mt),binwidth=0.005, color ="blue") +
+  annotate("text", x = my.threshold, y = 0, label = round(my.threshold,2), color="red2") +
+  scale_y_continuous(name = "UMI counts", labels = function(b) { round(b*max(toplot$UMI)/my.scale)},
+                     sec.axis = sec_axis(~.,name = "Cell frequency")) +
+  scale_color_manual(values=c("red2", "gray20")) +
+  labs(title = paste0(my.samplename," MT% vs UMIs relation"), x = "MT%") +
+  theme(legend.position="none", axis.title.y.right = element_text(color = "blue")) 
+
+ctable=ctable[,-which(percent.mt> my.threshold & Matrix::colSums(ctable) < median(Matrix::colSums(ctable)) )]
+
+gct = data.frame(cell = colnames(ctable), genes = (0))
+
+# Put the gene counts
+for (i in 1:dim(ctable)[2] ){
+  gct [i,2] = length(which(ctable[,i] > 0))
+}
+
+#Column for UMI counts
+gct = cbind(gct, UMIs=(Matrix::colSums(ctable)))
+
+my.filter=rep("black",dim(gct)[1])
+my.filter[which((gct$genes/gct$UMIs)<0.15 & gct$genes<(max(gct$genes)/3)*2)] = "red2"
+
+my.plots[[2]] = ggplot(gct, aes(x=UMIs, y=genes)) + geom_point(color=my.filter) + geom_smooth() +
+  geom_smooth(method = "lm", formula = y~x, color="red") + expand_limits(y=0, x=0) +
+  labs(title = paste0(my.samplename," Genes vs UMIs relation"), x = "UMIs", y = "Genes") +
+  geom_abline(intercept = 0, slope = 0.15, color="red", linetype="dashed", size=0.5) + theme_bw()
+
+grid.arrange(grobs=my.plots, ncol=2)
+
+#Remove cells for which the UMI counts are not substancially adding to the gene count (many counts on very few genes)
+ctable = ctable[,-which((gct$genes/gct$UMIs)<0.15 & gct$genes<(max(gct$genes)/3)*2)]
+
+gct=gct[gct$cell %in% colnames(ctable),]
 
 ```
 
-```{r RB_perc}
-gnames <- modplots::gnames
+ In this case the mitochondrial percent cutoff is `r round(median(percent.mt) + (mad(percent.mt) * 3),3)` .
 
-rb <- gnames[grep("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA", gnames$Gene.name), "Gene.stable.ID"]
-rb <- rb[rb %in% rownames(data)]
+After all these filtering steps, we can see the distribution of UMI counts, the UMI/gene frequency, the distribution of genes detected per cell and the final UMI/gene relation
 
-data[["percent.rb"]] <- PercentageFeatureSet(data, features = rb)
-```
+```{r final plots, message=FALSE, warning=FALSE, echo=FALSE}
+temp1 = data.frame(cells=colnames(ctable),UMIs=Matrix::colSums(ctable))
+my.plots[[1]] = ggplot(temp1, aes(x=temp1$UMIs)) + geom_histogram() + geom_vline(aes(xintercept=mean(temp1$UMIs))) +
+  labs(title = paste0(my.samplename," Filtered UMIs/Cell Frequency"), x = "UMIs/Cell", y = "Frequency") + theme_bw()
 
+temp = data.frame(genes=rownames(ctable), UMIs=log(Matrix::rowMeans(ctable)))
+my.plots[[2]] = ggplot(temp, aes(x=temp$UMIs)) + geom_histogram() +
+  labs(title = paste0(my.samplename," Filtered UMIs/Gene (log) Frequency"), x = "UMIs/Gene", y = "Frequency") + theme_bw()
 
-To perform ddqc on a dataset, we first need to run `initialQC` function to remove obvious bad quality cells:
-Since initialQC uses "MT-" as pattern for grep to calculate data[["percent.mt"]] and we already calculated it, we skip the function and manually filter with 50% as the hard threshold step:
+# Distribution of genes
+my.plots[[3]] = ggplot(gct, aes(x=genes)) + 
+  geom_histogram(aes(y=(..count..)/sum(..count..))) + 
+  scale_y_continuous(labels = percent) +
+  geom_vline(aes(xintercept=mean(genes))) + 
+  labs(title = paste0(my.samplename," Genes/Cell frequency"), x = "Number of genes", y ="Frequency") + theme_bw()
 
-```{r initialQC}
-data <- subset(data, subset = percent.mt <= 50)
-data
-```
+# Gene count / UMI count, with a linear regression
+my.plots[[4]] = ggplot(gct, aes(x=UMIs, y=genes)) + geom_point() + geom_smooth() +
+  geom_smooth(method = "lm", formula = y~x, aes(color="red")) + expand_limits(y=0, x=0) +
+  labs(title = paste0(my.samplename," Genes vs UMIs relation"), x = "UMIs", y = "Genes") + theme_bw() + theme(legend.position="none")
 
-Then we need to run `ddqc.metrics` <br>
-This function will not filter the Seurat object itself, but will return a data.frame with filtering statistics
-
-```{r metrics}
-df.qc <- ddqc.metrics(data, do.ribo = TRUE)
-```
-
-### Outputs
-There are two boxplots provided for exploratory data analysis:
-
-- log2(n_genes) by cluster: shows log2 of number of genes for each cluster in the initial clustering. Red line at 200 genes (7.64 in log2 scale) represents the most common fixed threshold cutoff for n_genes.
-- percent_mito by cluster: shows percent_mito for each cluster in the initial clustering. Red line at 10% represents the most common fixed threshold cutoff for percent_mito.
-
-The function will return a dataframe containing the following info for each cell:
-
-- `metric`: QC metric number
-- `cluster_labels`: cluster from initial clustering performed by ddqc
-- `metric.lower.co` and `metric.upper.co`: lower and upper cuttofs for each metric on which ddqc was performed. If ddqc was not performed for upper or lower end of this metric this field will be `None`
-- `metric.passed.qc`: whether the cell passed qc for a given metric
-This information is useful if you want to understand based on which metric the cell was filtered out.
-
-```{r table}
-df.qc
-```
-
-### Filter out the cells
-Now, we will filter out the cells that failed ddqc. 
-
-```{r filter}
-data <- filterData(data, df.qc) 
-data
+grid.arrange(grobs=my.plots, ncol=2)
 ```
 
 ### Save the dataset
@@ -172,6 +165,9 @@ saveRDS(data, file = paste0("~/spinal_cord_paper/data/",my.samplename,"_filtered
 ```
 
 ```{r sessionInfo}
+# Date and time of Rendering
+Sys.time()
+
 sessionInfo()
 ```
 
