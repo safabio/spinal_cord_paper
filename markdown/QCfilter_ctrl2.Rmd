@@ -11,7 +11,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
-```{r setup, include=FALSE, warning = FALSE, message = FALSE}
+```{r setup, warning = FALSE, message = FALSE}
 library(Seurat)
 library(ggplot2)
 library(dplyr)
@@ -21,7 +21,7 @@ library(cowplot)
 library(patchwork)
 ```
 
-```{r input, message=FALSE, warning=FALSE, include=FALSE}
+```{r input, message=FALSE, warning=FALSE}
 # This is where the raw data is located, results from a CellRanger pipeline
 cellranger_path = "/scicore/home/tschoppp/GROUP/mapped_data/10x_NeuralTube_Control_2_0420/"
 
@@ -35,7 +35,7 @@ This script takes raw UMIs from the 10x output, and runs some QC as well as filt
 
 In the following plot we can see the distribution of UMIs per cell, in this raw UMI table count
 
-```{r first look, echo=FALSE, message=FALSE, warning=FALSE}
+```{r first look, message=FALSE, warning=FALSE}
 ex = Read10X(data.dir = paste0(cellranger_path, "/outs/filtered_feature_bc_matrix/"), gene.column = 1)
 
 ctable = ex
@@ -53,7 +53,7 @@ The median + three times the MAD (median absolute deviation).
 
 The next filter is for cells that have an unusual number of genes detected per UMI
 
-```{r cell filtering, message=FALSE, warning=FALSE, echo=FALSE}
+```{r cell filtering, message=FALSE, warning=FALSE}
 
 my.plots=list()
 
@@ -134,7 +134,7 @@ gct=gct[gct$cell %in% colnames(ctable),]
 
 After all these filtering steps, we can see the distribution of UMI counts, the UMI/gene frequency, the distribution of genes detected per cell and the final UMI/gene relation
 
-```{r final plots, message=FALSE, warning=FALSE, echo=FALSE}
+```{r final plots, message=FALSE, warning=FALSE}
 temp1 = data.frame(cells=colnames(ctable),UMIs=Matrix::colSums(ctable))
 my.plots[[1]] = ggplot(temp1, aes(x=temp1$UMIs)) + geom_histogram() + geom_vline(aes(xintercept=mean(temp1$UMIs))) +
   labs(title = paste0(my.samplename," Filtered UMIs/Cell Frequency"), x = "UMIs/Cell", y = "Frequency") + theme_bw()
@@ -161,7 +161,9 @@ grid.arrange(grobs=my.plots, ncol=2)
 ### Save the dataset
 We will save the dataset as data.rds, which can then be imported into the scRNAseq pipeline of your choice for downstream analysis.
 ```{r save}
-saveRDS(data, file = paste0("~/spinal_cord_paper/data/",my.samplename,"_filtered_",format(Sys.Date(), "%d%m%y"),".rds"))
+ex = ex[,colnames(ctable)]
+
+saveRDS(ex, file = paste0("~/spinal_cord_paper/data/",my.samplename,"_filtered_",format(Sys.Date(), "%d%m%y"),".rds"))
 ```
 
 ```{r sessionInfo}
