@@ -47,7 +47,7 @@ library(ggdendro)
 
 gnames <- modplots::gnames
 # load the integrated seurat
-my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_poly_integrated_070223.rds")
+my.int <- readRDS(file = "~/spinal_cord_paper/data/Gg_poly_integrated_250723.rds")
 
 my.int@project.name <- "Gg_poly_int"
 
@@ -382,14 +382,14 @@ plots_prog <- lapply(prog, feat_list_plot)
 plots_neur <- lapply(neurons, feat_list_plot)
 
 
-pdf(paste0("~/spinal_cord_paper/figures/DV_prog_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
+pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_prog_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
   for (j in names(prog)) {
     plots_prog[[j]][["tsne"]] <- tsne_dim
     gridExtra::grid.arrange(grobs = plots_prog[[j]], ncol = 3, top = j)
   }
 dev.off()
 
-pdf(paste0("~/spinal_cord_paper/figures/DV_neur_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
+pdf(paste0("~/spinal_cord_paper/annotations/figures/DV_neur_domain_",my.int@project.name ,".pdf"), width = 7, height = 5)
   for (j in names(neurons)) {
     plots_neur[[j]][["tsne"]] <- tsne_dim
     gridExtra::grid.arrange(grobs = plots_neur[[j]], ncol = 3, top = j)
