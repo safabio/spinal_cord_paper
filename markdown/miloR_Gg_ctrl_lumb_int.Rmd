@@ -43,7 +43,7 @@ The Seurat package includes a converter to SingleCellExperiment.
 
 my.seed <- 07022023
 
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_070223.rds")
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
 
 my.se$cond <- substr(my.se$orig.ident, 1, 4)
 # represents the sequencing batch as well
