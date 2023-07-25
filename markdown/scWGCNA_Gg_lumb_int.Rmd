@@ -25,7 +25,7 @@ library(ggplot2)
 
 ```{r}
 # load seurat object
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_070223.rds")
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
 
 DefaultAssay(my.se) <- "SCT"
 my.se <- RunPCA(my.se,
