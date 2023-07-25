@@ -1627,15 +1627,15 @@ library(gridExtra)
 library(ggplot2)</code></pre>
 <div id="objects" class="section level1">
 <h1>objects</h1>
-<pre class="r"><code>se_path &lt;- c(&quot;Gg_D05_ctrl_seurat_070223&quot;,
-             &quot;Gg_D07_ctrl_seurat_070223&quot;,
-             &quot;Gg_ctrl_1_seurat_070223&quot;,
-             &quot;Gg_ctrl_int_seurat_070223&quot;,
-             &quot;Gg_lumb_int_seurat_070223&quot;,
-             &quot;Gg_poly_int_seurat_070223&quot;,
-             &quot;Gg_devel_int_seurat_070223&quot;,
-             &quot;Gg_ctrl_lumb_int_seurat_070223&quot;,
-             &quot;Gg_ctrl_poly_int_seurat_070223&quot;)</code></pre>
+<pre class="r"><code>se_path &lt;- c(&quot;Gg_D05_ctrl_seurat_070323&quot;,
+             &quot;Gg_D07_ctrl_seurat_070323&quot;,
+             &quot;Gg_ctrl_1_seurat_070323&quot;,
+             &quot;Gg_ctrl_int_seurat_250723&quot;,
+             &quot;Gg_lumb_int_seurat_250723&quot;,
+             &quot;Gg_poly_int_seurat_250723&quot;,
+             &quot;Gg_devel_int_seurat_250723&quot;,
+             &quot;Gg_ctrl_lumb_int_seurat_250723&quot;,
+             &quot;Gg_ctrl_poly_int_seurat_250723&quot;)</code></pre>
 </div>
 <div id="functions" class="section level1">
 <h1>functions</h1>
@@ -1713,22 +1713,22 @@ for (i in se_path) {
   plots_neur[[i]] &lt;- lapply(neurons, feat_list_plot)
   rm(my.se)
 }</code></pre>
-<pre><code>## [1] &quot;Gg_D05_ctrl_seurat_070223&quot;
-## [1] &quot;Gg_D07_ctrl_seurat_070223&quot;
+<pre><code>## [1] &quot;Gg_D05_ctrl_seurat_070323&quot;
+## [1] &quot;Gg_D07_ctrl_seurat_070323&quot;
 ## Not all features are present in your object! Removing:  ISL2 
-## [1] &quot;Gg_ctrl_1_seurat_070223&quot;
+## [1] &quot;Gg_ctrl_1_seurat_070323&quot;
 ## Not all features are present in your object! Removing:  LHX9 BARHL2 
 ## Not all features are present in your object! Removing:  MNX1 ISL2 
-## [1] &quot;Gg_ctrl_int_seurat_070223&quot;
+## [1] &quot;Gg_ctrl_int_seurat_250723&quot;
 ## Not all features are present in your object! Removing:  ISL2 
-## [1] &quot;Gg_lumb_int_seurat_070223&quot;
+## [1] &quot;Gg_lumb_int_seurat_250723&quot;
 ## Not all features are present in your object! Removing:  MNX1 ISL2 
-## [1] &quot;Gg_poly_int_seurat_070223&quot;
+## [1] &quot;Gg_poly_int_seurat_250723&quot;
 ## Not all features are present in your object! Removing:  ISL2 
-## [1] &quot;Gg_devel_int_seurat_070223&quot;
-## [1] &quot;Gg_ctrl_lumb_int_seurat_070223&quot;
+## [1] &quot;Gg_devel_int_seurat_250723&quot;
+## [1] &quot;Gg_ctrl_lumb_int_seurat_250723&quot;
 ## Not all features are present in your object! Removing:  ISL2 
-## [1] &quot;Gg_ctrl_poly_int_seurat_070223&quot;
+## [1] &quot;Gg_ctrl_poly_int_seurat_250723&quot;
 ## Not all features are present in your object! Removing:  ISL2</code></pre>
 </div>
 <div id="export" class="section level1">
@@ -1752,7 +1752,7 @@ for (i in se_path) {
 }</code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2023-02-28 15:15:51 CET&quot;</code></pre>
+<pre><code>## [1] &quot;2023-07-25 14:25:24 CEST&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.1.0 (2021-05-18)
 ## Platform: x86_64-pc-linux-gnu (64-bit)

@@ -24,15 +24,15 @@ library(ggplot2)
 # objects
 
 ```{r objects}
-se_path <- c("Gg_D05_ctrl_seurat_070223",
-             "Gg_D07_ctrl_seurat_070223",
-             "Gg_ctrl_1_seurat_070223",
-             "Gg_ctrl_int_seurat_070223",
-             "Gg_lumb_int_seurat_070223",
-             "Gg_poly_int_seurat_070223",
-             "Gg_devel_int_seurat_070223",
-             "Gg_ctrl_lumb_int_seurat_070223",
-             "Gg_ctrl_poly_int_seurat_070223")
+se_path <- c("Gg_D05_ctrl_seurat_070323",
+             "Gg_D07_ctrl_seurat_070323",
+             "Gg_ctrl_1_seurat_070323",
+             "Gg_ctrl_int_seurat_250723",
+             "Gg_lumb_int_seurat_250723",
+             "Gg_poly_int_seurat_250723",
+             "Gg_devel_int_seurat_250723",
+             "Gg_ctrl_lumb_int_seurat_250723",
+             "Gg_ctrl_poly_int_seurat_250723")
 ```
 
 # functions
