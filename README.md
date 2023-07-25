@@ -2,7 +2,7 @@
 
 This repository contains the code to recreate the results and figures of our current publication " " xxx.
 
-We calculate the tSNE embeddings with the FTF (Fast Fourier Transform) accerelated Interpolation-based t-SNE [FIt-SNE](https://github.com/KlugerLab/FIt-SNE) developed by the Kluger lab. Install it to a directory to your machine following their instruction.
+We calculate the tSNE embeddings with the FFT (Fast Fourier Transform) accerelated Interpolation-based t-SNE [FIt-SNE](https://github.com/KlugerLab/FIt-SNE) developed by the Kluger lab. Install it to a directory to your machine following their instruction.
 
 The Initial QC filtering and seurat object creation markdown files are rendered using an array job in the scripts/ directory. Use the following order:
 
