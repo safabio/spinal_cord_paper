@@ -159,7 +159,7 @@ PCAPlot(my.int, group.by = "Phase")
 # Which dimensions will we choose?
 hist(my.int@reductions$pca@stdev^2, breaks = 500)
 
-my.dimensions=1:20
+my.dimensions=1:24
 
 ```
 
@@ -174,10 +174,10 @@ We run two, a normal tSNE, and an exaggerated tSNE, where clusters are tighter t
 source("~/Software/FIt-SNE-master/fast_tsne.R")
 
 my.tsne = fftRtsne(my.int@reductions$pca@cell.embeddings[,my.dimensions],
-                   max_iter = 1000,
+                   max_iter = 1500,
                    learning_rate =  round(dim(my.int)[2]/12),
                    initialization =(my.int@reductions$pca@cell.embeddings[,1:2]/my.int@reductions$pca@stdev[1])*0.0001,
-                   perplexity_list = c(30, round(dim(my.int)[2]/100)),
+                   perplexity_list = c(25, round(dim(my.int)[2]/100)),
                    fast_tsne_path="~/Software/FIt-SNE-master/bin/fast_tsne")
 
 colnames(my.tsne) = c("tsne_1", "tsne_2")

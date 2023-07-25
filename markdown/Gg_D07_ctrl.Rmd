@@ -41,7 +41,7 @@ gnames<- modplots::gnames
 # here we need to load all the datasets that will be part of our analysis
 my.samples <- list()
 
-my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/D07_ctrl_filtered_060223.rds")
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/D07_ctrl_filtered_070323.rds")
 
 #The sample name, will  be used in plots and files
 my.samplename <- "Gg_D07_ctrl"
@@ -59,11 +59,7 @@ First, we build the Seurat object.
 my.multi <- F
 my.samplenames <- c()
 
-# put the datasets togheter, if there are many.
-if (length(my.samples) > 1) {
-  my.multi <- T
-  my.se = merge(my.samples[[1]], my.samples[[2]], add.cells.ids = my.samplenames)
-} else {my.se = my.samples[[1]]}
+my.se <- CreateSeuratObject(my.samples[[1]], project = my.samplename)
 
 #clean
 rm(my.samples)
@@ -76,6 +72,28 @@ rm(my.samplenames)
 Now, we do some normalization steps, and we can see what's the amount of UMIs, genes and percentage of MT reads
 
 ```{r normalization, echo = T, message=FALSE, warning=FALSE}
+mt <- c("ENSGALG00000035334", #COX3
+     "ENSGALG00000032142", #MT-CO1
+     "ENSGALG00000032079", #MT-CYB
+     "ENSGALG00000037838", #ND6
+     "ENSGALG00000029500", #ND5
+     "ENSGALG00000036229", #MT-ND4
+     "ENSGALG00000042478", #ND4L
+     "ENSGALG00000030436", #ND3
+     "ENSGALG00000041091", #MT-ATP6
+     "ENSGALG00000032465", #MT-ATP8
+     "ENSGALG00000043768", #MT-ND2
+     "ENSGALG00000042750") #MT-ND1
+
+#The mt genes
+is.mt <- (rownames(my.se)%in%mt)
+
+# Percentage of reads belonging to Mt genes
+my.se[["percent.mt"]] <-  PercentageFeatureSet(my.se, features = mt)
+
+rb <- gnames[grep("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA", gnames$Gene.name), "Gene.stable.ID"]
+rb <- rb[rb %in% rownames(my.se)]
+my.se[["percent.rb"]] <- PercentageFeatureSet(my.se, features = rb)
 
 # Normalize the data. Lognorm
 my.se <- NormalizeData(
@@ -283,7 +301,7 @@ Here we need to manually input how the dimensions we will use. Ca. 20 are usual 
 
 ```{r PCAdims, message=FALSE, warning=FALSE, echo = T}
 
-my.dimensions=1:20
+my.dimensions=1:18
 
 ```
 
@@ -298,10 +316,10 @@ We run two, a normal tSNE, and an exaggerated tSNE, where clusters are tighter t
 source("~/Software/FIt-SNE-master/fast_tsne.R")
 
 my.tsne = fftRtsne(my.se@reductions$pca@cell.embeddings[,my.dimensions],
-                   max_iter = 1000,
+                   max_iter = 1500,
                    learning_rate =  round(dim(my.se)[2]/12),
                    initialization =(my.se@reductions$pca@cell.embeddings[,1:2]/my.se@reductions$pca@stdev[1])*0.0001,
-                   perplexity_list = c(30, round(dim(my.se)[2]/100)),
+                   perplexity_list = c(25, round(dim(my.se)[2]/100)),
                    fast_tsne_path="~/Software/FIt-SNE-master/bin/fast_tsne")
 
 colnames(my.tsne) = c("tsne_1", "tsne_2")
