@@ -38,3 +38,19 @@ Differential abundance is calculated with [DAseq](https://github.com/KlugerLab/D
 -   ***DAseq_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs DAseq to calculate differential abundance. Requires a python3 verison available (install with anaconda).
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
+## augur Cell Type Prioritisation
+
+[augur](https://github.com/neurorestore/Augur) is used to prioritise cell types based on ther response to an experimental condition:
+
+-   ***augur_Gg_ctrl_lumb_ctrl_poly_int_array.sh***:  Runs augur between ctrl and lumb, as well as ctrl and poly. 
+
+## Plotting
+
+The following scripts are used to create the plots for the figures, if they are not already produced by the pipelines above:
+
+-   ***dotplots_broad_render.sh***: Plots the dotplots that show average marker gene expression by cluster.
+
+-   ***tsne_and_bar_plots_render.sh***: Plots the tsne embeddings colored by broad clustering as well as stacked bar plot by data set to show the relative cell type contributions.
+
+-   ***heatmap_spearman_ctrl_lumb_poly_int.sh*** and ***heatmap_spearman_devel.sh***: Produces the heatmaps of cluster and module correlation.
+
