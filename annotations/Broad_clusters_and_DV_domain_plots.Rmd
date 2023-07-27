@@ -72,9 +72,9 @@ neurons <- list(dI1 = c("LHX2","LHX9","BARHL1","BARHL2","POU4F1"),
   dI6 = c("LBX1","PAX2","LHX1","LHX5"),
   V0 = c("EVX1","PAX2","LHX1","LHX5"),
   V1 = c("EN1","PAX2","LHX1","LHX5"),
-  V2a = c("VSX1","SOX14","LHX3"),
+  V2a = c("VSX2","SOX14","LHX3"),
   V2b = c("GATA2","GATA3","TAL1"),
-  MN =  c("MNX1","ISL1","LHX3","ISL2"))
+  MN =  c("MNX1","ISL1","LHX3","ISL2","SLC18A3"))
 
 prog <- list(dp1_3 =  c("PAX6","IRX3","IRX5","MSX1","PAX3","PAX7"),
   dp4 = c("PAX6","IRX3","IRX5","GSX1","PAX3","PAX7"),
