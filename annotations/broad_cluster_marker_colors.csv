@@ -1,6 +1,7 @@
 broad_cluster,marker,color
 blood,HBBA,#bebebe
 FP,SHH,#853335
+FP/RP,SHH/RSPO1,#00ff00
 MFOL,PLP1,#333399
 microglia,IFI30,#000000
 neurons,TUBB3,#cd2b91
@@ -9,4 +10,3 @@ pericytes,IGFBP7,#f26a2d
 progenitors,SOX9,#edc919
 RP,RSPO1,#99ca3c
 vasculature,CDH5,#996633
-FP/RP,SHH/RSPO1,#00ff00
