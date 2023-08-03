@@ -29,5 +29,5 @@ number,broad,fine
 28,blood,blood
 29,neurons,excitatory_neurons
 30,neurons,CSF-cNS
-31,vasculature_microglia,vasculature_microglia
+31,vasculature,vasculature
 32,neurons,inhibitory_neurons
