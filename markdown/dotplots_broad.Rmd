@@ -32,14 +32,14 @@ library(modplots)
 ```
 
 ```{r seurat-objects}
-se_path <- c("Gg_D05_ctrl_seurat_070223",
-             "Gg_D07_ctrl_seurat_070223",
-             "Gg_ctrl_1_seurat_070223",
-             "Gg_ctrl_int_seurat_070223",
-             "Gg_lumb_int_seurat_070223",
-             "Gg_poly_int_seurat_070223",
-             "Gg_ctrl_lumb_int_seurat_070223",
-             "Gg_ctrl_poly_int_seurat_070223")
+se_path <- c("Gg_D05_ctrl_seurat_070323",
+             "Gg_D07_ctrl_seurat_070323",
+             "Gg_ctrl_1_seurat_070323",
+             "Gg_ctrl_int_seurat_250723",
+             "Gg_lumb_int_seurat_250723",
+             "Gg_poly_int_seurat_250723",
+             "Gg_ctrl_lumb_int_seurat_250723",
+             "Gg_ctrl_poly_int_seurat_250723")
 ```
 
 ```{r order}
@@ -47,6 +47,7 @@ se_path <- c("Gg_D05_ctrl_seurat_070223",
 broad_order <- c("progenitors",
       "FP",
       "RP",
+      "FP/RP",
       "neurons",
       "OPC",
       "MFOL",
@@ -64,7 +65,9 @@ broad_order <- c("progenitors",
 markers <- rev(c("SOX9",
              "SHH",
              "RSPO1",
-             "TUBB3","NRXN3","TLX3",
+             "TUBB3",
+             "NRXN3", #inhibitory
+             "TLX3", #excitatory
              "OLIG2", "PLP1",
              "IGFBP7",
              "IFI30",
@@ -120,6 +123,7 @@ for (i in seq(se_path)) {
   theme(axis.text.x = element_blank(),
         plot.title = element_text(hjust = 0.5))
   
+  # plot to take the annotations from
   x_annot[[i]] <- mDotPlot2(my.se,
           group.by = "fine",
           features = "ENSGALG00000037332", 
@@ -128,7 +132,6 @@ for (i in seq(se_path)) {
   coord_flip() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
-  
 }
 
 rm(my.se)

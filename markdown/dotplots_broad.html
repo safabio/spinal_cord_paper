@@ -2775,17 +2775,18 @@ library(ggplot2)
 library(gridExtra)
 library(patchwork)
 library(modplots)</code></pre>
-<pre class="r"><code>se_path &lt;- c(&quot;Gg_D05_ctrl_seurat_070223&quot;,
-             &quot;Gg_D07_ctrl_seurat_070223&quot;,
-             &quot;Gg_ctrl_1_seurat_070223&quot;,
-             &quot;Gg_ctrl_int_seurat_070223&quot;,
-             &quot;Gg_lumb_int_seurat_070223&quot;,
-             &quot;Gg_poly_int_seurat_070223&quot;,
-             &quot;Gg_ctrl_lumb_int_seurat_070223&quot;,
-             &quot;Gg_ctrl_poly_int_seurat_070223&quot;)</code></pre>
+<pre class="r"><code>se_path &lt;- c(&quot;Gg_D05_ctrl_seurat_070323&quot;,
+             &quot;Gg_D07_ctrl_seurat_070323&quot;,
+             &quot;Gg_ctrl_1_seurat_070323&quot;,
+             &quot;Gg_ctrl_int_seurat_250723&quot;,
+             &quot;Gg_lumb_int_seurat_250723&quot;,
+             &quot;Gg_poly_int_seurat_250723&quot;,
+             &quot;Gg_ctrl_lumb_int_seurat_250723&quot;,
+             &quot;Gg_ctrl_poly_int_seurat_250723&quot;)</code></pre>
 <pre class="r"><code>broad_order &lt;- c(&quot;progenitors&quot;,
       &quot;FP&quot;,
       &quot;RP&quot;,
+      &quot;FP/RP&quot;,
       &quot;neurons&quot;,
       &quot;OPC&quot;,
       &quot;MFOL&quot;,
@@ -2798,7 +2799,9 @@ library(modplots)</code></pre>
 markers &lt;- rev(c(&quot;SOX9&quot;,
              &quot;SHH&quot;,
              &quot;RSPO1&quot;,
-             &quot;TUBB3&quot;,&quot;NRXN3&quot;,&quot;TLX3&quot;,
+             &quot;TUBB3&quot;,
+             &quot;NRXN3&quot;, #inhibitory
+             &quot;TLX3&quot;, #excitatory
              &quot;OLIG2&quot;, &quot;PLP1&quot;,
              &quot;IGFBP7&quot;,
              &quot;IFI30&quot;,
@@ -2849,6 +2852,7 @@ for (i in seq(se_path)) {
   theme(axis.text.x = element_blank(),
         plot.title = element_text(hjust = 0.5))
   
+  # plot to take the annotations from
   x_annot[[i]] &lt;- mDotPlot2(my.se,
           group.by = &quot;fine&quot;,
           features = &quot;ENSGALG00000037332&quot;, 
@@ -2857,7 +2861,6 @@ for (i in seq(se_path)) {
   coord_flip() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
-  
 }
 
 rm(my.se)
@@ -2876,7 +2879,7 @@ dev.off()</code></pre>
   2 </code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>[1] &quot;2023-03-01 10:59:28 CET&quot;</code></pre>
+<pre><code>[1] &quot;2023-08-04 09:59:56 CEST&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.1.0 (2021-05-18)
 Platform: x86_64-pc-linux-gnu (64-bit)
