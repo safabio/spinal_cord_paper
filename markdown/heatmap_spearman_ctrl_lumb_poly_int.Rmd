@@ -31,9 +31,9 @@ library(gridExtra)
 ```
 
 ```{r data-sets}
-se_path <- c("Gg_ctrl_int_seurat_070223",
-             "Gg_lumb_int_seurat_070223",
-             "Gg_poly_int_seurat_070223")
+se_path <- c("Gg_ctrl_int_seurat_250723",
+             "Gg_lumb_int_seurat_250723",
+             "Gg_poly_int_seurat_250723")
 
 clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
   rename(broad = broad_cluster) %>% 
