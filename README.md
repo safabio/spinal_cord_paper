@@ -54,3 +54,6 @@ The following scripts are used to create the plots for the figures, if they are 
 
 -   ***heatmap_spearman_ctrl_lumb_poly_int.sh*** and ***heatmap_spearman_devel.sh***: Produces the heatmaps of cluster and module correlation.
 
+-   ***Vln_plots_render.sh***: Plots diagnostic violin/beeswarm plots to quickly reference mitochondrial and ribosomal gene expression by cluster.
+
+-   ***Gg_devel_scWGCNA_module_analysis_render.sh***: All the analysis of the scWGCNA modules on the development (D5, D7, and D10/ctrl1) data set.
