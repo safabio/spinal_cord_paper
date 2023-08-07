@@ -162,7 +162,7 @@ GSI over individual samples (before cbind).
 
 ```{r ind-gsi-heatmap-ctrl-lumb, fig.height=11, fig.width=12}
 
-heat_col <- colorRampPalette(colors = c("dodgerblue","dodgerblue4", "white", "red", "darkred"))
+heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
 
 toplot <- cor(pb_gsi_univ, method = "spearman")
 
@@ -252,7 +252,7 @@ GSI over individual samples (before cbind).
 
 ```{r ind-gsi-heatmap-ctrl-poly, fig.height=11, fig.width=12}
 
-heat_col <- colorRampPalette(colors = c("dodgerblue","dodgerblue4", "white", "red", "darkred"))
+heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
 
 toplot <- cor(pb_gsi_univ, method = "spearman")
 
