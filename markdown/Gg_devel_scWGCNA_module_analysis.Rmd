@@ -343,7 +343,7 @@ my.hclust = as.dendrogram(hclust(as.dist(1-cor(t(my.wgmat[[1]]), method = "spear
 #Plot!
 pdf("~/spinal_cord_paper/figures/Fig_1_module_gene_heatmap_spearman.pdf", width = 11, height = 11)
 heatmap.4(cor(t(my.wgmat[[1]]), method = "spearman"),
-          col = colorRampPalette(c("gray95","gray5"))(n = 1000),
+          col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
           trace="none",
           lhei=c(0.2,1.6),
           lwid=c(0.2,1.6),
@@ -496,9 +496,9 @@ pdf("~/spinal_cord_paper/figures/Devel_modules_AE_plots.pdf", width = 12, height
 gridExtra::grid.arrange(grobs = tmp, ncol = 3, as.table = FALSE)
 
 pdf("~/spinal_cord_paper/figures/Fig_1_MN_mod_tsne.pdf", height = 6, width = 12)
-modplots[[1]][[6]] + modplots[[1]][[7]] |
-  modplots[[2]][[6]] + modplots[[2]][[7]] |
-  modplots[[3]][[6]] + modplots[[3]][[7]]
+modplots[[1]][[22]] + modplots[[1]][[6]] |
+  modplots[[2]][[22]] + modplots[[2]][[6]] |
+  modplots[[3]][[22]] + modplots[[3]][[6]]
 
 ```
 
@@ -653,15 +653,20 @@ tmp <- avg.mod.eigengenes
 identical(rownames(tmp), colnames(my.sec))
 # add meta data to the int seurat object
 my.sec <- AddMetaData(my.sec, tmp)
+my.sec <- AddMetaData(my.sec, my.metam[c("fine", "sample_celltype")])
 
-my.sec$orig.ident <- factor(
-  my.sec$orig.ident,
-  levels = unique(my.sec$orig.ident)
+custom_order <- c(paste(names(ord_levels)[1], ord_levels[[1]], sep = '_'),
+                  paste(names(ord_levels)[2], ord_levels[[2]], sep = '_'),
+                  paste(names(ord_levels)[3], ord_levels[[3]], sep = '_'))
+
+my.sec$sample_celltype <- factor(
+  my.sec$sample_celltype,
+  levels = custom_order
   )
-
 
 vln_ind <- VlnPlot(my.sec,
                    features = c("AEdarkred", "AEgreen"),
+                   group.by = "sample_celltype",
                    stack = TRUE,
                    flip = TRUE,
                    cols = c("darkred", "green"),pt.size = 1
@@ -669,8 +674,33 @@ vln_ind <- VlnPlot(my.sec,
     NoLegend()
 
 vln_ind
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_MNs.pdf", height = 5, width = 20)
+pdf("~/spinal_cord_paper/figures/Fig_1_AE_MNs.pdf", height = 7, width = 20)
 vln_ind
+```
+
+```{r}
+VlnPlot(
+    my.sec,
+    features = mods[module_order],
+    group.by = "sample_celltype",
+    stack = TRUE, flip = TRUE,
+    cols = substring(mods, 3)[module_order]) +
+    theme(legend.position = "none") +
+    geom_hline(yintercept = 0, lty = "dashed")
+
+
+
+pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_cluster_integrated_data.pdf", height = 20, width = 30)
+VlnPlot(
+    my.sec,
+    features = mods[module_order],
+    group.by = "sample_celltype",
+    stack = TRUE, flip = TRUE,
+    cols = substring(mods, 3)[module_order]) +
+    theme(legend.position = "none") +
+    geom_hline(yintercept = 0, lty = "dashed")
+
+
 ```
 
 # avg. module exp. by stage
