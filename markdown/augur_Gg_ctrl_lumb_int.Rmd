@@ -25,8 +25,6 @@ library(viridis)
 
 # Data set
 
-Keep in mind, the integration of the brach and poly data is called uncut!
-
 ```{r data-set}
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
 # following issue #5 (github) we use the RNA assay. 
@@ -52,8 +50,6 @@ save(augur_seurat, file = paste0("~/spinal_cord_paper/output/", my.se@project.na
 ```
 
 # Results
-
-Cluster 25 is missing (motor neurons), since only ctrl cells are present! 
 
 ```{r}
 
@@ -82,6 +78,7 @@ tsne_seurat
 ```{r}
 pdf(paste0("~/spinal_cord_paper/figures/", my.se@project.name,"_augur_prios_tsne.pdf"), width = 10, height = 5)
 tsne_seurat
+lolli_seurat
 dev.off()
 ```
 

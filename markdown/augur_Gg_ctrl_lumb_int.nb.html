@@ -1767,40 +1767,66 @@ with augur</h1>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBkZXZ0b29sczo6aW5zdGFsbF9naXRodWIoXCJuZXVyb3Jlc3RvcmUvQXVndXJcIilcbmxpYnJhcnkoQXVndXIpXG5saWJyYXJ5KFNldXJhdClcbmxpYnJhcnkobWFncml0dHIpXG5saWJyYXJ5KGdncGxvdDIpXG5saWJyYXJ5KHBhdGNod29yaylcbmxpYnJhcnkodmlyaWRpcylcbmBgYCJ9 -->
-<pre class="r"><code># devtools::install_github(&quot;neurorestore/Augur&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuIyBkZXZ0b29sczo6aW5zdGFsbF9naXRodWIoXFxuZXVyb3Jlc3RvcmUvQXVndXJcXClcbmxpYnJhcnkoQXVndXIpXG5saWJyYXJ5KFNldXJhdClcbmxpYnJhcnkobWFncml0dHIpXG5saWJyYXJ5KGdncGxvdDIpXG5saWJyYXJ5KHBhdGNod29yaylcbmxpYnJhcnkodmlyaWRpcylcbmBgYFxuYGBgIn0= -->
+<pre class="r"><code>```r
+# devtools::install_github(\neurorestore/Augur\)
 library(Augur)
 library(Seurat)
 library(magrittr)
 library(ggplot2)
 library(patchwork)
 library(viridis)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<div id="data-set" class="section level1">
-<h1>Data set</h1>
-<p>Keep in mind, the integration of the brach and poly data is called
-uncut!</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubXkuc2UgPC0gcmVhZFJEUyhcIn4vc3BpbmFsX2NvcmRfcGFwZXIvZGF0YS9HZ19jdHJsX2x1bWJfaW50X3NldXJhdF8yNTA3MjMucmRzXCIpXG4jIGZvbGxvd2luZyBpc3N1ZSAjNSAoZ2l0aHViKSB3ZSB1c2UgdGhlIFJOQSBhc3NheS4gXG5EZWZhdWx0QXNzYXkobXkuc2UpIDwtIFwiUk5BXCJcblxuRGltUGxvdChteS5zZSwgcmVkdWN0aW9uID0gXCJ0c25lXCIsIGxhYmVsID0gVFJVRSlcblxuYGBgIn0= -->
-<pre class="r"><code>my.se &lt;- readRDS(&quot;~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds&quot;)
-# following issue #5 (github) we use the RNA assay. 
-DefaultAssay(my.se) &lt;- &quot;RNA&quot;
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
 
-DimPlot(my.se, reduction = &quot;tsne&quot;, label = TRUE)
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Data set
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxubXkuc2UgPC0gcmVhZFJEUyhcXH4vc3BpbmFsX2NvcmRfcGFwZXIvZGF0YS9HZ19jdHJsX2x1bWJfaW50X3NldXJhdF8yNTA3MjMucmRzXFwpXG4jIGZvbGxvd2luZyBpc3N1ZSAjNSAoZ2l0aHViKSB3ZSB1c2UgdGhlIFJOQSBhc3NheS4gXG5EZWZhdWx0QXNzYXkobXkuc2UpIDwtIFxcUk5BXFxcblxuRGltUGxvdChteS5zZSwgcmVkdWN0aW9uID0gXFx0c25lXFwsIGxhYmVsID0gVFJVRSlcblxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+my.se &lt;- readRDS(\~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds\)
+# following issue #5 (github) we use the RNA assay. 
+DefaultAssay(my.se) &lt;- \RNA\
+
+DimPlot(my.se, reduction = \tsne\, label = TRUE)
 </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="augur" class="section level1">
-<h1>Augur</h1>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZXhwciA8LSBteS5zZVtbXCJSTkFcIl1dQGRhdGFcblxubXkuc2VAbWV0YS5kYXRhIDwtIG15LnNlQG1ldGEuZGF0YSAlPiUgXG4gIGRwbHlyOjpyZW5hbWUoY2VsbF90eXBlID0gc2V1cmF0X2NsdXN0ZXJzKSAlPiUgXG4gIGRwbHlyOjptdXRhdGUobGFiZWwgPSBhcy5mYWN0b3Ioc3Vic3RyKG9yaWcuaWRlbnQsIDEsIDQpKSlcbm1ldGEgPC0gbXkuc2VAbWV0YS5kYXRhXG5cbmF1Z3VyX3NldXJhdCA9IGNhbGN1bGF0ZV9hdWMobXkuc2UsIG5fdGhyZWFkcyA9IDgpXG5cbnNhdmUoYXVndXJfc2V1cmF0LCBmaWxlID0gcGFzdGUwKFwifi9zcGluYWxfY29yZF9wYXBlci9vdXRwdXQvXCIsIG15LnNlQHByb2plY3QubmFtZSxcIl9hdWd1ci5SZGFcIikpXG5gYGAifQ== -->
-<pre class="r"><code>expr &lt;- my.se[[&quot;RNA&quot;]]@data
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Augur
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZXhwciA8LSBteS5zZVtbXFxSTkFcXF1dQGRhdGFcblxubXkuc2VAbWV0YS5kYXRhIDwtIG15LnNlQG1ldGEuZGF0YSAlPiUgXG4gIGRwbHlyOjpyZW5hbWUoY2VsbF90eXBlID0gc2V1cmF0X2NsdXN0ZXJzKSAlPiUgXG4gIGRwbHlyOjptdXRhdGUobGFiZWwgPSBhcy5mYWN0b3Ioc3Vic3RyKG9yaWcuaWRlbnQsIDEsIDQpKSlcbm1ldGEgPC0gbXkuc2VAbWV0YS5kYXRhXG5cbmF1Z3VyX3NldXJhdCA9IGNhbGN1bGF0ZV9hdWMobXkuc2UsIG5fdGhyZWFkcyA9IDgpXG5cbnNhdmUoYXVndXJfc2V1cmF0LCBmaWxlID0gcGFzdGUwKFxcfi9zcGluYWxfY29yZF9wYXBlci9vdXRwdXQvXFwsIG15LnNlQHByb2plY3QubmFtZSxcXF9hdWd1ci5SZGFcXCkpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+expr &lt;- my.se[[\RNA\]]@data
 
 my.se@meta.data &lt;- my.se@meta.data %&gt;% 
   dplyr::rename(cell_type = seurat_clusters) %&gt;% 
@@ -1809,19 +1835,30 @@ meta &lt;- my.se@meta.data
 
 augur_seurat = calculate_auc(my.se, n_threads = 8)
 
-save(augur_seurat, file = paste0(&quot;~/spinal_cord_paper/output/&quot;, my.se@project.name,&quot;_augur.Rda&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="results" class="section level1">
-<h1>Results</h1>
-<p>Cluster 25 is missing (motor neurons), since only ctrl cells are
-present!</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5hdWd1cl9zZXVyYXQkQVVDXG5yYW5nZShhdWd1cl9zZXVyYXQkQVVDJGF1YylcblxubG9sbGlfc2V1cmF0IDwtIHBsb3RfbG9sbGlwb3AoYXVndXJfc2V1cmF0KVxuXG5sb2xsaV9zZXVyYXRcblxuYGBgIn0= -->
-<pre class="r"><code>
+save(augur_seurat, file = paste0(\~/spinal_cord_paper/output/\, my.se@project.name,\_augur.Rda\))</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+# Results
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuXG5hdWd1cl9zZXVyYXQkQVVDXG5yYW5nZShhdWd1cl9zZXVyYXQkQVVDJGF1YylcblxubG9sbGlfc2V1cmF0IDwtIHBsb3RfbG9sbGlwb3AoYXVndXJfc2V1cmF0KVxuXG5sb2xsaV9zZXVyYXRcblxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+
 augur_seurat$AUC
 range(augur_seurat$AUC$auc)
 
@@ -1829,46 +1866,88 @@ lolli_seurat &lt;- plot_lollipop(augur_seurat)
 
 lolli_seurat
 </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG50c25lX3NldXJhdCA8LSBwbG90X3VtYXAoXG4gIGF1Z3VyX3NldXJhdCxcbiAgbXkuc2UsXG4gIHJlZHVjdGlvbiA9IFwidHNuZVwiLFxuICBwYWxldHRlID0gXCJpbmZlcm5vXCIsXG4gIHRvcF9uID0gbnJvdyhhdWd1cl9zZXVyYXQkQVVDKVxuKVxuXG50c25lX3NldXJhdFxuYGBgIn0= -->
-<pre class="r"><code>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuXG50c25lX3NldXJhdCA8LSBwbG90X3VtYXAoXG4gIGF1Z3VyX3NldXJhdCxcbiAgbXkuc2UsXG4gIHJlZHVjdGlvbiA9IFxcdHNuZVxcLFxuICBwYWxldHRlID0gXFxpbmZlcm5vXFwsXG4gIHRvcF9uID0gbnJvdyhhdWd1cl9zZXVyYXQkQVVDKVxuKVxuXG50c25lX3NldXJhdFxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+
 tsne_seurat &lt;- plot_umap(
   augur_seurat,
   my.se,
-  reduction = &quot;tsne&quot;,
-  palette = &quot;inferno&quot;,
+  reduction = \tsne\,
+  palette = \inferno\,
   top_n = nrow(augur_seurat$AUC)
 )
 
 tsne_seurat</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGRmKHBhc3RlMChcIn4vc3BpbmFsX2NvcmRfcGFwZXIvZmlndXJlcy9cIiwgbXkuc2VAcHJvamVjdC5uYW1lLFwiX2F1Z3VyX3ByaW9zX3RzbmUucGRmXCIpLCB3aWR0aCA9IDEwLCBoZWlnaHQgPSA1KVxudHNuZV9zZXVyYXRcbmRldi5vZmYoKVxuYGBgIn0= -->
-<pre class="r"><code>pdf(paste0(&quot;~/spinal_cord_paper/figures/&quot;, my.se@project.name,&quot;_augur_prios_tsne.pdf&quot;), width = 10, height = 5)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxucGRmKHBhc3RlMChcXH4vc3BpbmFsX2NvcmRfcGFwZXIvZmlndXJlcy9cXCwgbXkuc2VAcHJvamVjdC5uYW1lLFxcX2F1Z3VyX3ByaW9zX3RzbmUucGRmXFwpLCB3aWR0aCA9IDEwLCBoZWlnaHQgPSA1KVxudHNuZV9zZXVyYXRcbmRldi5vZmYoKVxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+pdf(paste0(\~/spinal_cord_paper/figures/\, my.se@project.name,\_augur_prios_tsne.pdf\), width = 10, height = 5)
 tsne_seurat
 dev.off()</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBEYXRlIGFuZCB0aW1lIG9mIFJlbmRlcmluZ1xuU3lzLnRpbWUoKVxuXG5zZXNzaW9uSW5mbygpXG5gYGAifQ== -->
-<pre class="r"><code># Date and time of Rendering
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuIyBEYXRlIGFuZCB0aW1lIG9mIFJlbmRlcmluZ1xuU3lzLnRpbWUoKVxuXG5zZXNzaW9uSW5mbygpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+# Date and time of Rendering
 Sys.time()
 
 sessionInfo()</code></pre>
+<p>```</p>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
-</div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiY3RybCB2cyBsdW1iIGludCBjZWxsIHR5cGUgcHJpb3JpdGlzYXRpb24gd2l0aCBhdWd1ciIKYXV0aG9yOiAiRmFiaW8gU2FjaGVyIgpkYXRlOiAiMDguMDIuMjAyMyIKZGF0YToKb3V0cHV0OgogIGh0bWxfZG9jdW1lbnQ6CiAgICBkZl9wcmludDogcGFnZWQKICBodG1sX25vdGVib29rOgogICAgZmlnX2hlaWdodDogNwogICAgZmlnX3dpZHRoOiA4CmVkaXRvcl9vcHRpb25zOgogIGNodW5rX291dHB1dF90eXBlOiBpbmxpbmUKLS0tCgpgYGB7ciBsaWJyYXJpZXMsIHdhcm5pbmcgPSBGQUxTRSwgbWVzc2FnZT1GQUxTRX0KIyBkZXZ0b29sczo6aW5zdGFsbF9naXRodWIoIm5ldXJvcmVzdG9yZS9BdWd1ciIpCmxpYnJhcnkoQXVndXIpCmxpYnJhcnkoU2V1cmF0KQpsaWJyYXJ5KG1hZ3JpdHRyKQpsaWJyYXJ5KGdncGxvdDIpCmxpYnJhcnkocGF0Y2h3b3JrKQpsaWJyYXJ5KHZpcmlkaXMpCmBgYAoKIyBEYXRhIHNldAoKS2VlcCBpbiBtaW5kLCB0aGUgaW50ZWdyYXRpb24gb2YgdGhlIGJyYWNoIGFuZCBwb2x5IGRhdGEgaXMgY2FsbGVkIHVuY3V0IQoKYGBge3IgZGF0YS1zZXR9Cm15LnNlIDwtIHJlYWRSRFMoIn4vc3BpbmFsX2NvcmRfcGFwZXIvZGF0YS9HZ19jdHJsX2x1bWJfaW50X3NldXJhdF8yNTA3MjMucmRzIikKIyBmb2xsb3dpbmcgaXNzdWUgIzUgKGdpdGh1Yikgd2UgdXNlIHRoZSBSTkEgYXNzYXkuIApEZWZhdWx0QXNzYXkobXkuc2UpIDwtICJSTkEiCgpEaW1QbG90KG15LnNlLCByZWR1Y3Rpb24gPSAidHNuZSIsIGxhYmVsID0gVFJVRSkKCmBgYAoKIyBBdWd1cgoKYGBge3IgYXVndXItZGVmfQpleHByIDwtIG15LnNlW1siUk5BIl1dQGRhdGEKCm15LnNlQG1ldGEuZGF0YSA8LSBteS5zZUBtZXRhLmRhdGEgJT4lIAogIGRwbHlyOjpyZW5hbWUoY2VsbF90eXBlID0gc2V1cmF0X2NsdXN0ZXJzKSAlPiUgCiAgZHBseXI6Om11dGF0ZShsYWJlbCA9IGFzLmZhY3RvcihzdWJzdHIob3JpZy5pZGVudCwgMSwgNCkpKQptZXRhIDwtIG15LnNlQG1ldGEuZGF0YQoKYXVndXJfc2V1cmF0ID0gY2FsY3VsYXRlX2F1YyhteS5zZSwgbl90aHJlYWRzID0gOCkKCnNhdmUoYXVndXJfc2V1cmF0LCBmaWxlID0gcGFzdGUwKCJ+L3NwaW5hbF9jb3JkX3BhcGVyL291dHB1dC8iLCBteS5zZUBwcm9qZWN0Lm5hbWUsIl9hdWd1ci5SZGEiKSkKYGBgCgojIFJlc3VsdHMKCkNsdXN0ZXIgMjUgaXMgbWlzc2luZyAobW90b3IgbmV1cm9ucyksIHNpbmNlIG9ubHkgY3RybCBjZWxscyBhcmUgcHJlc2VudCEgCgpgYGB7cn0KCmF1Z3VyX3NldXJhdCRBVUMKcmFuZ2UoYXVndXJfc2V1cmF0JEFVQyRhdWMpCgpsb2xsaV9zZXVyYXQgPC0gcGxvdF9sb2xsaXBvcChhdWd1cl9zZXVyYXQpCgpsb2xsaV9zZXVyYXQKCmBgYAoKYGBge3J9Cgp0c25lX3NldXJhdCA8LSBwbG90X3VtYXAoCiAgYXVndXJfc2V1cmF0LAogIG15LnNlLAogIHJlZHVjdGlvbiA9ICJ0c25lIiwKICBwYWxldHRlID0gImluZmVybm8iLAogIHRvcF9uID0gbnJvdyhhdWd1cl9zZXVyYXQkQVVDKQopCgp0c25lX3NldXJhdApgYGAKCmBgYHtyfQpwZGYocGFzdGUwKCJ+L3NwaW5hbF9jb3JkX3BhcGVyL2ZpZ3VyZXMvIiwgbXkuc2VAcHJvamVjdC5uYW1lLCJfYXVndXJfcHJpb3NfdHNuZS5wZGYiKSwgd2lkdGggPSAxMCwgaGVpZ2h0ID0gNSkKdHNuZV9zZXVyYXQKZGV2Lm9mZigpCmBgYAoKYGBge3J9CiMgRGF0ZSBhbmQgdGltZSBvZiBSZW5kZXJpbmcKU3lzLnRpbWUoKQoKc2Vzc2lvbkluZm8oKQpgYGA=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiY3RybCB2cyBsdW1iIGludCBjZWxsIHR5cGUgcHJpb3JpdGlzYXRpb24gd2l0aCBhdWd1ciIKYXV0aG9yOiAiRmFiaW8gU2FjaGVyIgpkYXRlOiAiMDguMDIuMjAyMyIKZGF0YToKb3V0cHV0OgogIGh0bWxfZG9jdW1lbnQ6CiAgICBkZl9wcmludDogcGFnZWQKICBodG1sX25vdGVib29rOgogICAgZmlnX2hlaWdodDogNwogICAgZmlnX3dpZHRoOiA4CmVkaXRvcl9vcHRpb25zOgogIGNodW5rX291dHB1dF90eXBlOiBpbmxpbmUKLS0tCgpgYGB7ciBsaWJyYXJpZXMsIHdhcm5pbmcgPSBGQUxTRSwgbWVzc2FnZT1GQUxTRX0KIyBkZXZ0b29sczo6aW5zdGFsbF9naXRodWIoIm5ldXJvcmVzdG9yZS9BdWd1ciIpCmxpYnJhcnkoQXVndXIpCmxpYnJhcnkoU2V1cmF0KQpsaWJyYXJ5KG1hZ3JpdHRyKQpsaWJyYXJ5KGdncGxvdDIpCmxpYnJhcnkocGF0Y2h3b3JrKQpsaWJyYXJ5KHZpcmlkaXMpCmBgYAoKIyBEYXRhIHNldAoKYGBge3IgZGF0YS1zZXR9Cm15LnNlIDwtIHJlYWRSRFMoIn4vc3BpbmFsX2NvcmRfcGFwZXIvZGF0YS9HZ19jdHJsX2x1bWJfaW50X3NldXJhdF8yNTA3MjMucmRzIikKIyBmb2xsb3dpbmcgaXNzdWUgIzUgKGdpdGh1Yikgd2UgdXNlIHRoZSBSTkEgYXNzYXkuIApEZWZhdWx0QXNzYXkobXkuc2UpIDwtICJSTkEiCgpEaW1QbG90KG15LnNlLCByZWR1Y3Rpb24gPSAidHNuZSIsIGxhYmVsID0gVFJVRSkKCmBgYAoKIyBBdWd1cgoKYGBge3IgYXVndXItZGVmfQpleHByIDwtIG15LnNlW1siUk5BIl1dQGRhdGEKCm15LnNlQG1ldGEuZGF0YSA8LSBteS5zZUBtZXRhLmRhdGEgJT4lIAogIGRwbHlyOjpyZW5hbWUoY2VsbF90eXBlID0gc2V1cmF0X2NsdXN0ZXJzKSAlPiUgCiAgZHBseXI6Om11dGF0ZShsYWJlbCA9IGFzLmZhY3RvcihzdWJzdHIob3JpZy5pZGVudCwgMSwgNCkpKQptZXRhIDwtIG15LnNlQG1ldGEuZGF0YQoKYXVndXJfc2V1cmF0ID0gY2FsY3VsYXRlX2F1YyhteS5zZSwgbl90aHJlYWRzID0gOCkKCnNhdmUoYXVndXJfc2V1cmF0LCBmaWxlID0gcGFzdGUwKCJ+L3NwaW5hbF9jb3JkX3BhcGVyL291dHB1dC8iLCBteS5zZUBwcm9qZWN0Lm5hbWUsIl9hdWd1ci5SZGEiKSkKYGBgCgojIFJlc3VsdHMKCmBgYHtyfQoKYXVndXJfc2V1cmF0JEFVQwpyYW5nZShhdWd1cl9zZXVyYXQkQVVDJGF1YykKCmxvbGxpX3NldXJhdCA8LSBwbG90X2xvbGxpcG9wKGF1Z3VyX3NldXJhdCkKCmxvbGxpX3NldXJhdAoKYGBgCgpgYGB7cn0KCnRzbmVfc2V1cmF0IDwtIHBsb3RfdW1hcCgKICBhdWd1cl9zZXVyYXQsCiAgbXkuc2UsCiAgcmVkdWN0aW9uID0gInRzbmUiLAogIHBhbGV0dGUgPSAiaW5mZXJubyIsCiAgdG9wX24gPSBucm93KGF1Z3VyX3NldXJhdCRBVUMpCikKCnRzbmVfc2V1cmF0CmBgYAoKYGBge3J9CnBkZihwYXN0ZTAoIn4vc3BpbmFsX2NvcmRfcGFwZXIvZmlndXJlcy8iLCBteS5zZUBwcm9qZWN0Lm5hbWUsIl9hdWd1cl9wcmlvc190c25lLnBkZiIpLCB3aWR0aCA9IDEwLCBoZWlnaHQgPSA1KQp0c25lX3NldXJhdApsb2xsaV9zZXVyYXQKZGV2Lm9mZigpCmBgYAoKYGBge3J9CiMgRGF0ZSBhbmQgdGltZSBvZiBSZW5kZXJpbmcKU3lzLnRpbWUoKQoKc2Vzc2lvbkluZm8oKQpgYGA=</div>
 
 
 
