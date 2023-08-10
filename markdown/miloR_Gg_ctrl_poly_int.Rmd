@@ -234,7 +234,7 @@ plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0)
 saveRDS(my.milo, paste0("~/spinal_cord_paper/output/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".rds"))
 
 # pdf export figures
-pdf(paste0("~/spinal_cord_paper/figures/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".pdf"), width = 5, height = 4)
+pdf(paste0("~/spinal_cord_paper/figures/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".pdf"), width = 5, height = 5)
 
 dim1 + ggtitle(my.se@project.name)
 dim2 + ggtitle(my.se@project.name)
@@ -247,7 +247,7 @@ DimPlot(my.se,
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = "TSNE") 
+                 layout = "TSNE") + NoLegend() 
 
 DimPlot(my.se,
         reduction = "umap",
@@ -255,7 +255,8 @@ DimPlot(my.se,
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = "UMAP")
+                 layout = "UMAP") + NoLegend() 
+
 plotNhoodSizeHist(my.milo)
 
 ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)

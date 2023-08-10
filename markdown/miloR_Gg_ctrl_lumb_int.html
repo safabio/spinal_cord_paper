@@ -2969,7 +2969,7 @@ head(da.results)</code></pre>
 <pre class="r"><code>saveRDS(my.milo, paste0(&quot;~/spinal_cord_paper/output/&quot;,my.se@project.name ,&quot;_milo_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.rds&quot;))
 
 # pdf export figures
-pdf(paste0(&quot;~/spinal_cord_paper/figures/&quot;,my.se@project.name ,&quot;_milo_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.pdf&quot;), width = 5, height = 4)
+pdf(paste0(&quot;~/spinal_cord_paper/figures/&quot;,my.se@project.name ,&quot;_milo_&quot;,format(Sys.Date(), &quot;%d%m%y&quot;),&quot;.pdf&quot;), width = 5, height = 5)
 
 dim1 + ggtitle(my.se@project.name)
 dim2 + ggtitle(my.se@project.name)
@@ -2982,7 +2982,8 @@ DimPlot(my.se,
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = &quot;TSNE&quot;) 
+                 layout = &quot;TSNE&quot;) + NoLegend()
+
 
 DimPlot(my.se,
         reduction = &quot;umap&quot;,
@@ -2990,7 +2991,8 @@ DimPlot(my.se,
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = &quot;UMAP&quot;)
+                 layout = &quot;UMAP&quot;) + NoLegend()
+
 plotNhoodSizeHist(my.milo)
 
 ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)
@@ -3002,7 +3004,7 @@ plotDAbeeswarm(da.results, group.by = &quot;seurat_clusters&quot;, alpha=1.0)</c
 ##   2</code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2023-07-25 14:57:40 CEST&quot;</code></pre>
+<pre><code>## [1] &quot;2023-08-10 15:46:30 CEST&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.1.0 (2021-05-18)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
