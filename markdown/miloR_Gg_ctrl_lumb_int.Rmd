@@ -256,7 +256,7 @@ DimPlot(my.se,
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
-                 layout = "UMAP") + NoLegend()
+                 layout = "UMAP")
 
 plotNhoodSizeHist(my.milo)
 
