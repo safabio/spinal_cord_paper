@@ -2837,19 +2837,20 @@ for (i in seq(se_path)) {
     rownames_to_column(&quot;rowname&quot;) %&gt;% 
     left_join(annot, by = &quot;seurat_clusters&quot;) %&gt;% 
     mutate(fine = factor(fine, levels = ord_levels)) %&gt;% 
+    mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, &quot;\\d{1,2}$&quot;))) %&gt;% 
     column_to_rownames(&quot;rowname&quot;)
   
   
   
   # without x labs so plots have the same height
   dpl[[i]] &lt;- mDotPlot2(my.se,
-          group.by = &quot;fine&quot;,
+          group.by = &quot;seurat_clusters&quot;,
           features = marker_ID$Gene.stable.ID, 
           gnames = modplots::gnames,
           cols = c(&quot;lightgrey&quot;, &quot;black&quot;)) +
   coord_flip() +
   ggtitle(paste0(my.se@project.name, &quot; marker Dotplot&quot;)) + 
-  theme(axis.text.x = element_blank(),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
   
   # plot to take the annotations from
@@ -2867,7 +2868,7 @@ rm(my.se)
 
 names(dpl) &lt;- str_remove_all(se_path, &quot;_seurat_\\d{6}&quot;)
 names(x_annot) &lt;- str_remove_all(se_path, &quot;_seurat_\\d{6}&quot;)</code></pre>
-<pre class="r"><code>pdf(&quot;~/spinal_cord_paper/figures/dotplots_broad.pdf&quot;, width = 7, height = 5)
+<pre class="r"><code>pdf(&quot;~/spinal_cord_paper/figures/dotplots_broad.pdf&quot;, width = 7, height = 4)
 
 for (i in seq(dpl)) {
   print(dpl[[i]])
@@ -2879,7 +2880,7 @@ dev.off()</code></pre>
   2 </code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>[1] &quot;2023-08-04 16:28:54 CEST&quot;</code></pre>
+<pre><code>[1] &quot;2023-08-11 10:59:28 CEST&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.1.0 (2021-05-18)
 Platform: x86_64-pc-linux-gnu (64-bit)

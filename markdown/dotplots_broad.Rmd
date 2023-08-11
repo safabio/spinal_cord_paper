@@ -108,19 +108,20 @@ for (i in seq(se_path)) {
     rownames_to_column("rowname") %>% 
     left_join(annot, by = "seurat_clusters") %>% 
     mutate(fine = factor(fine, levels = ord_levels)) %>% 
+    mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
     column_to_rownames("rowname")
   
   
   
   # without x labs so plots have the same height
   dpl[[i]] <- mDotPlot2(my.se,
-          group.by = "fine",
+          group.by = "seurat_clusters",
           features = marker_ID$Gene.stable.ID, 
           gnames = modplots::gnames,
           cols = c("lightgrey", "black")) +
   coord_flip() +
   ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
-  theme(axis.text.x = element_blank(),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
   
   # plot to take the annotations from
@@ -142,7 +143,7 @@ names(x_annot) <- str_remove_all(se_path, "_seurat_\\d{6}")
 ```
 
 ```{r}
-pdf("~/spinal_cord_paper/figures/dotplots_broad.pdf", width = 7, height = 5)
+pdf("~/spinal_cord_paper/figures/dotplots_broad.pdf", width = 7, height = 4)
 
 for (i in seq(dpl)) {
   print(dpl[[i]])
