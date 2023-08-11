@@ -179,17 +179,19 @@ corr_heatmap <- pheatmap(tmp,revC = T,
                  main = "D5_ctrl, D7, and D10 ctrl_1 GSI pseudobulk spearman corr\n(intersection of SCT variable features)\nGSI claculation before cbind",
                  fontsize = 8,  
                  color = heat_col(200)[low_limit:200],
-                 show_colnames = F, 
-                 treeheight_row = 0, 
-                 annotation_col = annot_name,
+                 cellwidth = 11,
+                 cellheight = 11,
+                 annotation_col = annot_name, 
+                 annotation_row = annot_name,
                  annotation_colors = annot_col,
                  annotation_legend = F,
                  border_color = NA
                  )
+
 ```
 
 ```{r export}
-pdf("~/spinal_cord_paper/figures/heatmap_spearman_devel.pdf", width = 12, height = 11)
+pdf("~/spinal_cord_paper/figures/heatmap_spearman_devel.pdf", width = 12, height = 12)
 grid.arrange(corr_heatmap[[4]])
 dev.off()
 ```
