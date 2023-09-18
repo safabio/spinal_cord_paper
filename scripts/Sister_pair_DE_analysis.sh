@@ -2,9 +2,9 @@
 
 
 #SBATCH --job-name=Sister_pair_DE_analysis_render
-#SBATCH --time=00:05:00
+#SBATCH --time=00:30:00
 #SBATCH --qos=30min
-#SBATCH --mem=10G
+#SBATCH --mem=20G
 #SBATCH --mail-user=fabio.sacher@unibas.ch
 #SBATCH --mail-type=ALL
 #SBATCH --output ./slurm_out/%x-%j.out

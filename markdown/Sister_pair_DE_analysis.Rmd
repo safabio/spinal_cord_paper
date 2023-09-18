@@ -226,14 +226,14 @@ colnames(sis_annot) <- paste0(c(rep("ctrl_",3),rep("lumb_",3)),
 sis_annot
 ```
 
-```{r, message=FALSE, eval=FALSE}
+```{r, message=FALSE}
 Idents(my.se) <- "annot_sample"
 
 sis_markers <- list()
 
 for (i in seq(nrow(sis_annot))) {
   sis_markers[[i]] <- FindMarkers(
-    my.ses,
+    my.se,
     ident.1 = sis_annot[i, "ctrl_fine"],
     ident.2 = sis_annot[i, "lumb_fine"],
     assay = "RNA",
@@ -254,7 +254,7 @@ for (i in seq(nrow(sis_annot))) {
 
 names(sis_markers) <- paste0(sis_annot$ctrl_fine, "-vs-", sis_annot$lumb_fine)
 
-saveRDS(sis_markers, file = "~/spinal_cord_paper/data/Gg_NT_ctrl_lumb_sis_markers.rds")
+saveRDS(sis_markers, file = "~/spinal_cord_paper/data/Gg_ctrl_lumb_sis_markers.rds")
 ```
 
 # Ctrl vs Poly
@@ -419,7 +419,7 @@ Here we run DE analasys between terminal sister pairs of different origin from t
 # sister pairs
 sis_pairs <- data.frame(
   "ctrl" = c(16, 16, 20, 11, 8),
-  "poly" = c(14, 26, 20, 15, 15)
+  "poly" = c(14, 26, 22, 15, 15)
 ) 
 
 # cell type annotations
@@ -438,14 +438,14 @@ colnames(sis_annot) <- paste0(c(rep("ctrl_",3),rep("poly_",3)),
 sis_annot
 ```
 
-```{r, message=FALSE, eval=FALSE}
+```{r, message=FALSE}
 Idents(my.se) <- "annot_sample"
 
 sis_markers <- list()
 
 for (i in seq(nrow(sis_annot))) {
   sis_markers[[i]] <- FindMarkers(
-    my.ses,
+    my.se,
     ident.1 = sis_annot[i, "ctrl_fine"],
     ident.2 = sis_annot[i, "poly_fine"],
     assay = "RNA",
@@ -466,7 +466,7 @@ for (i in seq(nrow(sis_annot))) {
 
 names(sis_markers) <- paste0(sis_annot$ctrl_fine, "-vs-", sis_annot$poly_fine)
 
-saveRDS(sis_markers, file = "~/spinal_cord_paper/data/Gg_NT_ctrl_poly_sis_markers.rds")
+saveRDS(sis_markers, file = "~/spinal_cord_paper/data/Gg_ctrl_poly_sis_markers.rds")
 ```
 
 ```{r}
