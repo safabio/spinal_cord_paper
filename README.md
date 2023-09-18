@@ -44,6 +44,12 @@ Differential abundance is calculated with [DAseq](https://github.com/KlugerLab/D
 
 -   ***augur_Gg_ctrl_lumb_ctrl_poly_int_array.sh***:  Runs augur between ctrl and lumb, as well as ctrl and poly. 
 
+## Sister Pair DE analysis
+
+This script runs DE analysis of closest neuronal clusters between ctrl & lumb, as well as ctrl & poly. Not only strict sister pairs, but also the next closest cluster from the other sample was considered.
+
+-   ***Sister_pair_DE_analysis_render.sh***: Loads the ctrl, lumbar and poly int data sets, transfers the cluster labels to the ctrl_lumb_int and ctrl_poly_int respectively. Then on the integrated data, DE between the sister pairs (or adjacent clusters) as by the spearman cor heatmaps ordering.
+
 ## Plotting
 
 The following scripts are used to create the plots for the figures, if they are not already produced by the pipelines above:
