@@ -186,6 +186,8 @@ corr_heatmap <- pheatmap(toplot,revC = T,
 pdf("~/spinal_cord_paper/figures/heatmap_spearman_ctrl_lumb_int.pdf", width = 12, height = 11)
 grid.arrange(corr_heatmap[[4]])
 dev.off()
+
+saveRDS(corr_heatmap, file = "~/spinal_cord_paper/output/heatmap_spearman_ctrl_lumb.rds")
 ```
 
 
@@ -276,6 +278,8 @@ corr_heatmap <- pheatmap(toplot,revC = T,
 pdf("~/spinal_cord_paper/figures/heatmap_spearman_ctrl_poly_int.pdf", width = 12, height = 11)
 grid.arrange(corr_heatmap[[4]])
 dev.off()
+
+saveRDS(corr_heatmap, file = "~/spinal_cord_paper/output/heatmap_spearman_ctrl_poly.rds")
 ```
 
 
