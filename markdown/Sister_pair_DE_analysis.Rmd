@@ -418,8 +418,8 @@ Here we run DE analasys between terminal sister pairs of different origin from t
 ```{r}
 # sister pairs
 sis_pairs <- data.frame(
-  "ctrl" = c(16, 16, 20, 11, 8),
-  "poly" = c(14, 26, 22, 15, 15)
+  "ctrl" = c(16, 16, 20, 11, 8, 6),
+  "poly" = c(14, 26, 22, 15, 15, 6)
 ) 
 
 # cell type annotations
