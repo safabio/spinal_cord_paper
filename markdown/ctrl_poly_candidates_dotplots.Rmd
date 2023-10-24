@@ -1,0 +1,140 @@
+---
+title: "Ctrl Poly candidates dotplots"
+author: "Fabio Sacher"
+date: "24.10.2023"
+data:
+output:
+  html_document:
+    df_print: paged
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries}
+library(Seurat)
+library(stringr)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(patchwork)
+library(modplots)
+```
+
+# cluster order
+
+```{r broad-order}
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+```
+
+# Marker Genes
+
+```{r marker genes}
+markers <- rev(c("RUNX1T1",
+                 "RELN",
+                 "SPOCK1"))
+
+marker_ID <- gnames %>% filter(Gene.name %in% markers)
+marker_ID <- marker_ID[match(markers, marker_ID$Gene.name), ]
+```
+
+# Data
+
+```{r data-sets}
+se_path <- c("Gg_ctrl_int_seurat_250723",
+             "Gg_lumb_int_seurat_250723",
+             "Gg_poly_int_seurat_250723")
+```
+
+# Dotplot
+
+```{r dotplots}
+dpl <- list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+    stop("Number of clusters must be identical!")
+  }
+  
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number)
+  
+  ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+  
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    mutate(fine = factor(fine, levels = ord_levels)) %>% 
+    mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
+    column_to_rownames("rowname")
+  
+  
+  
+  # without x labs so plots have the same height
+  dpl[[i]] <- mDotPlot2(my.se,
+                        group.by = "fine",
+                        features = marker_ID$Gene.stable.ID, 
+                        gnames = modplots::gnames) +
+    coord_flip() +
+    ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          plot.title = element_text(hjust = 0.5)) +
+    scale_colour_gradientn(colours = c("gray90","gray80","yellow", "orange", "red", "darkred", "darkred"))
+  
+ 
+}
+
+dpl[[1]]
+dpl[[2]]
+dpl[[3]]
+
+```
+
+# export
+
+```{r export}
+
+pdf("~/spinal_cord_paper/figures/ctrl_poly_candidates_dotplots.pdf", width = 7, height = 5)
+
+for (i in seq(dpl)) {
+  print(dpl[[i]])
+}
+
+dev.off()
+
+
+```
+
+
+```{r Session-info}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
