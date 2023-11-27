@@ -28,6 +28,7 @@ library(dplyr)
 library(ggplot2)
 library(pheatmap)
 library(gridExtra)
+library(patchwork)
 ```
 
 ```{r data-sets}
@@ -49,7 +50,7 @@ We calulate pseudobulk matrices and normalize them with the gene specificity ind
 sct_var <- list()
 pb_gsi <- list()
 col_table <-list()
-
+vlp <- list()
 for (i in seq(se_path)) {
   # load the data sets
   my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
@@ -89,8 +90,8 @@ for (i in seq(se_path)) {
   
   # individual gsi matrices
   pb_gsi[[i]] <- pseu_bulk/rowMeans(pseu_bulk)
-
-}
+  vlp[[i]] <- VlnPlot(my.se, features = "nCount_RNA", y.max = 50000, group.by = "orig.ident", )  +NoLegend()
+} 
 
 names(sct_var) <- c("D05", "D07", "D10")
 names(pb_gsi) <- c("D05", "D07", "D10")
@@ -166,7 +167,7 @@ names(annot_col[[1]]) <- annot_name$Celltypes
 
 GSI over individual samples (before cbind)
 
-```{r ind-gsi-heatmap, fig.height=11, fig.width=12}
+```{r ind-gsi-heatmap, fig.height=16, fig.width=16}
 
 heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
 
@@ -191,7 +192,7 @@ corr_heatmap <- pheatmap(tmp,revC = T,
 ```
 
 ```{r export}
-pdf("~/spinal_cord_paper/figures/heatmap_spearman_devel.pdf", width = 12, height = 12)
+pdf("~/spinal_cord_paper/figures/heatmap_spearman_devel.pdf", width = 16, height = 16)
 grid.arrange(corr_heatmap[[4]])
 dev.off()
 ```
