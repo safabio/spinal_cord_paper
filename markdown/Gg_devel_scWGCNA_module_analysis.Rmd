@@ -535,24 +535,27 @@ mean_AE <- avg.mod.eigengenes %>%
   dplyr::ungroup() %>%
   gather(key="module", value = "AE", -stage_cl) %>%
   dplyr::left_join(mod_annot[, c(1,3)], by = "module") %>%
-  tidyr::separate("stage_cl", c("stage", "broad"), sep = "_", remove = FALSE) %>%
-  dplyr::filter(broad %in% c("progenitors", "neurons", "RP", "FP", "pericytes"))
+  tidyr::separate("stage_cl", c("stage", "broad"), sep = "_", remove = FALSE) 
+# %>%
+  # dplyr::filter(broad %in% c("progenitors", "neurons", "RP", "FP", "pericytes"))
 
 labels_dotplot <- stringr::str_remove(modules_in_order, "^AE")
 names(labels_dotplot) <- modules_in_order
+
+plot_clusters <- c("progenitors", "neurons", "RP", "FP", "pericytes", "OPC", "MFOL", "microglia", "blood")
 
 mean_mod <- ggplot(data = mean_AE,
   aes(
     x = stage,
     y = AE,
-    color = factor(broad, levels = c("progenitors", "neurons", "RP", "FP", "pericytes")),
+    color = factor(broad, levels = plot_clusters),
     group = broad,
     label = annotation
     )
   ) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = c("#edc919", "#cd2b91", "#99ca3c", "#853335", "#f26a2d")) +
+  scale_color_manual(values = clust_col$color[match(plot_clusters, clust_col$broad)]) +
   theme_bw() +
   # facet wrap with reordered factors
   facet_wrap(vars(factor(module, levels = unique(mean_AE$module)[module_order])),
