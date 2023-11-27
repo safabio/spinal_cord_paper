@@ -25,6 +25,7 @@ library(patchwork)
 library(tidyverse)
 library(cowplot)
 library(pheatmap)
+library(gridExtra)
 source("~/Neuraltube/scripts/heatmap4.R")
 
 ```
@@ -716,6 +717,47 @@ v1
 
 pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_stage.pdf", height = 20, width = 20)
 v1
+
+```
+
+# module GO terms barplots
+```{r}
+# Load the top 50 (by limma::topGO) Go term table list from scWGCNA_Gg_devel_int.Rmd
+goterms <- readRDS("~/spinal_cord_paper/output/Gg_devel_int_module_GOTerms_250723.rds")
+# Load the devel module annotations 
+modules <- read.csv("~/spinal_cord_paper/annotations/Gg_devel_int_scWGCNA_module_annotation.csv")
+# Set list names as module number and name (e.g. "1_black")
+names(goterms) <- modules$module
+
+plot_list <- list()
+
+for (i in seq(goterms)) {
+  # Select the darkred module (motor neuron/transmembrane transport)
+  toplot <- goterms[[i]]
+  terms <- as.character(toplot$Term)
+  
+  #Plot the barplot!
+  plot_list[[i]] <- ggplot(toplot, aes(x=Term, y=-log10(P.DE), fill=Ont)) +
+    geom_bar(stat="identity") +
+    scale_fill_manual(values = str_remove(names(goterms)[i], "^\\d{1,2}_")) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          axis.text.y = element_text(size = 5)) +
+    labs(title=paste0("Top GOTerm of module ", names(goterms)[i])) +
+    coord_flip() +
+    geom_hline(yintercept = -log10(0.05), lty = "dashed") +
+    theme_cowplot()
+}
+
+rm(toplot, terms)
+
+names(plot_list) <- modules$module
+
+# Export PDF
+pdf("~/spinal_cord_paper/figures/GO_term_barplot_scWGCNA_Gg_devel_modules.pdf", width = 14, height = 7)
+for (i in seq(goterms)) {
+  grid.arrange(plot_list[[i]])
+}
+dev.off()
 
 ```
 
