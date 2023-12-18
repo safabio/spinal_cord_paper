@@ -84,7 +84,7 @@ gnames <- modplots::gnames
 
 plots <- list()
 
-for (i in seq(data.sets)) {
+for (i in seq(data_sets)) {
   my.se <- readRDS(data_sets[i])
   
   plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 1)
@@ -249,4 +249,47 @@ pheatmap(
   main = "Spearman correlation of CSF probe expression in Poly cl-26"
 )
 dev.off()
+
+##############
+## tsne plots of all CSF-cNS modules overlap
+############## 
+
+data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
+             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
+gnames <- modplots::gnames
+
+plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = overlap, my.slot = "scale.data", size = 0.5, return = TRUE)
+  # set empty legend title
+  for (j in seq(overlap)) {
+    plots[[i]][[j]][["labels"]][["colour"]] <- ""
+  }
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/CSF_overlap_tsne.pdf", width = 18, height = 14)
+grid.arrange(grobs = plots[[1]])
+grid.arrange(grobs = plots[[2]])
+grid.arrange(grobs = plots[[3]])
+dev.off()
+
+rm(data_sets, overlap, gnames, plots)
+
+
+
+
+
+
+
+
+
 
