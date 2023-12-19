@@ -11,6 +11,7 @@ library(ggvenn)
 library(cowplot)
 library(gridExtra)
 library(pheatmap)
+library(patchwork)
 
 # cell highlight cl-26 poly
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
@@ -285,7 +286,55 @@ dev.off()
 rm(data_sets, overlap, gnames, plots)
 
 
+##############
+## tSNE plots of NRP2 (neuropilin 2)
+############## 
 
+
+data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+blend_names <- modplots::gnames %>% 
+  filter(Gene.name %in% c("PKD2L1", "NRP2")) 
+
+plots <- list()
+blend <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = c("PKD2L1","NRP2"), my.slot = "scale.data", size = 0.5)
+  tmp <- FeaturePlot(
+    my.se,
+    reduction = "tsne",
+    features = blend_names$Gene.stable.ID,
+    blend = TRUE,
+    cols = "white",
+    order = TRUE, 
+    combine = FALSE
+  )
+  # create patchwork
+  blend[[i]] <- (tmp[[1]] + tmp[[3]])/
+    (tmp[[2]] + tmp[[4]]) +
+    plot_layout(guides = 'collect')
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/NRP2_tsne.pdf", width = 8, height = 3)
+grid.arrange(plots[[1]])
+grid.arrange(plots[[2]])
+grid.arrange(plots[[3]])
+dev.off()
+
+pdf("~/spinal_cord_paper/figures/NRP2_PKD2L1_blend_tsne.pdf", width = 7, height = 6)
+blend[[1]]
+blend[[2]]
+blend[[3]]
+dev.off()
+
+rm(data_sets, probes, gnames, plots)
 
 
 
