@@ -111,10 +111,10 @@ probes <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
 
 df <- ctrl_wgcna$modules[[17]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>% 
+  dplyr::left_join(gnames) %>% # add gene names 
   arrange(desc(Membership)) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when(
+  mutate(highlight = case_when( # add column with '*' indicating overlap genes
     Gene.name %in% probes ~ "*",
     TRUE ~ ""
   ))
@@ -139,10 +139,10 @@ lumb_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds
 
 df <- lumb_wgcna$modules[[9]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>% 
+  dplyr::left_join(gnames) %>%  # add gene names
   arrange(desc(Membership)) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when(
+  mutate(highlight = case_when( # add column with '*' indicating overlap genes
     Gene.name %in% probes ~ "*",
     TRUE ~ ""
   ))
@@ -167,10 +167,10 @@ poly_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds
 
 df <- poly_wgcna$modules[[16]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>% 
+  dplyr::left_join(gnames) %>%  # add gene names
   arrange(desc(Membership)) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when(
+  mutate(highlight = case_when( # add column with '*' indicating overlap genes
     Gene.name %in% probes ~ "*",
     TRUE ~ ""
   ))
@@ -214,7 +214,7 @@ overlap_subset <- data.frame(t(as.matrix(my.se@assays[["RNA"]]@data[overlap_ids$
 
 # pearson correlation 
 cor_table_pear <- cor(overlap_subset, method = "pear")
-
+# replace gene IDs with gene names
 if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_pear),overlap_ids$Gene.stable.ID)) {
   colnames(cor_table_pear) <- overlap_ids$Gene.name
   rownames(cor_table_pear) <- overlap_ids$Gene.name
@@ -222,13 +222,13 @@ if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(c
 
 # spearman correlation 
 cor_table_spea <- cor(overlap_subset, method = "spear")
-
+# replace gene IDs with gene names
 if (identical(rownames(cor_table_spea),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_spea),overlap_ids$Gene.stable.ID)) {
   colnames(cor_table_spea) <- overlap_ids$Gene.name
   rownames(cor_table_spea) <- overlap_ids$Gene.name
 }
 
-pdf("~/spinal_cord_paper/figures/CSF_probes_poly_cl26_corr_heatmap.pdf", paper = "a4", width = 10, height = 12)
+pdf("~/spinal_cord_paper/figures/CSF_probes_poly_int_corr_heatmap.pdf", paper = "a4", width = 10, height = 12)
 # pearson 
 pheatmap(
   cor_table_pear,
@@ -268,7 +268,7 @@ overlap_subset <- data.frame(t(as.matrix(cl26@assays[["RNA"]]@data[overlap_ids$G
 
 # pearson correlation 
 cor_table_pear <- cor(overlap_subset, method = "pear")
-
+# replace gene IDs with gene names
 if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_pear),overlap_ids$Gene.stable.ID)) {
   colnames(cor_table_pear) <- overlap_ids$Gene.name
   rownames(cor_table_pear) <- overlap_ids$Gene.name
@@ -276,7 +276,7 @@ if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(c
 
 # spearman correlation 
 cor_table_spea <- cor(overlap_subset, method = "spear")
-
+# replace gene IDs with gene names
 if (identical(rownames(cor_table_spea),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_spea),overlap_ids$Gene.stable.ID)) {
   colnames(cor_table_spea) <- overlap_ids$Gene.name
   rownames(cor_table_spea) <- overlap_ids$Gene.name
@@ -388,9 +388,35 @@ dev.off()
 
 rm(data_sets, probes, gnames, plots)
 
+### ### ### ### ### ### ### ### ### ### ###
+#### detailed venn diagram of CSF-module overlap ####
+### ### ### ### ### ### ### ### ### ### ###
 
+wgcna_dat <- c(
+  "~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds",
+  "~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds",
+  "~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds"
+  )
 
+nrp2_id <- gnames$Gene.stable.ID[gnames$Gene.name %in% "NRP2"]
 
+output <- list()
+
+for (i in seq(wgcna_dat)) {
+  my.wgcna <- readRDS(wgcna_dat[3])
+  
+  output[[i]] <- nrp2_id %in% head(unlist(my.wgcna[["module.genes"]]))
+}
+
+print(output)
+# [[1]]
+# [1] FALSE
+# 
+# [[2]]
+# [1] FALSE
+# 
+# [[3]]
+# [1] FALSE
 
 
 
