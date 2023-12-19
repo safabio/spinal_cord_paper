@@ -1,7 +1,7 @@
-##############
-## Additional plots and code for figure 4
+### ### ### ### ### ### ### ### ### ### ###
+#### Additional plots and code for figure 4 ####
 ## Fabio Sacher, 06.12.23
-##############
+### ### ### ### ### ### ### ### ### ### ###
 
 library(Seurat)
 library(ggplot2)
@@ -29,9 +29,9 @@ dev.off()
 
 rm(my.se, p)
 
-##############
-## detailed venn diagram of CSF-module overlap
-##############
+### ### ### ### ### ### ### ### ### ### ###
+#### detailed venn diagram of CSF-module overlap ####
+### ### ### ### ### ### ### ### ### ### ###
 
 wgcna_dat <- list(
   ctrl = readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds"),
@@ -70,9 +70,9 @@ Reduce(intersect, venn)
 
 rm(wgcna_dat)
 
-##############
-## tSNE plots of all 5 in situ probes
-############## 
+### ### ### ### ### ### ### ### ### ### ###
+#### tSNE plots of all 5 in situ probes ####
+### ### ### ### ### ### ### ### ### ### ###
 
 
 data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
@@ -101,9 +101,9 @@ dev.off()
 
 rm(data_sets, probes, gnames, plots)
 
-##############
-## CSF module membership values 
-############## 
+### ### ### ### ### ### ### ### ### ###
+#### CSF module membership values ####
+### ### ### ### ### ### ### ### ### ### 
 
 ctrl_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds")
 
@@ -197,12 +197,64 @@ dev.off()
 
 rm(df, p1, p2, p3)
 
-##############
-## pairwise gene expression correlation in Poly-cl26
-############## 
+### ### ### ### ### ### ### ### ### ### ###
+#### pairwise gene expression correlation in Poly_int ####
+### ### ### ### ### ### ### ### ### ### ###
 
 overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
-            "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
+             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
+gnames <- modplots::gnames
+rownames(gnames) <- gnames$Gene.name
+
+overlap_ids <- gnames[overlap, ]
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
+
+overlap_subset <- data.frame(t(as.matrix(my.se@assays[["RNA"]]@data[overlap_ids$Gene.stable.ID,])))
+
+# pearson correlation 
+cor_table_pear <- cor(overlap_subset, method = "pear")
+
+if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_pear),overlap_ids$Gene.stable.ID)) {
+  colnames(cor_table_pear) <- overlap_ids$Gene.name
+  rownames(cor_table_pear) <- overlap_ids$Gene.name
+}
+
+# spearman correlation 
+cor_table_spea <- cor(overlap_subset, method = "spear")
+
+if (identical(rownames(cor_table_spea),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_spea),overlap_ids$Gene.stable.ID)) {
+  colnames(cor_table_spea) <- overlap_ids$Gene.name
+  rownames(cor_table_spea) <- overlap_ids$Gene.name
+}
+
+pdf("~/spinal_cord_paper/figures/CSF_probes_poly_cl26_corr_heatmap.pdf", paper = "a4", width = 10, height = 12)
+# pearson 
+pheatmap(
+  cor_table_pear,
+  cellwidth = 20,
+  cellheight = 20,
+  display_numbers = TRUE,
+  border_color = NA,
+  main = "Pearson correlation of CSF probe expression in Poly int"
+)
+# spearman
+pheatmap(
+  cor_table_spea,
+  cellwidth = 20,
+  cellheight = 20,
+  display_numbers = TRUE,
+  border_color = NA,
+  main = "Spearman correlation of CSF probe expression in Poly int"
+)
+dev.off()
+
+### ### ### ### ### ### ### ### ### ### ###
+#### pairwise gene expression correlation in Poly-cl26 ####
+### ### ### ### ### ### ### ### ### ### ###
+
+overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
+             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
 gnames <- modplots::gnames
 rownames(gnames) <- gnames$Gene.name
 
@@ -251,9 +303,9 @@ pheatmap(
 )
 dev.off()
 
-##############
-## tsne plots of all CSF-cNS modules overlap
-############## 
+### ### ### ### ### ### ### ### ### ### ###
+#### tsne plots of all CSF-cNS modules overlap ####
+### ### ### ### ### ### ### ### ### ### ###
 
 data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
                "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
@@ -286,9 +338,9 @@ dev.off()
 rm(data_sets, overlap, gnames, plots)
 
 
-##############
-## tSNE plots of NRP2 (neuropilin 2)
-############## 
+### ### ### ### ### ### ### ### ### ### ###
+#### tSNE plots of NRP2 (neuropilin 2) ####
+### ### ### ### ### ### ### ### ### ### ###
 
 
 data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
