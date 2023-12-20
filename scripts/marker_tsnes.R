@@ -131,5 +131,52 @@ dev.off()
 rm(probes, gnames, plots)
 
 
+### ### ### ### ### ### ### ### ### ### ###
+#### tSNE plots of ribosomal percent  ####
+### ### ### ### ### ### ### ### ### ### ###
 
+# The goal is to see the extent of Lumbar MNs
 
+data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+gnames <- modplots::gnames
+
+plots <- list()
+vln_plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- FeaturePlot(
+    my.se,
+    features = "percent.rb",
+    reduction = "tsne",
+    order = TRUE,
+    pt.size = 0.5,
+    cols = c(
+      "gray90",
+      "gray90",
+      "gray80",
+      "yellow",
+      "orange",
+      "red",
+      "darkred",
+      "darkred"
+    ))
+  
+  vln_plots[[i]] <- VlnPlot(my.se, "percent.rb")
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/Ribo_percent_plots.pdf", width = 7, height = 7)
+grid.arrange(plots[[1]])
+grid.arrange(vln_plots[[1]])
+grid.arrange(plots[[2]])
+grid.arrange(vln_plots[[2]])
+grid.arrange(plots[[3]])
+grid.arrange(vln_plots[[3]])
+dev.off()
+
+rm(probes, gnames, plots)
