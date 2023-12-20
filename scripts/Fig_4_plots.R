@@ -7,11 +7,14 @@ library(Seurat)
 library(ggplot2)
 library(modplots)
 library(dplyr)
+library(tibble)
+library(stringr)
 library(ggvenn)
 library(cowplot)
 library(gridExtra)
 library(pheatmap)
 library(patchwork)
+library(scWGCNA)
 
 # cell highlight cl-26 poly
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
@@ -417,6 +420,98 @@ print(output)
 # 
 # [[3]]
 # [1] FALSE
+
+### ### ### ### ### ### ### ### ### ### ###
+#### cl-26 poly module salmon expression ####
+### ### ### ### ### ### ### ### ### ### ###
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+my.wgcna <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
+
+avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
+
+if (identical(rownames(my.se[[]]), rownames(avgExp))) {
+  my.se <- AddMetaData(my.se, avgExp)
+}
+# cluster color and marker table
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
+# cluster annotation
+annot <- read.csv("~/spinal_cord_paper/annotations/Gg_poly_int_cluster_annotation.csv")
+
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+
+# rename for left join
+annot <- annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+  rename(seurat_clusters = number)
+
+ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+
+# add cluster annotation to meta data
+my.se@meta.data <- my.se@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(annot, by = "seurat_clusters") %>% 
+  mutate(fine = factor(fine, levels = ord_levels)) %>% 
+  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
+  column_to_rownames("rowname")
+# color palette
+col_plot <- c(rep("#edc919", 8),
+              "#853335",
+              rep("#99ca3c", 2),
+              rep("#cd2b91", 8),
+              rep("#008cb5", 6),
+              "#333399","#f26a2d",
+              "#000000","#bebebe","#996633")
+
+# violin plot of module salmon expression by cluster
+pdf("~/spinal_cord_paper/figures/poly_module_salmon_vln_plot.pdf", width = 10, height = 6)
+  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot) +
+    ggtitle("AEsalmon avgExp by cell across poly_int clusters")
+  
+  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
+    geom_boxplot() +
+    ggtitle("AEsalmon avgExp by cell across poly_int clusters with boxplot")
+  
+  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
+    scale_y_log10() +
+    ggtitle("AEsalmon avgExp by cell across poly_int clusters (log scale, 0 removed")
+dev.off()
+
+# 3D plot of module salmon expression
+library(plotly)
+library(htmlwidgets)
+
+x_tsne <- my.se@reductions[["tsne"]]@cell.embeddings[,"tsne_1"]
+y_tsne <- my.se@reductions[["tsne"]]@cell.embeddings[,"tsne_2"]
+salmon <- my.se[[]]$AEsalmon
+
+saveWidget(
+  plot_ly(
+    x = x_tsne,
+    y = y_tsne,
+    z = salmon,
+    type = "scatter3d",
+    mode = "markers",
+    color = salmon,
+    size = 1,
+    alpha_stroke = 1,
+    colors = c("#E5E5E5", "#FA8072")
+  ),
+  file = "~/spinal_cord_paper/figures/poly_mod_salmon_3d.html")
+
 
 
 
