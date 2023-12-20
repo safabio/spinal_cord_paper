@@ -512,6 +512,139 @@ saveWidget(
   ),
   file = "~/spinal_cord_paper/figures/poly_mod_salmon_3d.html")
 
+### ### ### ### ### ### ### ### ### ### ###
+#### lumb module darkmagent expression ####
+### ### ### ### ### ### ### ### ### ### ###
 
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
 
+my.wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
 
+avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
+
+if (identical(rownames(my.se[[]]), rownames(avgExp))) {
+  my.se <- AddMetaData(my.se, avgExp)
+}
+# cluster color and marker table
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
+# cluster annotation
+annot <- read.csv("~/spinal_cord_paper/annotations/Gg_lumb_int_cluster_annotation.csv")
+
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+
+# rename for left join
+annot <- annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+  rename(seurat_clusters = number)
+
+ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+
+# add cluster annotation to meta data
+my.se@meta.data <- my.se@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(annot, by = "seurat_clusters") %>% 
+  mutate(fine = factor(fine, levels = ord_levels)) %>% 
+  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
+  column_to_rownames("rowname")
+# color palette
+col_plot <- c(rep("#edc919", 9),
+              "#853335",
+              rep("#99ca3c", 2),
+              rep("#cd2b91", 7),
+              rep("#008cb5", 5),
+              "#333399","#f26a2d",
+              "#000000","#bebebe","#996633")
+
+# violin plot of module salmon expression by cluster
+pdf("~/spinal_cord_paper/figures/lumb_module_darkmagenta_vln_plot.pdf", width = 10, height = 6)
+VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot) +
+  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters")
+
+VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
+  geom_boxplot() +
+  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters with boxplot")
+
+VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
+  scale_y_log10() +
+  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters (log scale, 0 removed)")
+dev.off()
+
+### ### ### ### ### ### ### ### ### ### ###
+#### ctrl module royalblue expression ####
+### ### ### ### ### ### ### ### ### ### ###
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+
+my.wgcna <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds")
+
+avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
+
+if (identical(rownames(my.se[[]]), rownames(avgExp))) {
+  my.se <- AddMetaData(my.se, avgExp)
+}
+# cluster color and marker table
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
+# cluster annotation
+annot <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv")
+
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+
+# rename for left join
+annot <- annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+  rename(seurat_clusters = number)
+
+ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+
+# add cluster annotation to meta data
+my.se@meta.data <- my.se@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(annot, by = "seurat_clusters") %>% 
+  mutate(fine = factor(fine, levels = ord_levels)) %>% 
+  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
+  column_to_rownames("rowname")
+# color palette
+col_plot <- c(rep("#edc919", 6),
+              "#00ff00",
+              rep("#cd2b91", 5),
+              rep("#008cb5", 6),
+              rep("#333399", 2),
+              "#f26a2d","#bebebe","#996633")
+
+# violin plot of module salmon expression by cluster
+pdf("~/spinal_cord_paper/figures/ctrl_module_royalblue_vln_plot.pdf", width = 10, height = 6)
+VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot) +
+  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters")
+
+VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
+  geom_boxplot() +
+  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters with boxplot")
+
+VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
+  scale_y_log10() +
+  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters (log scale, 0 removed)")
+dev.off()
