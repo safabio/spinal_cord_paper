@@ -74,7 +74,7 @@ Reduce(intersect, venn)
 rm(wgcna_dat)
 
 ### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of all 5 in situ probes ####
+#### tSNE plots of all 4 in situ probes ####
 ### ### ### ### ### ### ### ### ### ### ###
 
 
@@ -82,7 +82,8 @@ data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
                "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
                "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
 
-probes <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
+# PKD2L1 is already in figure 4
+probes <- c("GATA2","CACNA1G","SFRP5","CRTAC1")
 
 gnames <- modplots::gnames
 
@@ -91,15 +92,40 @@ plots <- list()
 for (i in seq(data_sets)) {
   my.se <- readRDS(data_sets[i])
   
-  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 1)
+  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 1, return = TRUE)
   
   rm(my.se)
 }
 
-pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 12, height = 7)
-  grid.arrange(plots[[1]])
-  grid.arrange(plots[[2]])
-  grid.arrange(plots[[3]])
+pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 12, height = 8)
+  
+(plots[[1]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
+    NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[1]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[1]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[1]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[2]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[2]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[2]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[1]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[3]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[3]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[3]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
+  (plots[[3]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
+
+
 dev.off()
 
 rm(data_sets, probes, gnames, plots)
@@ -307,7 +333,7 @@ pheatmap(
 dev.off()
 
 ### ### ### ### ### ### ### ### ### ### ###
-#### tsne plots of all CSF-cNS modules overlap ####
+#### tSNE plots of all CSF-cNS modules overlap ####
 ### ### ### ### ### ### ### ### ### ### ###
 
 data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
@@ -359,7 +385,7 @@ blend <- list()
 for (i in seq(data_sets)) {
   my.se <- readRDS(data_sets[i])
   
-  plots[[i]] <- mFeaturePlot(my.se, my.features = c("PKD2L1","NRP2"), my.slot = "scale.data", size = 0.5)
+  plots[[i]] <- mFeaturePlot(my.se, my.features = c("PKD2L1","NRP2"), my.slot = "scale.data", size = 0.5, return = TRUE)
   tmp <- FeaturePlot(
     my.se,
     reduction = "tsne",
@@ -377,10 +403,20 @@ for (i in seq(data_sets)) {
   rm(my.se)
 }
 
-pdf("~/spinal_cord_paper/figures/NRP2_tsne.pdf", width = 8, height = 3)
-grid.arrange(plots[[1]])
-grid.arrange(plots[[2]])
-grid.arrange(plots[[3]])
+pdf("~/spinal_cord_paper/figures/NRP2_tsne.pdf", width = 6, height = 8)
+(plots[[1]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
+    NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  (plots[[1]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  (plots[[2]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  (plots[[2]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  (plots[[3]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  (plots[[3]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
+     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
+  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
 dev.off()
 
 pdf("~/spinal_cord_paper/figures/NRP2_PKD2L1_blend_tsne.pdf", width = 7, height = 6)
@@ -389,11 +425,11 @@ blend[[2]]
 blend[[3]]
 dev.off()
 
-rm(data_sets, probes, gnames, plots)
+rm(data_sets, plots)
 
-### ### ### ### ### ### ### ### ### ### ###
-#### detailed venn diagram of CSF-module overlap ####
-### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ###
+#### NRP2 in WGCNA ####
+### ### ### ### ### ###
 
 wgcna_dat <- c(
   "~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds",
