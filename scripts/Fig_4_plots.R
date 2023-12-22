@@ -113,7 +113,7 @@ pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 12, height = 8)
      NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
   (plots[[2]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
      NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
+  (plots[[2]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
      NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
   (plots[[3]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
      NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
