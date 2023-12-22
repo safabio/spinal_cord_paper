@@ -51,6 +51,7 @@ clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colo
 
 ```{r}
 tsne_plots <- list()
+fine_tsne_plots <- list()
 cell_numbers <- list()
 
 for (i in seq(se_path)) {
@@ -98,6 +99,26 @@ for (i in seq(se_path)) {
     annotate(
       "text",
       label = paste0("broad ", se_path[i]),
+      x = 0,
+      y = 0,
+      angle = 45
+    )
+  
+  #fine clustering plots
+  fine_tsne_plots[[i]] <- DimPlot(
+    object = my.se,
+    reduction = "tsne",
+    group.by = "seurat_clusters",
+    cols = rainbow(length(table(my.se$seurat_clusters))),
+    label = TRUE,
+    label.size = 5
+    ) +
+    ggtitle(NULL)+
+    theme_void() +
+    NoLegend() +
+    annotate(
+      "text",
+      label = paste0("fine ", se_path[i]),
       x = 0,
       y = 0,
       angle = 45
@@ -174,6 +195,17 @@ ggsave(
 
 ```
 
+```{r fine_tsne-plots, fig.width = 10, fig.height = 10}
+
+grid.arrange(grobs = fine_tsne_plots)
+
+ggsave(
+   filename = "~/spinal_cord_paper/figures/fine_tsne_plots.pdf",
+   width = 7, height = 7,
+   plot = marrangeGrob(fine_tsne_plots, nrow=1, ncol=1, top = NULL)
+)
+
+```
 
 ```{r}
 # Date and time of Rendering
