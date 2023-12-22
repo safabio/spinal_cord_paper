@@ -1,0 +1,236 @@
+---
+title: "Module expression of the ctrl, lumb, or poly_int modules"
+author: "Fabio Sacher"
+date: "04.08.2023"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+Render this report with ~/spinal_cord_paper/scripts/Gg_int_scWGCNA_module_analysis_render.sh.
+
+```{r setup}
+library(Seurat)
+library(WGCNA)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(patchwork)
+library(tidyverse)
+library(cowplot)
+library(gridExtra)
+library(pheatmap)
+source("~/Neuraltube/scripts/heatmap4.R")
+```
+
+# 
+
+```{r data-sets}
+se_path <- c("Gg_ctrl_int_seurat_250723",
+             "Gg_lumb_int_seurat_250723",
+             "Gg_poly_int_seurat_250723")
+
+wg_path <- c("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds",
+             "~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds",
+             "~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
+
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
+  rename(broad = broad_cluster) %>% 
+  select(-marker)
+
+```
+
+Order of the broad clusters for plotting purposes.
+
+```{r ordering}
+broad_order <- c("progenitors",
+      "FP",
+      "RP",
+      "FP/RP",
+      "neurons",
+      "OPC",
+      "MFOL",
+      "pericytes",
+      "microglia",
+      "blood",
+      "vasculature"
+      )
+```
+
+```{r seurat-objects-and-annotations}
+
+vplots <- list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+     stop("Number of clusters must be identical!")
+  }
+  
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number) 
+  
+  # cluster order for vln plots
+  ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+  
+  # create index for color coding
+  col_table <- annot %>%
+    left_join(clust_col, by = "broad") %>% 
+    select(c("fine", "color"))
+  
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    mutate(fine = factor(fine, levels = annot$fine)) %>% 
+    column_to_rownames("rowname")
+
+  # WGCNA data
+  my.wgcna = readRDS(wg_path[[i]])
+  
+
+  my.datExpr = data.frame(my.se@assays$RNA@data)
+  
+  # Make a new list
+  my.MEs = my.wgcna[["sc.MEList"]]
+    
+  #Calculate average of expression, per sample and cell cluster
+  my.modavg = aggregate(
+        my.MEs$averageExpr,
+        list(my.se@meta.data$seurat_clusters),
+        mean
+        )
+  # Give the cell clusters meaningful names
+  rownames(my.modavg) <-
+  levels(my.se@meta.data$fine)
+  
+  #Get rid of the extra column
+  my.modavg = data.frame(my.modavg[,-1])
+  
+  #Get a dataframe with annotations for all the samples and colors we need.
+  my.metam <- my.se[[]]
+  
+  my.metam <- my.metam %>% 
+    tibble::rownames_to_column(var = "cell_ID") %>%
+    dplyr::left_join(col_table, by = "fine") %>%
+    tibble::column_to_rownames(var = "cell_ID")
+  
+  #The colors for the samples and clusters. First the closest to the heatmap. Add a white space to easy the eye and make less confussing
+  my.heatcols = as.matrix(data.frame(
+      cluster= as.character(col_table$color[match(rownames(my.modavg), col_table$fine)]))
+      )
+  
+  # names and colors for the heatmap annotation
+  annot_name <- data.frame(
+    "Celltypes" = col_table$fine,
+    row.names = col_table$fine)
+  
+  annot_col <- list(
+    Celltypes = col_table$color
+    )
+  
+  names(annot_col[[1]]) <- annot_name$Celltypes
+  
+  heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
+
+  #Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
+  my.hclust = hclust(as.dist(1-cor(t(my.modavg), method = "spearman")))
+  
+  # lower limit to scale color bar
+  low_limit <- 100 - abs(round(range(cor(t(my.modavg), method = "spearman"))[1]*100))
+  
+  pheatmap(cor(t(my.modavg), method = "spearman"),revC = T,
+                   main = "spearman correlation of average module eigengene expression by cluster\n Dendrogram based on 'distance 1-cor'",
+                   fontsize = 8,  
+                   color = heat_col(200)[low_limit:200],
+                   show_colnames = F,
+                   cluster_rows = my.hclust,
+                   cluster_cols = my.hclust,
+                   cellwidth = 10,
+                   cellheight = 10,
+                   treeheight_row = 0, 
+                   annotation_col = annot_name,
+                   annotation_colors = annot_col,
+                   annotation_legend = F,
+                   border_color = NA
+                   )
+  
+  my.colcols = as.matrix(names(table(my.wgcna$dynamicCols)))
+  
+  htmp <- heatmap.4(as.matrix(my.modavg),
+            col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
+            trace="none",
+            main = se_path[i],
+            scale = "row",
+            margins = c(10,10),
+            ColSideColors = my.colcols, 
+            RowSideColors = t(my.heatcols))
+ 
+  pdf(paste0("~/spinal_cord_paper/figures/", se_path[i], "_modules_v_cluster.pdf"))
+  heatmap.4(as.matrix(my.modavg),
+            col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
+            trace="none",
+            main = se_path[i],
+            scale = "row",
+            margins = c(10,10),
+            ColSideColors = my.colcols, 
+            RowSideColors = t(my.heatcols))
+  dev.off()
+  
+  module_order <- htmp[["colInd"]]
+
+   
+  avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
+
+  if (identical(rownames(my.se[[]]), rownames(avgExp))) {
+    my.se <- AddMetaData(my.se, avgExp)
+  }
+
+  
+  my.se$seurat_clusters <- factor(
+  my.se$seurat_clusters,
+  levels = levels(my.se$seurat_clusters)[as.integer(str_extract(ord_levels, "\\d{1,2}$"))]
+  )
+
+  mods <- colnames(my.se[[]])[grep("^AE",colnames(my.se[[]]))]
+    
+  vplots[[i]] <- VlnPlot(
+        my.se,
+        features = mods[module_order],
+        group.by = "seurat_clusters",
+        stack = TRUE, flip = TRUE,
+        cols = substring(mods, 3)[module_order]) +
+    theme(legend.position = "none") +
+    geom_hline(yintercept = 0, lty = "dashed")
+}
+
+
+pdf("~/spinal_cord_paper/figures/Gg_int_module_AE_by_cluster_modcol.pdf", height = 20, width = 10,)
+vplots[[1]]
+vplots[[2]]
+vplots[[3]]
+dev.off()
+
+```
+
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
