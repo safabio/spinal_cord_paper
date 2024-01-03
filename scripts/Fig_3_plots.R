@@ -130,22 +130,22 @@ venn_cilia = list(ctrl_purple = ctrl_purple$Gene.name,
                   lumb_yellow = lumb_yellow$Gene.name, 
                   poly_black = poly_black$Gene.name)
 
-p_lab_rp <- ggvenn(venn_rp, fill_color = c("greenyellow", "darkred", "purple"), show_elements = TRUE) +
+p_lab_rp <- ggvenn(venn_rp, fill_color = c("greenyellow", "darkred", "purple"), show_elements = TRUE, text_size = 2) +
   ggtitle("Roof plate modules D10 int")
 p_rp <- ggvenn(venn_rp, fill_color = c("greenyellow", "darkred", "purple")) +
   ggtitle("Roof plate modules D10 int")
 
-p_lab_fp <- ggvenn(venn_fp, fill_color = c("tan", "lightgreen", "lightgreen"), show_elements = TRUE) +
+p_lab_fp <- ggvenn(venn_fp, fill_color = c("tan", "lightgreen", "lightgreen"), show_elements = TRUE, text_size = 2) +
   ggtitle("Floor plate modules D10 int")
 p_fp <- ggvenn(venn_fp, fill_color = c("tan", "lightgreen", "lightgreen")) +
   ggtitle("Floor plate modules D10 int")
 
-p_lab_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black"), show_elements = TRUE) +
+p_lab_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black"), show_elements = TRUE, text_size = 2) +
   ggtitle("Cilia/Flagella modules D10 int")
 p_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black")) +
   ggtitle("Cilia/Flagella modules D10 int")
 
-pdf("~/spinal_cord_paper/figures/RP_FP_cilia_modules_venn_D10.pdf", width = 10, height = 10)
+pdf("~/spinal_cord_paper/figures/RP_FP_cilia_modules_venn_D10.pdf", width = 7, height = 7)
 p_lab_rp
 p_rp
 p_lab_fp
