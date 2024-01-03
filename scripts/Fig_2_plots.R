@@ -105,18 +105,12 @@ p <-
   FeaturePlot(
     my.se,
     features = c("AEgreenyellow", "AEtan"),
+    cols = c("grey90", "greenyellow", "tan"),
     blend = TRUE,
     reduction = "tsne",
     order = TRUE,
     combine = FALSE
   )
-
-p[[3]]
-
-p[[3]] +
-  ylim(c(55,80)) + 
-  xlim(c(18,32))
-
 
 p_cl17 <-
   FeaturePlot(
@@ -134,4 +128,7 @@ p_cl17 <-
 pdf("~/spinal_cord_paper/figures/Ctrl_int_RP_FP_module_overlap.pdf", width = 8, height = 7)
 (p_cl17[[1]] + p_cl17[[2]])/
   (p_cl17[[4]] + p_cl17[[3]])
+
+(p[[1]] + p[[2]])/
+  (p[[4]] + p[[3]])
 dev.off()
