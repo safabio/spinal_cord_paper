@@ -132,3 +132,66 @@ pdf("~/spinal_cord_paper/figures/Ctrl_int_RP_FP_module_overlap.pdf", width = 8, 
 (p[[1]] + p[[2]])/
   (p[[4]] + p[[3]])
 dev.off()
+
+### ### ### ### ### ### ### ### ### ### ### ### ###
+#### tSNE plots of RP/FP/cilia modules overlap ####
+### ### ### ### ### ### ### ### ### ### ### ### ###
+
+data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+# RP overlap
+RP_overlap <- c("GYG2","COL1A2","GDF10","ENSGALG00000052026","LMX1A","OLFML3",
+             "WNT3A","ENSGALG00000033591","KLHDC8B","UTRN","TSPAN18")
+
+gnames <- modplots::gnames
+
+plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = RP_overlap, my.slot = "data", size = 0.5, return = TRUE)
+  # set empty legend title
+  for (j in seq(RP_overlap)) {
+    plots[[i]][[j]][["labels"]][["colour"]] <- ""
+  }
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/RP_module_overlap_tsne.pdf", width = 18, height = 14)
+grid.arrange(grobs = plots[[1]])
+grid.arrange(grobs = plots[[2]])
+grid.arrange(grobs = plots[[3]])
+dev.off()
+
+# FP overlap
+FP_overlap <- c("ASB9","SLC6A4","ECM2","CNP1","TLL1","NTN1",
+                "SHH","HPGDS","PTGDS","EXFABP","KRT24","CMTM8","ADIPOQ")
+
+plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = FP_overlap, my.slot = "data", size = 0.5, return = TRUE)
+  # set empty legend title
+  for (j in seq(FP_overlap)) {
+    plots[[i]][[j]][["labels"]][["colour"]] <- ""
+  }
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/FP_module_overlap_tsne.pdf", width = 18, height = 14)
+grid.arrange(grobs = plots[[1]])
+grid.arrange(grobs = plots[[2]])
+grid.arrange(grobs = plots[[3]])
+dev.off()
+
+rm(data_sets, RP_overlap, FP_overlap, gnames, plots)
+
+
+
