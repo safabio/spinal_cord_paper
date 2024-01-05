@@ -25,6 +25,7 @@ library(tibble)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
+library(patchwork)
 ```
 
 ```{r seurat-objects}
@@ -111,7 +112,7 @@ for (i in seq(se_path)) {
     group.by = "seurat_clusters",
     cols = rainbow(length(table(my.se$seurat_clusters))),
     label = TRUE,
-    label.size = 5
+    label.size = 3
     ) +
     ggtitle(NULL)+
     theme_void() +
@@ -206,6 +207,32 @@ ggsave(
 )
 
 ```
+
+
+## Supplementary figure 3
+
+Code to plot broad and fine clusters of all individual non integrated data sets. Exports raster to save space.
+
+```{r supp_fig_3}
+
+for (i in seq(tsne_plots)) {
+  tsne_plots[[i]]$layers[[3]] <- NULL # remove annot text 
+  tsne_plots[[i]]$layers[[2]] <- NULL # remove labels
+  fine_tsne_plots[[i]]$layers[[3]] <- NULL # remove annot text
+}
+
+pdf("~/spinal_cord_paper/figures/Supplementary_Figure_3.pdf", width = 10, height = 10)
+tsne_plots[[1]] + tsne_plots[[2]] + tsne_plots[[3]] + tsne_plots[[4]] +
+  tsne_plots[[6]] + tsne_plots[[7]] + tsne_plots[[9]] + tsne_plots[[10]] +
+  fine_tsne_plots[[1]] + fine_tsne_plots[[2]] + fine_tsne_plots[[3]] + fine_tsne_plots[[4]] +
+  fine_tsne_plots[[6]] + fine_tsne_plots[[7]] + fine_tsne_plots[[9]] + fine_tsne_plots[[10]] + 
+  plot_layout(ncol = 4, byrow = TRUE) +
+  plot_annotation(tag_levels = 'A')
+dev.off()
+
+```
+
+
 
 ```{r}
 # Date and time of Rendering
