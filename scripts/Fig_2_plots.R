@@ -193,5 +193,38 @@ dev.off()
 
 rm(data_sets, RP_overlap, FP_overlap, gnames, plots)
 
+### ### ### ### ### ### ### ### ###
+#### cluster sizes bar plots ####
+### ### ### ### ### ### ### ### ###
+
+
+my.se <- list()
+# load seurat objects
+my.se[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+my.se[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+my.se[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+names(my.ses) <- c("ctrl_int", "lumb_int", "poly_int")
+
+plots <- list()
+
+for (i in seq_along(my.se)) {
+  # cluster ids and id summary (frequency table)
+  cl_sizes <- data.frame(cluster = my.se[[i]]$seurat_clusters)
+  # plot cluster size 
+  plots[[i]] <- ggplot(cl_sizes, aes(x = cluster)) +
+    geom_bar(fill = "lightgrey", color = "black",stat = "count") + 
+    stat_count(geom = "text", colour = "black", size = 2.5,
+               aes(label = ..count..),position=position_stack(vjust=0.5)) +
+    ggtitle(names(my.se)[i]) +
+    theme_cowplot()
+  
+}
+
+grid.arrange(grobs = plots, ncol = 1)
+
+pdf(file = "~/spinal_cord_paper/figures/Int_data_cluster_sizes.pdf", height = 13)
+grid.arrange(grobs = plots, ncol = 1)
+dev.off()
 
 
