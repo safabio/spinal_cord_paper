@@ -1,39 +1,16 @@
 ### ### ### ### ### ### ### ### ### ### ###
 #### Additional plots and code for figure 4 ####
-## Fabio Sacher, 06.12.23
+## Fabio Sacher, 03.01.2024
 ### ### ### ### ### ### ### ### ### ### ###
+
 
 library(Seurat)
-library(ggplot2)
-library(modplots)
 library(dplyr)
-library(tibble)
 library(stringr)
-library(ggvenn)
-library(cowplot)
-library(gridExtra)
-library(pheatmap)
-library(patchwork)
-library(scWGCNA)
-
-# cell highlight cl-26 poly
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
-
-p <- DimPlot(my.se,
-             reduction = "tsne",
-             cells.highlight = WhichCells(my.se, idents = "26"),
-             cols.highlight = "black") +
-  theme_minimal() +
-  NoLegend()
-
-pdf("~/spinal_cord_paper/figures/Gg_int_poly_cl26_highlight_tsne.pdf", width = 10, height = 10)
-p
-dev.off()
-
-rm(my.se, p)
+library(ggplot2)
 
 ### ### ### ### ### ### ### ### ### ### ###
-#### detailed venn diagram of CSF-module overlap ####
+#### detailed venn diagram of RP and FP module overlap ####
 ### ### ### ### ### ### ### ### ### ### ###
 
 wgcna_dat <- list(
@@ -43,583 +20,74 @@ wgcna_dat <- list(
 )
 
 # get the module genes
-ctrl_royalb <- wgcna_dat[[1]]$module.genes[[17]]
-lumb_darkma <- wgcna_dat[[2]]$module.genes[[9]]
-poly_salmon <- wgcna_dat[[3]]$module.genes[[16]]
+ctrl_greenyellow  <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[1]]$module.genes[[7]]) 
+ctrl_tan          <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[1]]$module.genes[[19]]) 
+ctrl_purple       <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[1]]$module.genes[[15]]) 
 
-ctrl_names <- modplots::gnames %>% 
-  filter(Gene.stable.ID %in% ctrl_royalb) 
+lumb_darkred      <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[2]]$module.genes[[13]])
+lumb_lightgreen   <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[2]]$module.genes[[23]])
+lumb_yellow       <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[2]]$module.genes[[49]])
 
-lumb_names <- modplots::gnames %>% 
-  filter(Gene.stable.ID %in% lumb_darkma) 
+poly_purple       <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[3]]$module.genes[[14]])
+poly_ligthgreen   <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[3]]$module.genes[[9]])
+poly_black        <- modplots::gnames %>% 
+  filter(Gene.stable.ID %in% wgcna_dat[[3]]$module.genes[[1]])
 
-poly_names <- modplots::gnames %>% 
-  filter(Gene.stable.ID %in% poly_salmon) 
+venn_rp = list(ctrl_greenyellow = ctrl_greenyellow$Gene.name,
+               lumb_darkred = lumb_darkred$Gene.name, 
+               poly_purple = poly_purple$Gene.name)
+
+venn_fp = list(ctrl_tan = ctrl_tan$Gene.name,
+               lumb_lightgreen = lumb_lightgreen$Gene.name, 
+               poly_ligthgreen = poly_ligthgreen$Gene.name)
 
 
-venn = list(ctrl_royalb = ctrl_names$Gene.name,
-            lumb_darkma = lumb_names$Gene.name, 
-            poly_salmon = poly_names$Gene.name)
+venn_cilia = list(ctrl_purple = ctrl_purple$Gene.name,
+                  lumb_yellow = lumb_yellow$Gene.name, 
+                  poly_black = poly_black$Gene.name)
 
-p_lab <- ggvenn(venn, fill_color = c("royalblue", "darkmagenta", "salmon"), show_elements = TRUE)
-p <- ggvenn(venn, fill_color = c("royalblue", "darkmagenta", "salmon"))
+p_lab_rp <- ggvenn(venn_rp, fill_color = c("greenyellow", "darkred", "purple"), show_elements = TRUE, text_size = 2) +
+  ggtitle("Roof plate modules D10 int")
+p_rp <- ggvenn(venn_rp, fill_color = c("greenyellow", "darkred", "purple")) +
+  ggtitle("Roof plate modules D10 int")
 
-pdf("~/spinal_cord_paper/figures/CSF-cNS_modules_venn.pdf", width = 10, height = 10)
-p_lab
-p
+p_lab_fp <- ggvenn(venn_fp, fill_color = c("tan", "lightgreen", "lightgreen"), show_elements = TRUE, text_size = 2) +
+  ggtitle("Floor plate modules D10 int")
+p_fp <- ggvenn(venn_fp, fill_color = c("tan", "lightgreen", "lightgreen")) +
+  ggtitle("Floor plate modules D10 int")
+
+p_lab_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black"), show_elements = TRUE, text_size = 2) +
+  ggtitle("Cilia/Flagella modules D10 int")
+p_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black")) +
+  ggtitle("Cilia/Flagella modules D10 int")
+
+pdf("~/spinal_cord_paper/figures/RP_FP_cilia_modules_venn_D10.pdf", width = 7, height = 7)
+p_lab_rp
+p_rp
+p_lab_fp
+p_fp
+p_lab_cilia
+p_cilia
 dev.off()
 
-Reduce(intersect, venn)
+Reduce(intersect, venn_rp)
+Reduce(intersect, venn_fp)
+Reduce(intersect, venn_cilia)
+
 
 rm(wgcna_dat)
 
-### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of all 4 in situ probes ####
-### ### ### ### ### ### ### ### ### ### ###
-
-
-data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
-
-# PKD2L1 is already in figure 4
-probes <- c("GATA2","CACNA1G","SFRP5","CRTAC1")
-
-gnames <- modplots::gnames
-
-plots <- list()
-
-for (i in seq(data_sets)) {
-  my.se <- readRDS(data_sets[i])
-  
-  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 1, return = TRUE)
-  
-  rm(my.se)
-}
-
-pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 12, height = 8)
-  
-(plots[[1]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-    NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
-
-
-dev.off()
-
-rm(data_sets, probes, gnames, plots)
-
-### ### ### ### ### ### ### ### ### ###
-#### CSF module membership values ####
-### ### ### ### ### ### ### ### ### ### 
-
-ctrl_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds")
-
-probes <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
-
-df <- ctrl_wgcna$modules[[17]] %>% 
-  tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>% # add gene names 
-  arrange(desc(Membership)) %>% 
-  mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
-    TRUE ~ ""
-  ))
-
-p1 <- ggplot(df, aes(x = Gene.name,
-                     y = Membership,
-                     label = signif(Membership,3))) +
-  geom_col(fill = "royalblue", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
-  xlab("Module genes") +
-  ylab("Module Membership") +
-  theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 17_royalblue gene Module Membership (ctrl_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
-
-rm(ctrl_wgcna)
-
-lumb_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
-
-df <- lumb_wgcna$modules[[9]] %>% 
-  tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>%  # add gene names
-  arrange(desc(Membership)) %>% 
-  mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
-    TRUE ~ ""
-  ))
-
-p2 <- ggplot(df, aes(x = Gene.name,
-                     y = Membership,
-                     label = signif(Membership,3))) +
-  geom_col(fill = "darkmagenta", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
-  xlab("Module genes") +
-  ylab("Module Membership") +
-  theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 9_darkmagenta gene Module Membership (lumb_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
-
-rm(lumb_wgcna)
-
-poly_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
-
-df <- poly_wgcna$modules[[16]] %>% 
-  tibble::rownames_to_column("Gene.stable.ID") %>% 
-  dplyr::left_join(gnames) %>%  # add gene names
-  arrange(desc(Membership)) %>% 
-  mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
-  mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
-    TRUE ~ ""
-  ))
-
-p3 <- ggplot(df, aes(x = Gene.name,
-                     y = Membership,
-                     label = signif(Membership,3))) +
-  geom_col(fill = "salmon", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
-  xlab("Module genes") +
-  ylab("Module Membership") +
-  theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 16_salmon gene Module Membership (poly_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
-
-rm(poly_wgcna)
-
-pdf("~/spinal_cord_paper/figures/CSF_module_memberships.pdf", paper = "a4", width = 10, height = 12)
-p1 / p2 / p3
-dev.off()
-
-rm(df, p1, p2, p3)
-
-### ### ### ### ### ### ### ### ### ### ###
-#### pairwise gene expression correlation in Poly_int ####
-### ### ### ### ### ### ### ### ### ### ###
-
-overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
-             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
-gnames <- modplots::gnames
-rownames(gnames) <- gnames$Gene.name
-
-overlap_ids <- gnames[overlap, ]
-
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
-
-overlap_subset <- data.frame(t(as.matrix(my.se@assays[["RNA"]]@data[overlap_ids$Gene.stable.ID,])))
-
-# pearson correlation 
-cor_table_pear <- cor(overlap_subset, method = "pear")
-# replace gene IDs with gene names
-if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_pear),overlap_ids$Gene.stable.ID)) {
-  colnames(cor_table_pear) <- overlap_ids$Gene.name
-  rownames(cor_table_pear) <- overlap_ids$Gene.name
-}
-
-# spearman correlation 
-cor_table_spea <- cor(overlap_subset, method = "spear")
-# replace gene IDs with gene names
-if (identical(rownames(cor_table_spea),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_spea),overlap_ids$Gene.stable.ID)) {
-  colnames(cor_table_spea) <- overlap_ids$Gene.name
-  rownames(cor_table_spea) <- overlap_ids$Gene.name
-}
-
-pdf("~/spinal_cord_paper/figures/CSF_probes_poly_int_corr_heatmap.pdf", paper = "a4", width = 10, height = 12)
-# pearson 
-pheatmap(
-  cor_table_pear,
-  cellwidth = 20,
-  cellheight = 20,
-  display_numbers = TRUE,
-  border_color = NA,
-  main = "Pearson correlation of CSF probe expression in Poly int"
-)
-# spearman
-pheatmap(
-  cor_table_spea,
-  cellwidth = 20,
-  cellheight = 20,
-  display_numbers = TRUE,
-  border_color = NA,
-  main = "Spearman correlation of CSF probe expression in Poly int"
-)
-dev.off()
-
-### ### ### ### ### ### ### ### ### ### ###
-#### pairwise gene expression correlation in Poly-cl26 ####
-### ### ### ### ### ### ### ### ### ### ###
-
-overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
-             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
-gnames <- modplots::gnames
-rownames(gnames) <- gnames$Gene.name
-
-overlap_ids <- gnames[overlap, ]
-
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")  
-
-cl26 <- subset(x = my.se, idents = 26)
-
-overlap_subset <- data.frame(t(as.matrix(cl26@assays[["RNA"]]@data[overlap_ids$Gene.stable.ID,])))
-
-# pearson correlation 
-cor_table_pear <- cor(overlap_subset, method = "pear")
-# replace gene IDs with gene names
-if (identical(rownames(cor_table_pear),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_pear),overlap_ids$Gene.stable.ID)) {
-  colnames(cor_table_pear) <- overlap_ids$Gene.name
-  rownames(cor_table_pear) <- overlap_ids$Gene.name
-}
-
-# spearman correlation 
-cor_table_spea <- cor(overlap_subset, method = "spear")
-# replace gene IDs with gene names
-if (identical(rownames(cor_table_spea),overlap_ids$Gene.stable.ID) & identical(colnames(cor_table_spea),overlap_ids$Gene.stable.ID)) {
-  colnames(cor_table_spea) <- overlap_ids$Gene.name
-  rownames(cor_table_spea) <- overlap_ids$Gene.name
-}
-
-pdf("~/spinal_cord_paper/figures/CSF_probes_poly_cl26_corr_heatmap.pdf", paper = "a4", width = 10, height = 12)
-# pearson 
-pheatmap(
-  cor_table_pear,
-  cellwidth = 20,
-  cellheight = 20,
-  display_numbers = TRUE,
-  border_color = NA,
-  main = "Pearson correlation of CSF probe expression in Poly cl-26"
-)
-# spearman
-pheatmap(
-  cor_table_spea,
-  cellwidth = 20,
-  cellheight = 20,
-  display_numbers = TRUE,
-  border_color = NA,
-  main = "Spearman correlation of CSF probe expression in Poly cl-26"
-)
-dev.off()
-
-### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of all CSF-cNS modules overlap ####
-### ### ### ### ### ### ### ### ### ### ###
-
-data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
-
-overlap <- c("PKD2L1", "GATA2", "CACNA1G", "SFRP5", "CRTAC1", "ABCG2", "GATA3",
-             "MYO3B", "ST3GAL1", "SST", "TAL1", "TAL2", "ENSGALG00000000645", "ENSGALG00000007596")
-gnames <- modplots::gnames
-
-plots <- list()
-
-for (i in seq(data_sets)) {
-  my.se <- readRDS(data_sets[i])
-  
-  plots[[i]] <- mFeaturePlot(my.se, my.features = overlap, my.slot = "scale.data", size = 0.5, return = TRUE)
-  # set empty legend title
-  for (j in seq(overlap)) {
-    plots[[i]][[j]][["labels"]][["colour"]] <- ""
-  }
-  
-  rm(my.se)
-}
-
-pdf("~/spinal_cord_paper/figures/CSF_overlap_tsne.pdf", width = 18, height = 14)
-grid.arrange(grobs = plots[[1]])
-grid.arrange(grobs = plots[[2]])
-grid.arrange(grobs = plots[[3]])
-dev.off()
-
-rm(data_sets, overlap, gnames, plots)
-
-
-### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of NRP2 (neuropilin 2) ####
-### ### ### ### ### ### ### ### ### ### ###
-
-
-data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
-               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
-
-blend_names <- modplots::gnames %>% 
-  filter(Gene.name %in% c("PKD2L1", "NRP2")) 
-
-plots <- list()
-blend <- list()
-
-for (i in seq(data_sets)) {
-  my.se <- readRDS(data_sets[i])
-  
-  plots[[i]] <- mFeaturePlot(my.se, my.features = c("PKD2L1","NRP2"), my.slot = "scale.data", size = 0.5, return = TRUE)
-  tmp <- FeaturePlot(
-    my.se,
-    reduction = "tsne",
-    features = blend_names$Gene.stable.ID,
-    blend = TRUE,
-    cols = "white",
-    order = TRUE, 
-    combine = FALSE
-  )
-  # create patchwork
-  blend[[i]] <- (tmp[[1]] + tmp[[3]])/
-    (tmp[[2]] + tmp[[4]]) +
-    plot_layout(guides = 'collect')
-  
-  rm(my.se)
-}
-
-pdf("~/spinal_cord_paper/figures/NRP2_tsne.pdf", width = 6, height = 8)
-(plots[[1]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
-    NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  (plots[[1]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  (plots[[2]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  (plots[[2]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  (plots[[3]][[1]]  + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  (plots[[3]][[2]]  + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
-dev.off()
-
-pdf("~/spinal_cord_paper/figures/NRP2_PKD2L1_blend_tsne.pdf", width = 7, height = 6)
-blend[[1]]
-blend[[2]]
-blend[[3]]
-dev.off()
-
-rm(data_sets, plots)
-
-### ### ### ### ### ###
-#### NRP2 in WGCNA ####
-### ### ### ### ### ###
-
-wgcna_dat <- c(
-  "~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds",
-  "~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds",
-  "~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds"
-  )
-
-nrp2_id <- gnames$Gene.stable.ID[gnames$Gene.name %in% "NRP2"]
-
-output <- list()
-
-for (i in seq(wgcna_dat)) {
-  my.wgcna <- readRDS(wgcna_dat[3])
-  
-  output[[i]] <- nrp2_id %in% head(unlist(my.wgcna[["module.genes"]]))
-}
-
-print(output)
-# [[1]]
-# [1] FALSE
-# 
-# [[2]]
-# [1] FALSE
-# 
-# [[3]]
-# [1] FALSE
-
-### ### ### ### ### ### ### ### ### ### ###
-#### cl-26 poly module salmon expression ####
-### ### ### ### ### ### ### ### ### ### ###
-
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
-
-my.wgcna <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
-
-avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
-
-if (identical(rownames(my.se[[]]), rownames(avgExp))) {
-  my.se <- AddMetaData(my.se, avgExp)
-}
-# cluster color and marker table
-clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
-# cluster annotation
-annot <- read.csv("~/spinal_cord_paper/annotations/Gg_poly_int_cluster_annotation.csv")
-
-broad_order <- c("progenitors",
-                 "FP",
-                 "RP",
-                 "FP/RP",
-                 "neurons",
-                 "OPC",
-                 "MFOL",
-                 "pericytes",
-                 "microglia",
-                 "blood",
-                 "vasculature"
-)
-
-# rename for left join
-annot <- annot %>% 
-  mutate(fine = paste(fine, number, sep = "_")) %>% 
-  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
-  rename(seurat_clusters = number)
-
-ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
-
-# add cluster annotation to meta data
-my.se@meta.data <- my.se@meta.data %>% 
-  rownames_to_column("rowname") %>% 
-  left_join(annot, by = "seurat_clusters") %>% 
-  mutate(fine = factor(fine, levels = ord_levels)) %>% 
-  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
-  column_to_rownames("rowname")
-# color palette
-col_plot <- c(rep("#edc919", 8),
-              "#853335",
-              rep("#99ca3c", 2),
-              rep("#cd2b91", 8),
-              rep("#008cb5", 6),
-              "#333399","#f26a2d",
-              "#000000","#bebebe","#996633")
-
-# violin plot of module salmon expression by cluster
-pdf("~/spinal_cord_paper/figures/poly_module_salmon_vln_plot.pdf", width = 10, height = 6)
-  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot) +
-    ggtitle("AEsalmon avgExp by cell across poly_int clusters")
-  
-  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
-    geom_boxplot() +
-    ggtitle("AEsalmon avgExp by cell across poly_int clusters with boxplot")
-  
-  VlnPlot(my.se, "AEsalmon", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
-    scale_y_log10() +
-    ggtitle("AEsalmon avgExp by cell across poly_int clusters (log scale, 0 removed")
-dev.off()
-
-# 3D plot of module salmon expression
-library(plotly)
-library(htmlwidgets)
-
-x_tsne <- my.se@reductions[["tsne"]]@cell.embeddings[,"tsne_1"]
-y_tsne <- my.se@reductions[["tsne"]]@cell.embeddings[,"tsne_2"]
-salmon <- my.se[[]]$AEsalmon
-
-saveWidget(
-  plot_ly(
-    x = x_tsne,
-    y = y_tsne,
-    z = salmon,
-    type = "scatter3d",
-    mode = "markers",
-    color = salmon,
-    size = 1,
-    alpha_stroke = 1,
-    colors = c("#E5E5E5", "#FA8072")
-  ),
-  file = "~/spinal_cord_paper/figures/poly_mod_salmon_3d.html")
-
-### ### ### ### ### ### ### ### ### ### ###
-#### lumb module darkmagent expression ####
-### ### ### ### ### ### ### ### ### ### ###
-
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
-
-my.wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
-
-avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
-
-if (identical(rownames(my.se[[]]), rownames(avgExp))) {
-  my.se <- AddMetaData(my.se, avgExp)
-}
-# cluster color and marker table
-clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
-# cluster annotation
-annot <- read.csv("~/spinal_cord_paper/annotations/Gg_lumb_int_cluster_annotation.csv")
-
-broad_order <- c("progenitors",
-                 "FP",
-                 "RP",
-                 "FP/RP",
-                 "neurons",
-                 "OPC",
-                 "MFOL",
-                 "pericytes",
-                 "microglia",
-                 "blood",
-                 "vasculature"
-)
-
-# rename for left join
-annot <- annot %>% 
-  mutate(fine = paste(fine, number, sep = "_")) %>% 
-  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
-  rename(seurat_clusters = number)
-
-ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
-
-# add cluster annotation to meta data
-my.se@meta.data <- my.se@meta.data %>% 
-  rownames_to_column("rowname") %>% 
-  left_join(annot, by = "seurat_clusters") %>% 
-  mutate(fine = factor(fine, levels = ord_levels)) %>% 
-  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
-  column_to_rownames("rowname")
-# color palette
-col_plot <- c(rep("#edc919", 9),
-              "#853335",
-              rep("#99ca3c", 2),
-              rep("#cd2b91", 7),
-              rep("#008cb5", 5),
-              "#333399","#f26a2d",
-              "#000000","#bebebe","#996633")
-
-# violin plot of module salmon expression by cluster
-pdf("~/spinal_cord_paper/figures/lumb_module_darkmagenta_vln_plot.pdf", width = 10, height = 6)
-VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot) +
-  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters")
-
-VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
-  geom_boxplot() +
-  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters with boxplot")
-
-VlnPlot(my.se, "AEdarkmagenta", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
-  scale_y_log10() +
-  ggtitle("AEdarkmagenta avgExp by cell across lumb_int clusters (log scale, 0 removed)")
-dev.off()
-
-### ### ### ### ### ### ### ### ### ### ###
-#### ctrl module royalblue expression ####
-### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ### ### ### ###
+#### ctrl_int m-greenyellow and m-tan overlay ####
+### ### ### ### ### ### ### ### ### ### ### ### ###
 
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
 
@@ -630,57 +98,133 @@ avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
 if (identical(rownames(my.se[[]]), rownames(avgExp))) {
   my.se <- AddMetaData(my.se, avgExp)
 }
-# cluster color and marker table
-clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv")
-# cluster annotation
-annot <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv")
 
-broad_order <- c("progenitors",
-                 "FP",
-                 "RP",
-                 "FP/RP",
-                 "neurons",
-                 "OPC",
-                 "MFOL",
-                 "pericytes",
-                 "microglia",
-                 "blood",
-                 "vasculature"
-)
+cl17 <- subset(x = my.se, idents = 17)
 
-# rename for left join
-annot <- annot %>% 
-  mutate(fine = paste(fine, number, sep = "_")) %>% 
-  mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
-  rename(seurat_clusters = number)
+p <-
+  FeaturePlot(
+    my.se,
+    features = c("AEgreenyellow", "AEtan"),
+    cols = c("grey90", "greenyellow", "tan"),
+    blend = TRUE,
+    reduction = "tsne",
+    order = TRUE,
+    combine = FALSE
+  )
 
-ord_levels <- annot$fine[order(match(annot$broad, broad_order))]
+p_cl17 <-
+  FeaturePlot(
+    cl17,
+    features = c("AEgreenyellow", "AEtan"),
+    cols = c("grey90", "greenyellow", "tan"),
+    blend = TRUE,
+    reduction = "tsne",
+    order = TRUE,
+    combine = FALSE,
+    pt.size = 3
+  )
 
-# add cluster annotation to meta data
-my.se@meta.data <- my.se@meta.data %>% 
-  rownames_to_column("rowname") %>% 
-  left_join(annot, by = "seurat_clusters") %>% 
-  mutate(fine = factor(fine, levels = ord_levels)) %>% 
-  mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
-  column_to_rownames("rowname")
-# color palette
-col_plot <- c(rep("#edc919", 6),
-              "#00ff00",
-              rep("#cd2b91", 5),
-              rep("#008cb5", 6),
-              rep("#333399", 2),
-              "#f26a2d","#bebebe","#996633")
 
-# violin plot of module salmon expression by cluster
-pdf("~/spinal_cord_paper/figures/ctrl_module_royalblue_vln_plot.pdf", width = 10, height = 6)
-VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot) +
-  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters")
+pdf("~/spinal_cord_paper/figures/Ctrl_int_RP_FP_module_overlap.pdf", width = 8, height = 7)
+(p_cl17[[1]] + p_cl17[[2]])/
+  (p_cl17[[4]] + p_cl17[[3]])
 
-VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot, pt.size = 0) +
-  geom_boxplot() +
-  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters with boxplot")
-
-VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot, pt.size = 0.5) +
-  scale_y_log10() +
-  ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters (log scale, 0 removed)")
+(p[[1]] + p[[2]])/
+  (p[[4]] + p[[3]])
 dev.off()
+
+### ### ### ### ### ### ### ### ### ### ### ### ###
+#### tSNE plots of RP/FP/cilia modules overlap ####
+### ### ### ### ### ### ### ### ### ### ### ### ###
+
+data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
+               "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+# RP overlap
+RP_overlap <- c("GYG2","COL1A2","GDF10","ENSGALG00000052026","LMX1A","OLFML3",
+             "WNT3A","ENSGALG00000033591","KLHDC8B","UTRN","TSPAN18")
+
+gnames <- modplots::gnames
+
+plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = RP_overlap, my.slot = "data", size = 0.5, return = TRUE)
+  # set empty legend title
+  for (j in seq(RP_overlap)) {
+    plots[[i]][[j]][["labels"]][["colour"]] <- ""
+  }
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/RP_module_overlap_tsne.pdf", width = 18, height = 14)
+grid.arrange(grobs = plots[[1]])
+grid.arrange(grobs = plots[[2]])
+grid.arrange(grobs = plots[[3]])
+dev.off()
+
+# FP overlap
+FP_overlap <- c("ASB9","SLC6A4","ECM2","CNP1","TLL1","NTN1",
+                "SHH","HPGDS","PTGDS","EXFABP","KRT24","CMTM8","ADIPOQ")
+
+plots <- list()
+
+for (i in seq(data_sets)) {
+  my.se <- readRDS(data_sets[i])
+  
+  plots[[i]] <- mFeaturePlot(my.se, my.features = FP_overlap, my.slot = "data", size = 0.5, return = TRUE)
+  # set empty legend title
+  for (j in seq(FP_overlap)) {
+    plots[[i]][[j]][["labels"]][["colour"]] <- ""
+  }
+  
+  rm(my.se)
+}
+
+pdf("~/spinal_cord_paper/figures/FP_module_overlap_tsne.pdf", width = 18, height = 14)
+grid.arrange(grobs = plots[[1]])
+grid.arrange(grobs = plots[[2]])
+grid.arrange(grobs = plots[[3]])
+dev.off()
+
+rm(data_sets, RP_overlap, FP_overlap, gnames, plots)
+
+### ### ### ### ### ### ### ### ###
+#### cluster sizes bar plots ####
+### ### ### ### ### ### ### ### ###
+
+
+my.se <- list()
+# load seurat objects
+my.se[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+my.se[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+my.se[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+names(my.ses) <- c("ctrl_int", "lumb_int", "poly_int")
+
+plots <- list()
+
+for (i in seq_along(my.se)) {
+  # cluster ids and id summary (frequency table)
+  cl_sizes <- data.frame(cluster = my.se[[i]]$seurat_clusters)
+  # plot cluster size 
+  plots[[i]] <- ggplot(cl_sizes, aes(x = cluster)) +
+    geom_bar(fill = "lightgrey", color = "black",stat = "count") + 
+    stat_count(geom = "text", colour = "black", size = 2.5,
+               aes(label = ..count..),position=position_stack(vjust=0.5)) +
+    ggtitle(names(my.se)[i]) +
+    theme_cowplot()
+  
+}
+
+grid.arrange(grobs = plots, ncol = 1)
+
+pdf(file = "~/spinal_cord_paper/figures/Int_data_cluster_sizes.pdf", height = 13)
+grid.arrange(grobs = plots, ncol = 1)
+dev.off()
+
+
