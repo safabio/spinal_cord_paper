@@ -384,7 +384,7 @@ avg.mod.eigengenes <- WGCNA_data[[1]]$sc.MEList$averageExpr
 rm(WGCNA_data)
 
 htmp <- heatmap.4(as.matrix(my.wgmat[[1]]),
-          col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
+          col = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
           trace="none",
           scale = "row",
           margins = c(10,10),
@@ -393,9 +393,9 @@ htmp <- heatmap.4(as.matrix(my.wgmat[[1]]),
 
 module_order <- htmp[["colInd"]]
 
-pdf("~/spinal_cord_paper/figures/Devel_module_v_clusters_heatmap.pdf", width = 7, height = 10)
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_heatmap.pdf", width = 7, height = 10)
 heatmap.4(as.matrix(my.wgmat[[1]]),
-          col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
+          col = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
           trace="none",
           scale = "row",
           margins = c(10,10),
@@ -478,7 +478,7 @@ for (i in seq(my.ses)) {
   for (j in seq(ncol(tmp))) {
   
     modplots[[i]][[j]]  <- FeaturePlot(
-      my.ses[[i]],
+      my.ses[[i]], order = TRUE,
       features = modules_in_order[j],
       reduction = "tsne",
       cols = c("grey90", substring(modules_in_order[j], 3))
@@ -496,13 +496,13 @@ tmp <- c(modplots[[1]], modplots[[2]], modplots[[3]])
 
 gridExtra::grid.arrange(grobs = tmp, ncol = 3, as.table = FALSE)
 
-pdf("~/spinal_cord_paper/figures/Devel_modules_AE_plots.pdf", width = 12, height = 70)
+pdf("~/spinal_cord_paper/figures/Fig_2_devel_modules_AE_plots.pdf", width = 12, height = 70)
 gridExtra::grid.arrange(grobs = tmp, ncol = 3, as.table = FALSE)
 
-pdf("~/spinal_cord_paper/figures/Fig_1_MN_mod_tsne.pdf", height = 6, width = 12)
-modplots[[1]][[22]] + modplots[[1]][[6]] |
-  modplots[[2]][[22]] + modplots[[2]][[6]] |
-  modplots[[3]][[22]] + modplots[[3]][[6]]
+pdf("~/spinal_cord_paper/figures/Fig_2_selected_mod_tsne.pdf", height = 21, width = 12)
+modplots[[1]][[22]] + modplots[[1]][[2]] + modplots[[1]][[6]] + modplots[[1]][[12]] + modplots[[1]][[13]] + modplots[[1]][[18]] + modplots[[1]][[21]] |
+  modplots[[2]][[22]] + modplots[[2]][[2]] + modplots[[2]][[6]] + modplots[[2]][[12]] + modplots[[2]][[13]] + modplots[[2]][[18]] + modplots[[2]][[21]] |
+  modplots[[3]][[22]] + modplots[[3]][[2]] + modplots[[3]][[6]] + modplots[[3]][[12]] + modplots[[3]][[13]] + modplots[[3]][[18]] + modplots[[3]][[21]]
 
 ```
 
@@ -571,7 +571,7 @@ mean_mod <- ggplot(data = mean_AE,
 
 plotly::ggplotly(mean_mod)
 
-pdf("~/spinal_cord_paper/figures/Fig_1_mean_mod_AE.pdf", height = 7, width = 12)
+pdf("~/spinal_cord_paper/figures/Fig_2_mean_mod_AE.pdf", height = 7, width = 12)
 #Plot split tsne
 mean_mod
 ```
@@ -612,7 +612,7 @@ vplots[[1]]
 vplots[[2]]
 vplots[[3]]
 
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_cluster_modcol.pdf", height = 20, width = 10)
+pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_modcol.pdf", height = 20, width = 10)
 vplots[[1]]
 vplots[[2]]
 vplots[[3]]
@@ -644,7 +644,7 @@ vplots_id[[1]]
 vplots_id[[2]]
 vplots_id[[3]]
 
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_cluster_clucol.pdf", height = 20, width = 10)
+pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_clucol.pdf", height = 20, width = 10)
 vplots_id[[1]]
 vplots_id[[2]]
 vplots_id[[3]]
@@ -672,16 +672,16 @@ my.sec$sample_celltype <- factor(
   )
 
 vln_ind <- VlnPlot(my.sec,
-                   features = c("AEdarkred", "AEgreen"),
+                   features = c("AEdarkred", "AEpink", "AEgreen", "AEdarkgreen", "AEroyalblue", "AEcyan", "AElightgreen"),
                    group.by = "sample_celltype",
                    stack = TRUE,
                    flip = TRUE,
-                   cols = c("darkred", "green"),pt.size = 1
+                   cols = c("darkred", "pink", "green", "darkgreen", "royalblue", "cyan", "lightgreen"),pt.size = 1
                   ) +
     NoLegend()
 
 vln_ind
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_MNs.pdf", height = 7, width = 20)
+pdf("~/spinal_cord_paper/figures/Fig_2_AE_selected_mod.pdf", height = 22, width = 20)
 vln_ind
 ```
 
@@ -697,7 +697,7 @@ VlnPlot(
 
 
 
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_cluster_integrated_data.pdf", height = 20, width = 30)
+pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_integrated_data.pdf", height = 20, width = 30)
 VlnPlot(
     my.sec,
     features = mods[module_order],
@@ -718,7 +718,7 @@ v1 <- VlnPlot(my.sec,
         group.by = "orig.ident")
 v1
 
-pdf("~/spinal_cord_paper/figures/Fig_1_AE_by_stage.pdf", height = 20, width = 20)
+pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_stage.pdf", height = 20, width = 20)
 v1
 
 ```
