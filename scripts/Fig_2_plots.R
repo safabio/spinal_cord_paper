@@ -32,15 +32,15 @@ for (i in seq(modules)) {
   set.seed(42)
   
   GGally::ggnet2(mynet,
-                              mode = "fruchtermanreingold",
-                              layout.par = list(repulse.rad = network::network.size(mynet)^1.1,
-                                                area = network::network.size(mynet)^2.3),
-                              node.size = network::get.vertex.attribute(mynet, "membership01"),
-                              max_size = 23,
-                              node.color = col, 
-                              edge.size = "weight02", 
-                              edge.color = "black",
-                              edge.alpha = network::get.edge.attribute(mynet, "weight01")) +
+                  mode = "fruchtermanreingold",
+                  layout.par = list(repulse.rad = network::network.size(mynet)^1.1,
+                                    area = network::network.size(mynet)^2.3),
+                  node.size = network::get.vertex.attribute(mynet, "membership01"),
+                  max_size = 23,
+                  node.color = col, 
+                  edge.size = "weight02", 
+                  edge.color = "black",
+                  edge.alpha = network::get.edge.attribute(mynet, "weight01")) +
     ggplot2::theme(legend.position = "none") +
     ggplot2::geom_text(ggplot2::aes(label = gene.labs),
                        alpha = 1,
@@ -49,7 +49,7 @@ for (i in seq(modules)) {
                        size = 5
   )
   
-  ggsave(paste0("~/spinal_cord_paper/figures/Fig_2_", col,"network.pdf"), width = 5, height = 5)
+  ggsave(paste0("~/spinal_cord_paper/figures/Fig_2_", col,"_network.pdf"), width = 5, height = 5)
 }
 
 
