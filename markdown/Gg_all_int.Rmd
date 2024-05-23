@@ -1,0 +1,111 @@
+---
+title: "Integration and Seurat workflow of all samples"
+author: "Fabio Sacher"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+---
+
+Render this script with \> sbatch \~/spinal_cord_paper/scripts/Gg_all_int_render.sh
+
+```{r libraries, warning = FALSE, message = FALSE, echo = T, results = 'hide'}
+library(Seurat)
+library(magrittr)
+library(dplyr)
+library(Rtsne)
+library(RColorBrewer)
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+library(patchwork)
+library(cowplot)
+library(ggdendro)
+```
+
+# Integration
+
+the following workflow is based on:
+
+-   [<https://github.com/satijalab/seurat/issues/1500>] Cell cycle regression
+
+-   [<https://github.com/satijalab/seurat/issues/1836>] General workflow
+
+-   [<https://github.com/satijalab/seurat/issues/2590>] Integrate all features (although used in the integration script)
+
+```{r, load data}
+my.samples <- list()
+
+my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_070323.rds")
+my.samples[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_2_seurat_070323.rds")
+my.samples[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_1_seurat_070323.rds")
+my.samples[[4]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_2_seurat_070323.rds")
+my.samples[[5]] <- readRDS("~/spinal_cord_paper/data/Gg_poly_1_seurat_070323.rds")
+my.samples[[6]] <- readRDS("~/spinal_cord_paper/data/Gg_poly_2_seurat_070323.rds")
+my.samples[[7]] <- readRDS("~/spinal_cord_paper/data/Gg_D05_ctrl_seurat_070323.rds")
+my.samples[[8]] <- readRDS("~/spinal_cord_paper/data/Gg_D07_ctrl_seurat_070323.rds")
+
+names(my.samples) <- c("Gg_ctrl_1", "Gg_ctrl_1", "Gg_lumb_1", "Gg_lumb_2", "Gg_poly_1", "Gg_poly_2", "Gg_ctrl_D05", "Gg_ctrl_D07")
+
+```
+
+```{r, Integration step}
+# integration features
+features <- SelectIntegrationFeatures(
+	object.list = my.samples,
+	nfeatures = 3000
+	)
+
+# prepare integration 
+my.samples <- PrepSCTIntegration(
+	object.list = my.samples,
+	anchor.features = features
+	)
+
+# find anchors
+NT.anchors <- FindIntegrationAnchors(
+	object.list = my.samples,
+	normalization.method = "SCT",
+	anchor.features = features
+	)
+
+rm(my.samples)
+
+# integrate
+my.int <- IntegrateData(
+	anchorset = NT.anchors,
+	normalization.method = "SCT"
+	)
+
+# compute PCA
+my.int <- RunPCA(
+	my.int,
+	verbose = FALSE
+	)
+
+# Run tSNE
+my.int <- RunTSNE(
+	my.int,
+	reduction = "pca",
+	dims = 1:30
+	)
+
+```
+
+## Inspect the data
+
+```{r, inspection}
+
+PCAPlot(my.int)
+
+DimPlot(my.int, reduction = "tsne")
+
+```
+
+```{r, save-seurat}
+saveRDS(my.int, file = paste0("~/spinal_cord_paper/Gg_all_seurat",format(Sys.Date(), "%d%m%y"),".rds"))
+```
