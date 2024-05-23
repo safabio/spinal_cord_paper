@@ -684,3 +684,65 @@ VlnPlot(my.se, "AEroyalblue", group.by = "seurat_clusters", cols = col_plot, pt.
   scale_y_log10() +
   ggtitle("AEroyalblue avgExp by cell across ctrl_int clusters (log scale, 0 removed)")
 dev.off()
+
+
+### ### ### ### ### ### ### ### ### ### ###
+#### CSF modules network plot  ####
+### ### ### ### ### ### ### ### ### ### ###
+
+# code is taken and adapted from scWGCNA::scW.p.network
+
+# scWGNA.data
+wgcna_dat <- list(
+  ctrl = readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds"),
+  lumb = readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds"),
+  poly = readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
+)
+
+modules <- c("royalblue", "darkmagenta", "salmon")
+
+gnames <- modplots::gnames
+rownames(gnames) <- gnames[,1]
+
+for (i in seq(modules)) {
+  # get the module colors
+  my.cols <- levels(as.factor(wgcna_dat[[i]][["dynamicCols"]]))
+  
+  col <- modules[i]
+  # get index if color is provided
+  module <- which(my.cols == col)
+  # extract the module
+  mynet <- wgcna_dat[[i]][["networks"]][[module]]
+  
+  gene.labs = gnames[network::network.vertex.names(mynet),2]
+  set.seed(42)
+  
+  GGally::ggnet2(mynet,
+                 mode = "fruchtermanreingold",
+                 layout.par = list(repulse.rad = network::network.size(mynet)^1.1,
+                                   area = network::network.size(mynet)^2.3),
+                 node.size = network::get.vertex.attribute(mynet, "membership01"),
+                 max_size = 23,
+                 node.color = col, 
+                 edge.size = "weight02", 
+                 edge.color = "black",
+                 edge.alpha = network::get.edge.attribute(mynet, "weight01")) +
+    ggplot2::theme(legend.position = "none") +
+    ggplot2::geom_text(ggplot2::aes(label = gene.labs),
+                       alpha = 1,
+                       color = "black",
+                       fontface = "italic",
+                       size = 5
+    )
+  
+  ggsave(paste0("~/spinal_cord_paper/figures/Fig_3_",
+                names(wgcna_dat)[i], 
+                "_int_", 
+                col,
+                "_network.pdf"),
+         width = 6, height = 6)
+}
+
+
+
+
