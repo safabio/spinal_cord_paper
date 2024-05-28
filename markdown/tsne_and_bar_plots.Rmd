@@ -41,7 +41,8 @@ se_path <- c("Gg_D05_ctrl_seurat_070323",
              "Gg_poly_2_seurat_070323",
              "Gg_poly_int_seurat_250723",
              "Gg_ctrl_lumb_int_seurat_250723",
-             "Gg_ctrl_poly_int_seurat_250723")
+             "Gg_ctrl_poly_int_seurat_250723",
+             "Gg_all_int_seurat_270524")
 ```
 
 ```{r cluster-annotations}
