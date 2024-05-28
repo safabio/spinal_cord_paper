@@ -4,7 +4,7 @@
 #SBATCH --job-name=Seurat_all_integration
 #SBATCH --time=02:00:00
 #SBATCH --qos=6hours
-#SBATCH --mem=120G
+#SBATCH --mem=80G
 #SBATCH --mail-user=fabio.sacher@unibas.ch
 #SBATCH --mail-type=ALL
 #SBATCH --output ./slurm_out/%x-%j.out

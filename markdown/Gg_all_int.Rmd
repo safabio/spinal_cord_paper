@@ -37,7 +37,7 @@ the following workflow is based on:
 
 -   [<https://github.com/satijalab/seurat/issues/2590>] Integrate all features (although used in the integration script)
 
-```{r, load data}
+```{r, load data, eval=FALSE}
 my.samples <- list()
 
 my.samples[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_1_seurat_070323.rds")
@@ -53,7 +53,7 @@ names(my.samples) <- c("Gg_ctrl_1", "Gg_ctrl_1", "Gg_lumb_1", "Gg_lumb_2", "Gg_p
 
 ```
 
-```{r, Integration step}
+```{r, Integration step, eval=FALSE}
 # integration features
 features <- SelectIntegrationFeatures(
 	object.list = my.samples,
@@ -96,16 +96,407 @@ my.int <- RunTSNE(
 
 ```
 
+```{r, save-seurat, eval=FALSE}
+saveRDS(my.int, file = paste0("~/spinal_cord_paper/data/Gg_all_seurat_",format(Sys.Date(), "%d%m%y"),".rds"))
+```
+
+# Integrated Seurat
+
+## Load the data
+
+```{r load-seurat}
+my.int <- readRDS("~/spinal_cord_paper/data/Gg_all_seurat_220524.rds")
+my.int@project.name <- "Gg_all_int"
+```
+
+
 ## Inspect the data
 
 ```{r, inspection}
 
-PCAPlot(my.int)
+PCAPlot(my.int, group.by = "orig.ident")
 
-DimPlot(my.int, reduction = "tsne")
+DimPlot(my.int, reduction = "tsne", group.by = "orig.ident")
+DimPlot(my.int, reduction = "tsne", split.by = "orig.ident", ncol = 4)
 
 ```
 
-```{r, save-seurat}
-saveRDS(my.int, file = paste0("~/spinal_cord_paper/Gg_all_seurat",format(Sys.Date(), "%d%m%y"),".rds"))
+## Violin Plot by Sample
+
+Use Counts (UMI) and Features (Genes) from the raw data (RNA assay).
+
+```{r orig-ident-violin, fig.width = 15, fig.height = 8}
+
+meta_int <- my.int@meta.data %>% 
+  mutate(orig.ident = factor(
+    orig.ident,
+    levels = c("Gg_D05_ctrl", "Gg_D07_ctrl",
+               "Gg_ctrl_1", "Gg_ctrl_2",
+               "Gg_lumb_1", "Gg_lumb_2",
+               "Gg_poly_1", "Gg_poly_2")))
+
+vln_pm <- ggplot(meta_int, aes(x = orig.ident, y = percent.mt, fill = orig.ident)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+        ) 
+      
+vln_nC <- ggplot(meta_int, aes(x = orig.ident, y = nCount_RNA, fill = orig.ident)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+        )
+        
+vln_cF <- ggplot(meta_int, aes(x = orig.ident, y = nFeature_RNA, fill = orig.ident)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+        )
+
+vln_pm + vln_nC + vln_cF
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_1_Gg_all_vln.pdf", width = 15, height = 8)
+vln_pm + vln_nC + vln_cF
 ```
+
+# Cell cycle scoring
+
+```{r , message=FALSE, warning=FALSE, echo = T, results = 'hide'}
+# Load the orhtology table
+ortho_gg_mm_v102 <- readRDS("~/spinal_cord_paper/data/ortho_gg_mm_v102.rds") 
+
+colnames(ortho_gg_mm_v102) <- c(
+  "GG_gene_ID",
+  "GG_gene_Name",
+  "MM_gene_ID",
+  "MM_gene_Name",
+  "ortho_conf",
+  "homolog_type"
+)
+
+# A list of cell cycle markers, from Tirosh et al, 2015, is loaded with Seurat.  We can
+# segregate this list into markers of G2/M phase and markers of S phase
+s.genes <- ortho_gg_mm_v102 %>%
+  dplyr::mutate(MM_gene_Name = toupper(MM_gene_Name)) %>%
+  dplyr::filter(MM_gene_Name %in% cc.genes$s.genes) %>%
+  dplyr::arrange(match(MM_gene_Name, cc.genes$s.genes)) %>%
+  dplyr::pull(GG_gene_ID)
+
+g2m.genes <- ortho_gg_mm_v102 %>%
+  dplyr::mutate(MM_gene_Name = toupper(MM_gene_Name)) %>%
+  dplyr::filter(MM_gene_Name %in% cc.genes$g2m.genes) %>%
+  dplyr::arrange(match(MM_gene_Name, cc.genes$g2m.genes)) %>%
+  dplyr::pull(GG_gene_ID) 
+
+t0 <- Sys.time()
+my.int <- CellCycleScoring(
+  my.int,
+  s.features = s.genes,
+  g2m.features = g2m.genes,
+  set.ident = TRUE
+  )
+paste0("Seurats CC scoring took ", Sys.time() - t0, " seconds to run.")
+
+my.int$CC.Difference.seurat <- my.int$S.Score - my.int$G2M.Score
+# view cell cycle scores and phase assignments
+head(my.int[[]])
+
+rm(t0, s.genes, g2m.genes)
+```
+
+## PCA plot of non-regressed data
+```{r}
+PCAPlot(my.int, group.by = "Phase")
+```
+
+
+# rescale integrated assay
+
+We rescale the data to regress out the CC.difference
+
+```{r scale.data-regress.cc.diff}
+all_genes <- rownames(my.int)
+
+my.int <- ScaleData(
+  my.int,
+  features = all_genes,
+  vars.to.regress = "CC.Difference.seurat"
+)
+```
+
+# PCA
+
+```{r}
+# Run the actual PCA (by default uses var.features of assay)
+my.int <- RunPCA(my.int, verbose = F)
+
+PCAPlot(my.int, group.by = "Phase")
+
+# Which dimensions will we choose?
+hist(my.int@reductions$pca@stdev^2, breaks = 500)
+
+my.dimensions=1:20
+
+```
+
+# Dim Reduction
+
+We will run the tSNE. Using the FFT-accelerated Interpolation-based t-SNE (FIt-SNE).
+We run two, a normal tSNE, and an exaggerated tSNE, where clusters are tighter togheter. This is located under the xtsne name.
+
+```{r tsne, message=FALSE, warning=FALSE, echo = T, results = 'hide'}
+
+# Get the tSNE function
+source("~/Software/FIt-SNE-master/fast_tsne.R")
+
+my.tsne = fftRtsne(my.int@reductions$pca@cell.embeddings[,my.dimensions],
+                   max_iter = 1500,
+                   learning_rate =  round(dim(my.int)[2]/12),
+                   initialization =(my.int@reductions$pca@cell.embeddings[,1:2]/my.int@reductions$pca@stdev[1])*0.0001,
+                   perplexity_list = c(25, round(dim(my.int)[2]/100)),
+                   fast_tsne_path="~/Software/FIt-SNE-master/bin/fast_tsne")
+
+colnames(my.tsne) = c("tsne_1", "tsne_2")
+rownames(my.tsne) = colnames(my.int)
+
+my.int[["tsne"]] = CreateDimReducObject(embeddings = my.tsne, key = "tsne_", assay = DefaultAssay(my.int), global = T)
+
+```
+
+
+# Clustering
+
+Here we perform the Louvain-jaccard clustering implemented in Seurat.
+We can see the tree of clusters, to see how the clusters relate in the PCA space.   
+We also use the tree, to check if any of the terminal pairs of sisters should be merged. This is determined based on a minimum of 20 DEs between the clusters.
+
+```{r clusters, message=FALSE, warning=FALSE, echo = T, results = 'hide'}
+
+# Find first the nearest neighbors
+my.int <- FindNeighbors(object = my.int, dims=my.dimensions, verbose = F)
+
+# Then the actual clusters
+my.int <- FindClusters(object = my.int, resolution = 1, verbose = F, random.seed = 42)
+
+# Check the tree of clusters, to see what's the relationship between them
+my.int <- BuildClusterTree(my.int, dims = my.dimensions, verbose = F)
+plot(Tool(object = my.int, slot = 'BuildClusterTree'))
+
+# We are gonna check for DEs using the non integrated data. We are only gonna test genes that have variability, so we calculate variable genes
+my.int <- FindVariableFeatures(my.int, assay = "RNA")
+
+
+# Only the genes with variability > median
+my.HVF <- HVFInfo(my.int, assay = "RNA")
+my.HVF <- rownames(my.HVF)[which(my.HVF[,3] > (median(my.HVF[,3])))]
+# We check for pairs of clusters, how mayn DEs they have. If less than n, we merge them
+keep.check <- T
+while (keep.check == T) {
+  
+  keep.check <- F
+  # Check the tree of clusters, to see what's the relationship between them
+  my.int <- BuildClusterTree(my.int, dims = my.dimensions, verbose = F)
+  # Check only the terminal sisters
+  to.check = ips::terminalSisters(my.int@tools$BuildClusterTree)
+  for (i in to.check) {
+    # DE between the sisters
+    my.DE <- FindMarkers(my.int, i[1], i[2], test.use = "MAST", latent.vars = c("CC.Difference.seurat"),
+                         min.pct = 0.25, verbose = T, assay = "RNA", features = my.HVF,) %>%
+      dplyr::filter(abs(avg_log2FC) > 0.5) %>%
+      dplyr::filter(p_val_adj < 0.05)
+    
+    # If less than 5, merge, and repeat
+    if (dim(my.DE)[1] < 5) {
+      cat(paste0(dim(my.DE)[1], " genes differentially expressed between clusters ",i[1]," and ",i[2]," merging \n"))
+      my.int <- SetIdent(my.int, cells = WhichCells(my.int, idents = i[2]), value = i[1])
+      keep.check <- T
+    }
+    print(i)
+  }
+}
+rm(to.check, my.HVF, my.DE)
+
+```
+
+```{r tsne_again, fig.height = 12, fig.width = 12}
+
+# renumber starting from 1
+my.ID <- factor(
+  Idents(my.int),
+  levels= levels(Idents(my.int))[base::order(as.numeric(levels(Idents(my.int))))])
+levels(my.ID) <- seq(length(levels(my.ID)))
+Idents(my.int) <- my.ID
+my.int[["seurat_clusters"]] <- my.ID
+
+# Check again the clusters
+dim1 <- DimPlot(my.int, reduction = "tsne", cols = rainbow(length(levels(my.ID))), label = T, label.size = 5, pt.size = 1)
+dim1
+```
+
+Now that we have the final reductions, we'll choose one and we look at the statistics of the cells. 
+
+```{r}
+modplots::mFeaturePlot(my.int, 
+                       my.features = c("OLIG2", "SOX9", "TUBB3", "SHH",
+                                       "SLC18A3", "GATA2", "PAX2", "TLX3",
+                                       "IGFBP7", "HBBA", "IFI30", "MSX2", "PLP1"),
+                       gnames = modplots::gnames)
+```
+
+```{r qplots, fig.height = 15, fig.width = 10, message=FALSE, warning=FALSE, echo = T}
+
+# set and get dim.reduct embeddings
+my.reduc <- "tsne"
+emb <- data.frame(Embeddings(my.int, my.reduc))
+colnames(emb) <- c("reduc_1", "reduc_2")
+
+meta <- my.int[[]] %>%
+  tibble::rownames_to_column("cell_ID")
+
+
+my.plots = list()
+
+my.plots[[1]] = ggplot(emb[meta[order(meta$nCount_RNA),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$nCount_RNA)), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="UMI count", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[2]] = ggplot(emb[meta[order(meta$nFeature_RNA),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$nFeature_RNA)), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="gene count", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[3]] = ggplot(emb[meta[order(meta$nCount_SCT),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$nCount_RNA)), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="UMI count (SCT)", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[4]] = ggplot(emb[meta[order(meta$nFeature_SCT),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$nFeature_RNA)), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="gene count (SCT)", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[5]] = ggplot(emb[meta[order(meta$percent.mt),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=(sort(meta$percent.mt))), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="log1p MT percent", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[6]] = ggplot(emb[meta[order(meta$CC.Difference.seurat),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$CC.Difference.seurat)), size=1, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="Cell Cycle\nS-G2M", x = paste0(my.reduc, "_1"), y = paste0(my.reduc, "_2"))
+
+my.plots[[7]] = ggplot(emb[meta[order(meta$percent.rb),]$cell_ID, ], aes(x = reduc_1, y = reduc_2)) +
+    geom_point(aes(color=sort(meta$percent.rb)), size=2, alpha = 0.4, pch = 19) + 
+    scale_colour_gradientn(colours = c("gray90","gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+    theme_classic() + labs(colour="percent.rb")
+
+grid.arrange(grobs=my.plots, ncol=2)
+
+```
+
+# DE analysis
+
+Here we do the differential expression analysis, and end up with the marker genes lists.
+We can also see the marker gene dot plot, for the top 2 marker genes per cluster
+
+```{r DE, fig.height=10, message=FALSE, warning=FALSE, echo = T}
+
+# Find all the marker genes, with these thresholds MAST
+semarkers = FindAllMarkers(my.int,
+                           features = my.int[["integrated"]]@var.features, 
+                           only.pos = TRUE, 
+                           min.pct = 0.25, 
+                           logfc.threshold =  0.5,
+                           latent.vars = c("CC.Difference.seurat"), 
+                           test.use = "MAST", 
+                           assay = "RNA", 
+                           return.thresh = 0.05)
+
+# We only keep the significant ones
+semarkers <- semarkers %>%
+  filter(p_val_adj < 0.05) %>% 
+  rename(Gene.stable.ID = gene) %>% 
+  left_join(modplots::gnames, by = "Gene.stable.ID")
+
+
+# Take only the top 10
+semrk10 = semarkers %>% group_by(cluster) %>% top_n(-10, p_val_adj)
+semrk1 = semarkers %>% group_by(cluster) %>% top_n(-1, p_val_adj)
+
+modplots::mDotPlot2(my.int, 
+          features = unique(semrk1$Gene.stable.ID), 
+          cols = c("grey", "black"),  
+          gnames = modplots::gnames, dot.scale = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+# save
+
+```{r saving, message=FALSE, warning=FALSE, echo = T}
+
+saveRDS(
+  my.int,
+  paste0(
+    "~/spinal_cord_paper/data/",
+    my.int@project.name,
+    "_seurat_",
+    format(Sys.Date(), "%d%m%y"),
+    ".rds"
+  )
+)
+
+write.table(
+  semarkers,
+  sep = "\t",
+  row.names = T,
+  col.names = T,
+  file = paste0(
+    "~/spinal_cord_paper/data/",
+    my.int@project.name,
+    "_fullDE_",
+    format(Sys.Date(), "%d%m%y"),
+    ".txt"
+  ),
+  quote = F
+)
+
+write.table(
+  semrk10,
+  sep = "\t",
+  row.names = T,
+  col.names = T,
+  file = paste0(
+    "~/spinal_cord_paper/data/",
+    my.int@project.name,
+    "_top10DE_",
+    format(Sys.Date(), "%d%m%y"),
+    ".txt"
+  ),
+  quote = F
+)
+
+```
+
+```{r session-info}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
+
+
+
