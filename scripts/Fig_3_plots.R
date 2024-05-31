@@ -74,7 +74,7 @@ Reduce(intersect, venn)
 rm(wgcna_dat)
 
 ### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of all 4 in situ probes ####
+#### tSNE plots of all 5 in situ probes ####
 ### ### ### ### ### ### ### ### ### ### ###
 
 
@@ -83,7 +83,7 @@ data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
                "~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
 
 # PKD2L1 is already in figure 4
-probes <- c("GATA2","CACNA1G","SFRP5","CRTAC1")
+probes <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
 
 gnames <- modplots::gnames
 
@@ -92,39 +92,152 @@ plots <- list()
 for (i in seq(data_sets)) {
   my.se <- readRDS(data_sets[i])
   
-  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 1, return = TRUE)
+  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 0.5, return = TRUE)
   
   rm(my.se)
 }
 
-pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 12, height = 8)
-  
-(plots[[1]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-    NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[1]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[2]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[1]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[2]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[3]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) + 
-  (plots[[3]][[4]] + theme(plot.title = element_blank()) + theme_void() + 
-     NoLegend() + annotate("text", label = paste(probes, collapse = '_'), x = 0, y = 0)) +
-  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
+pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 8.5, height = 5)
 
+  # brachial 
+(plots[[1]][[1]] + theme(plot.title = element_blank()) +
+    geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
+                 size = 0.8, color = "black", 
+                 linejoin = "mitre", lineend = "square",
+                 arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+    theme_void() +
+    NoLegend() + annotate("text", label = probes[1], fontface = "italic", x = 0, y = 110)) +
+  annotate("text", label = "A", fontface = "bold", x = -100, y = 110)  + 
+  annotate("text", label = "brachial", x = -110, y = 0, angle = 90)  + 
+  (plots[[1]][[2]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[2], fontface = "italic", x = 0, y = 110)) +  
+  annotate("text", label = "brachial", col = "white", x = -110, y = 0, angle = 90)  + 
+  (plots[[1]][[3]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[3], fontface = "italic", x = 0, y = 110)) + 
+  annotate("text", label = "brachial", col = "white", x = -110, y = 0, angle = 90)  + 
+  (plots[[1]][[4]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[4], fontface = "italic", x = 0, y = 110)) + 
+  annotate("text", label = "brachial", col = "white", x = -110, y = 0, angle = 90)  + 
+  (plots[[1]][[5]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[5], fontface = "italic", x = 0, y = 110)) +  
+  annotate("text", label = "brachial", col = "white", x = -110, y = 0, angle = 90)  + 
+  # lumbar
+  (plots[[2]][[1]] + theme(plot.title = element_blank()) + 
+     geom_segment(aes(x=40,y=18,xend=41,yend=19),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     
+     theme_void() +
+     NoLegend() + annotate("text", label = probes[1], fontface = "italic", x = 0, y = 110,
+                           color = "white")) +
+  annotate("text", label = "lumbar", x = -100, y = 0, angle = 90)  + 
+  (plots[[2]][[2]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=40,y=18,xend=41,yend=19),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[2], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[2]][[3]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=40,y=18,xend=41,yend=19),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[3], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[2]][[4]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=40,y=18,xend=41,yend=19),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[4], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[2]][[5]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=40,y=18,xend=41,yend=19),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[5], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  + 
+  # polydactyl
+  (plots[[3]][[1]] +  theme(plot.title = element_blank())  +
+     geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() +
+     NoLegend() + annotate("text", label = probes[1], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "polydactyl", x = -100, y = 0, angle = 90)  + 
+  (plots[[3]][[2]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[2], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[3]][[3]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[3], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[3]][[4]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[4], fontface = "italic", x = 0, y = 110,
+                           color = "white")) + 
+  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
+  (plots[[3]][[5]] + theme(plot.title = element_blank()) +
+     geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
+                  size = 0.8, color = "black", 
+                  linejoin = "mitre", lineend = "square",
+                  arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
+     theme_void() + 
+     NoLegend() + annotate("text", label = probes[5], fontface = "italic", x = 0, y = 110,
+                           color = "white")) +
+  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
+  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
 
 dev.off()
 
