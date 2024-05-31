@@ -8,6 +8,7 @@ library(Seurat)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(gridExtra)
 
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ###
@@ -84,4 +85,52 @@ pdf("~/spinal_cord_paper/figures/RP_FP_cluster_sizes.pdf", width = 7, height = 7
 p + theme_classic()
 dev.off()
 
+### ### ### ### ### ### 
+#### DE heatmaps ####
+### ### ### ### ### ### 
+
+gnames <- modplots::gnames
+
+# load the ctrl poly integrated data and add the combined labels.
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_250723.rds")
+
+ctrl_poly_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_poly_int_combined_labels.rds")
+
+my.se <- AddMetaData(my.se, ctrl_poly_int_combined_labels)
+
+# subset for two 
+Idents(my.se) <- "annot_sample"
+
+sub <- subset(my.se, idents = c("excitatory neurons_11_ctrl", "excitatory_neurons_15_poly") )
+
+cand_c11_p15 <- c("SPOCK1", "RUNX1T1", "TAC1", "RELN")
+
+gnames[gnames$Gene.name %in% cand_c11_p15,]
+
+c11_p15 <- DoHeatmap(
+  subset(
+    my.se, 
+    idents = c("excitatory neurons_11_ctrl",
+               "excitatory_neurons_15_poly")),
+  raster = FALSE,
+  features = gnames[gnames$Gene.name %in% cand_c11_p15, 1]
+)
+
+cand_c16_p14 <- c("ST18", "EPB41", "ASCL1", "NOTCH1")
+
+gnames[gnames$Gene.name %in% cand_c16_p14,]
+
+c16_p14 <- DoHeatmap(
+  subset(
+    my.se, 
+    idents = c("inhibitory_neurons_16_ctrl",
+               "inhibitory_neurons_14_poly")),
+  raster = FALSE,
+  features = gnames[gnames$Gene.name %in% cand_c16_p14, 1]
+)
+
+pdf("~/spinal_cord_paper/figures/Fig_5_ctrl_poly_DE_htmp.pdf")
+c11_p15
+c16_p14
+dev.off()
 
