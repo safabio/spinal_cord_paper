@@ -157,6 +157,7 @@ vsd <- vst(dds, blind=FALSE)
 
 ngenes <- 1000
 point.size <- 2
+pch.order <- c(0,5,2,6,3,4,1,8)
 # PC1 and 2
 my.pca12 <-
   modplots::mPCA(
@@ -166,7 +167,7 @@ my.pca12 <-
     group = "broad",
     colors = clust_col$color,
     shape = "orig.ident",
-    pch = c(0, 1, 2, 3, 4, 5, 6, 8),
+    pch = pch.order,
     pt.size = point.size
   )
 # PC1 and 3
@@ -178,7 +179,7 @@ my.pca13 <-
     group = "broad",
     colors = clust_col$color,
     shape = "orig.ident",
-    pch = c(0, 1, 2, 3, 4, 5, 6, 8),
+    pch = pch.order,
     pt.size = point.size
   )
 # PC4 and 2 (reversed so plot aligns)
@@ -190,7 +191,7 @@ my.pca42 <-
     group = "broad",
     colors = clust_col$color,
     shape = "orig.ident",
-    pch = c(0, 1, 2, 3, 4, 5, 6, 8),
+    pch = pch.order,
     pt.size = point.size
   )
 
