@@ -9,6 +9,9 @@ library(dplyr)
 library(stringr)
 library(ggplot2)
 library(gridExtra)
+library(magrittr)
+library(tibble)
+
 
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ###
@@ -134,3 +137,88 @@ c11_p15
 c16_p14
 dev.off()
 
+### ### ### ### ### ### ### ### 
+#### Ctrl_poly int dotplot ####
+### ### ### ### ### ### ### ###
+
+# ctrl int data with annotations
+ctrl <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+
+ctrl_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv")
+
+if(length(table(ctrl_annot$number)) != length(table(ctrl$seurat_clusters))) {
+  stop("Number of clusters must be identical!")
+}
+
+# rename for left join
+ctrl_annot <- ctrl_annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(ctrl_annot))) %>% 
+  rename(seurat_clusters = number) %>% 
+  mutate(fine = paste("ctrl_int", fine, sep = "_"))
+
+# add cluster annotation to meta data
+ctrl@meta.data <- ctrl@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(ctrl_annot, by = "seurat_clusters") %>% 
+  column_to_rownames("rowname")
+
+# poly int data with annotations
+poly <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
+
+poly_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_poly_int_cluster_annotation.csv")
+
+if(length(table(poly_annot$number)) != length(table(poly$seurat_clusters))) {
+  stop("Number of clusters must be identical!")
+}
+
+# rename for left join
+poly_annot <- poly_annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(poly_annot))) %>% 
+  rename(seurat_clusters = number) %>% 
+  mutate(fine = paste("poly_int", fine, sep = "_"))
+
+# add cluster annotation to meta data
+poly@meta.data <- poly@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(poly_annot, by = "seurat_clusters") %>% 
+  column_to_rownames("rowname")
+
+my.se <- merge(ctrl, poly)
+
+my.se[[]]
+
+# GSI correlation order
+my.htmp <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_poly.rds")
+
+my.se@meta.data$fine <- factor(
+  my.se@meta.data$fine,
+  levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
+
+
+Idents(my.se) <- "fine" 
+my.se@active.assay <- "SCT"
+
+
+GOI <- c("SPOCK1", "RUNX1T1", "TAC1", "RELN", "ST18", "EPB41", "ASCL1", "NOTCH1")
+
+gnames = modplots::gnames
+
+dpl <- modplots::mDotPlot2(
+  my.se,
+  features = gnames[gnames$Gene.name %in% GOI,
+                    "Gene.stable.ID"],
+  cols = c("lightgrey", "black"),
+  cluster.idents = FALSE,
+  gnames = gnames
+) +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_poly_dotplot.pdf",
+  width = 13, height = 5.5,
+  plot = dpl
+)
