@@ -3,11 +3,13 @@
 ## Fabio Sacher, 03.01.2024
 ### ### ### ### ### ### ### ### ### ### ###
 
-
 library(Seurat)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(magrittr)
+library(tibble)
+
 
 ### ### ### ### ### ### ### ### ### ### ###
 #### detailed venn diagram of RP and FP module overlap ####
@@ -227,4 +229,124 @@ pdf(file = "~/spinal_cord_paper/figures/Int_data_cluster_sizes.pdf", height = 13
 grid.arrange(grobs = plots, ncol = 1)
 dev.off()
 
+### ### ### ### ### ### ### ### 
+#### Ctrl_lumb int dotplot ####
+### ### ### ### ### ### ### ###
 
+# ctrl int data with annotations
+ctrl <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+
+ctrl_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv")
+
+if(length(table(ctrl_annot$number)) != length(table(ctrl$seurat_clusters))) {
+  stop("Number of clusters must be identical!")
+}
+
+# rename for left join
+ctrl_annot <- ctrl_annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(ctrl_annot))) %>% 
+  rename(seurat_clusters = number) %>% 
+  mutate(fine = paste("ctrl_int", fine, sep = "_"))
+
+# add cluster annotation to meta data
+ctrl@meta.data <- ctrl@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(ctrl_annot, by = "seurat_clusters") %>% 
+  column_to_rownames("rowname")
+
+# lumb int data with annotations
+lumb <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+
+lumb_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_lumb_int_cluster_annotation.csv")
+
+if(length(table(lumb_annot$number)) != length(table(lumb$seurat_clusters))) {
+  stop("Number of clusters must be identical!")
+}
+
+# rename for left join
+lumb_annot <- lumb_annot %>% 
+  mutate(fine = paste(fine, number, sep = "_")) %>% 
+  mutate(number = factor(number, levels = 1:nrow(lumb_annot))) %>% 
+  rename(seurat_clusters = number) %>% 
+  mutate(fine = paste("lumb_int", fine, sep = "_"))
+
+# add cluster annotation to meta data
+lumb@meta.data <- lumb@meta.data %>% 
+  rownames_to_column("rowname") %>% 
+  left_join(lumb_annot, by = "seurat_clusters") %>% 
+  column_to_rownames("rowname")
+
+# merge ctrl and lumb data
+my.se <- merge(ctrl, lumb)
+
+my.se[[]]
+
+# GSI correlation order
+my.htmp <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_lumb.rds")
+
+my.se@meta.data$fine <- factor(
+  my.se@meta.data$fine,
+  levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
+
+my.se@meta.data$fine <- fct_rev(my.se@meta.data$fine)
+
+Idents(my.se) <- "fine" 
+my.se@active.assay <- "RNA"
+
+gnames = modplots::gnames
+
+# Dotplot and clustering on the HOX clusters 
+hox <- modplots::gnames %>% 
+  filter(grepl("^HOX", Gene.name)) %>% 
+  filter(Gene.stable.ID %in% rownames(my.se))
+
+dpl_hox <- modplots::mDotPlot2(my.se,
+                               features = hox$Gene.stable.ID,
+                               cols = c("lightgrey", "black"),
+                               cluster.idents = TRUE,
+                               gnames = gnames)
+
+dpl_hox[[1]] +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+# hclust as dendrogram
+dend.idents <- as.dendrogram(dpl_hox[[2]])
+
+pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_dotplot_dendro.pdf")
+plot(dend.idents)
+dev.off()  
+  
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_dotplot.pdf",
+  width = 13, height = 10,
+  plot = dpl_hox[[1]] +
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+)
+  
+## Marker gene dotplot
+GOI <- rev(c("SOX9","SHH","RSPO1","TUBB3","NRXN3","TLX3","OLIG2","PLP1","IGFBP7","IFI30","HBBA","CDH5"))
+
+cand <- modplots::gnames %>% 
+  filter(Gene.name %in% GOI)
+
+cand <- cand[match(GOI, cand$Gene.name),]
+
+
+# Dotplot of candidate genes (GSI clust. from my.htmp)
+dpl_cand <- modplots::mDotPlot2(
+  my.se,
+  features = cand$Gene.stable.ID,
+  cols = c("lightgrey", "black"),
+  gnames = gnames
+) +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_cand_dotplot.pdf",
+  width = 13, height = 6,
+  plot = dpl_cand
+)
