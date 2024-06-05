@@ -289,7 +289,7 @@ my.se@meta.data$fine <- factor(
   my.se@meta.data$fine,
   levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
 
-my.se@meta.data$fine <- fct_rev(my.se@meta.data$fine)
+my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
 
 Idents(my.se) <- "fine" 
 my.se@active.assay <- "RNA"
@@ -314,18 +314,56 @@ dpl_hox[[1]] +
 # hclust as dendrogram
 dend.idents <- as.dendrogram(dpl_hox[[2]])
 
-pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_dotplot_dendro.pdf")
+pdf("~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot_dendro.pdf")
 plot(dend.idents)
 dev.off()  
   
 ggsave(
-  filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_dotplot.pdf",
+  filename = "~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot.pdf",
   width = 13, height = 10,
   plot = dpl_hox[[1]] +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 )
   
+## select HOX genes
+hox_select <- rev(c("HOXA10","HOXA11","HOXC10","HOXB5","HOXC6","HOXC9"))
+
+cand <- modplots::gnames %>% 
+  filter(Gene.name %in% hox_select)
+
+cand <- cand[match(hox_select, cand$Gene.name),]
+
+dpl_hox_select <- modplots::mDotPlot2(
+  my.se,
+  features = cand$Gene.stable.ID,
+  cols = c("lightgrey", "black"),
+  cluster.idents = TRUE,
+  gnames = gnames
+)
+
+dpl_hox_select[[1]] +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+# hclust as dendrogram
+dend.idents.hox <- as.dendrogram(dpl_hox_select[[2]])
+
+pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot_dendro.pdf")
+plot(dend.idents.hox)
+dev.off()  
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
+  width = 13, height = 5,
+  plot = dpl_hox_select[[1]] +
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+)
+
+
+
+
 ## Marker gene dotplot
 GOI <- rev(c("SOX9","SHH","RSPO1","TUBB3","NRXN3","TLX3","OLIG2","PLP1","IGFBP7","IFI30","HBBA","CDH5"))
 
