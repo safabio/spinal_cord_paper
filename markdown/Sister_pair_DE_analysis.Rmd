@@ -249,7 +249,7 @@ for (i in seq(nrow(sis_annot))) {
     dplyr::arrange(-avg_log2FC) %>%
     dplyr::filter(p_val_adj < 0.05) %>%
     dplyr::filter(abs(avg_log2FC) > 0.5) %>%
-  dplyr::mutate(delta_pct = abs(pct.1 - pct.2))
+  dplyr::mutate(delta_pct = pct.1 - pct.2)
 }
 
 names(sis_markers) <- paste0(sis_annot$ctrl_fine, "-vs-", sis_annot$lumb_fine)
@@ -461,7 +461,7 @@ for (i in seq(nrow(sis_annot))) {
     dplyr::arrange(-avg_log2FC) %>%
     dplyr::filter(p_val_adj < 0.05) %>%
     dplyr::filter(abs(avg_log2FC) > 0.5) %>%
-  dplyr::mutate(delta_pct = abs(pct.1 - pct.2))
+  dplyr::mutate(delta_pct = pct.1 - pct.2)
 }
 
 names(sis_markers) <- paste0(sis_annot$ctrl_fine, "-vs-", sis_annot$poly_fine)
