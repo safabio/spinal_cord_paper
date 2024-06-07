@@ -327,7 +327,7 @@ ggsave(
 )
   
 ## select HOX genes
-hox_select <- rev(c("HOXA10","HOXA11","HOXC10","HOXB5","HOXC6","HOXC9","HOXD10","HOXD11"))
+hox_select <- rev(c("HOXB5","HOXC6","HOXC9","HOXA10","HOXC10","HOXD10","HOXA11","HOXD11"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% hox_select)
