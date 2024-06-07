@@ -327,7 +327,7 @@ ggsave(
 )
   
 ## select HOX genes
-hox_select <- rev(c("HOXA10","HOXA11","HOXC10","HOXB5","HOXC6","HOXC9"))
+hox_select <- rev(c("HOXA10","HOXA11","HOXC10","HOXB5","HOXC6","HOXC9","HOXD10","HOXD11"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% hox_select)
@@ -355,13 +355,11 @@ dev.off()
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
-  width = 13, height = 5,
+  width = 13, height = 5.5,
   plot = dpl_hox_select[[1]] +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 )
-
-
 
 
 ## Marker gene dotplot
