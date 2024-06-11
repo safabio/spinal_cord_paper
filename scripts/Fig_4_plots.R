@@ -299,10 +299,14 @@ gnames = modplots::gnames
 # Dotplot and clustering on the HOX clusters 
 hox <- modplots::gnames %>% 
   filter(grepl("^HOX", Gene.name)) %>% 
-  filter(Gene.stable.ID %in% rownames(my.se))
+  filter(Gene.stable.ID %in% rownames(my.se)) %>% 
+  mutate(group = str_extract(Gene.name, "HOX.")) %>% 
+  mutate(number = as.numeric(str_extract(Gene.name, "\\d{1,2}$"))) %>% 
+  arrange(group) %>% 
+  arrange(number)
 
 dpl_hox <- modplots::mDotPlot2(my.se,
-                               features = hox$Gene.stable.ID,
+                               features = rev(hox$Gene.stable.ID),
                                cols = c("lightgrey", "black"),
                                cluster.idents = TRUE,
                                gnames = gnames)
