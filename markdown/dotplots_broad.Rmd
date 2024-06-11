@@ -111,7 +111,7 @@ for (i in seq(se_path)) {
     mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
     column_to_rownames("rowname")
   
-  
+  my.se@active.assay <- "RNA"
   
   # without x labs so plots have the same height
   dpl[[i]] <- mDotPlot2(my.se,

@@ -2840,7 +2840,7 @@ for (i in seq(se_path)) {
     mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, &quot;\\d{1,2}$&quot;))) %&gt;% 
     column_to_rownames(&quot;rowname&quot;)
   
-  
+  my.se@active.assay &lt;- &quot;RNA&quot;
   
   # without x labs so plots have the same height
   dpl[[i]] &lt;- mDotPlot2(my.se,
@@ -2880,7 +2880,7 @@ dev.off()</code></pre>
   2 </code></pre>
 <pre class="r"><code># Date and time of Rendering
 Sys.time()</code></pre>
-<pre><code>[1] &quot;2023-08-11 10:59:28 CEST&quot;</code></pre>
+<pre><code>[1] &quot;2024-06-11 09:01:06 CEST&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.1.0 (2021-05-18)
 Platform: x86_64-pc-linux-gnu (64-bit)
