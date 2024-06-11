@@ -203,8 +203,9 @@ DE_table$Gene.name[duplicated(DE_table$Gene.stable.ID)]
 
 # select top50 by log2FC 
 for (i in seq(DE_list)) {
-    DE_list[[i]] <- DE_list[[i]] %>% 
-    slice_max(order_by = abs(avg_log2FC), n = 50)
+    DE_list[[i]] <- DE_list[[i]] %>%
+    slice_max(order_by = abs(avg_log2FC), n = 50) %>% 
+    arrange(desc(avg_log2FC))
 }
 
 p1 <- modplots::mDotPlot2(my.se,
