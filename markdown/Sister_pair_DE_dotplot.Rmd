@@ -22,6 +22,7 @@ library(ggplot2)
 library(stringr)
 library(tibble)
 library(patchwork)
+library(plotly)
 ```
 
 # DE table
@@ -275,6 +276,69 @@ pdf("~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_poly_dotplot_individual.pdf", h
 dev.off()
 ```
 
+# Volcanoplots
+
+```{r volcanoplots}
+p.adj <- 0.01
+l2fc <- 0
+
+# select top50 by log2FC 
+for (i in seq(DE_list)) {
+    DE_list[[i]] <- DE_list[[i]] %>% 
+    mutate(delta_pct_sign = case_when(
+      delta_pct < 0 ~ "-",
+      delta_pct > 0 ~ "+",
+      delta_pct == 0 ~ "0"
+    ))
+}
+ 
+
+c16_p14 <- ggplot(data = DE_list[[4]],
+       aes(x = avg_log2FC,
+           y = -log10(p_val_adj),
+           label = Gene.name,
+           color = delta_pct_sign,
+           size = abs(delta_pct)
+       )) +
+  geom_point(shape = 21) +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = c("red", "black")) +
+  scale_size_continuous(range = c(0.5, 4)) +
+  xlim(-2,2) +
+  ylab("-log10(padj)") +
+  theme_bw()
+
+c11_p15 <- ggplot(data = DE_list[[1]],
+       aes(x = avg_log2FC,
+           y = -log10(p_val_adj),
+           label = Gene.name,
+           color = delta_pct_sign,
+           size = abs(delta_pct)
+       )) +
+  geom_point(shape = 21) +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = c("red", "black")) +
+  scale_size_continuous(range = c(0.5, 4)) +
+  xlim(-2,2) +
+  ylab("-log10(padj)") +
+  theme_bw()
+
+ggplotly(c16_p14)
+ggplotly(c11_p15)
+
+```
+
+```{r}
+pdf("~/spinal_cord_paper/figures/Fig_5_volcanoplots.pdf", width = 7, height = 10)
+(c16_p14 +
+  ggrepel::geom_text_repel(size = 3, color = "black")) /
+(c11_p15  +
+  ggrepel::geom_text_repel(size = 3, color = "black")) + plot_layout(guides = "collect")
+
+```
+ 
 # Specific markers
 
 Find Markers for clusters 11_ctrl, 16_ctrl, and 15_poly.
