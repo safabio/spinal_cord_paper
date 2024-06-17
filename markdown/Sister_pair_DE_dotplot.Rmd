@@ -61,7 +61,7 @@ hist(abs(DE_list[[5]]$delta_pct), breaks = 20)
 abline(v = 0.1, lty = "dashed", col = "red")
 ```
 
-Now we filter the DE lists for absolute delta percentage \> 0.1.
+Now we filter the DE lists for absolute delta percentage \> 0.1. 
 
 ```{r filter-delta-pct}
 for (i in seq(DE_list)) {
@@ -258,21 +258,32 @@ p4 <- modplots::mDotPlot2(my.se,
     xlab(names(DE_list)[4]) +
     ylab(element_blank())
 
+p5 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample",  
+                    assay = "RNA",
+                      # RELN (to ensure proper scaling) and
+                      # ND3 (filter out previously due to delta_pct = 0.009)
+                    features = c("ENSGALG00000008193", "ENSGALG00000030436"),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+    coord_flip() +
+    xlab(names(DE_list)[3]) +
+    ylab(element_blank())
+
 ```
 
 ```{r export_plots }
-layout <- "CCDD
-           CC##"
 
 pdf("~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_poly_dotplot_individual.pdf", height = 21, width = 7)
 # without labels for proper alignment
 (p1 + p2 + plot_layout(guides = "collect")) /
-(p3 + p4 + plot_layout(guides = "collect", design = layout)) & 
+(p3 + (p4 / p5) + plot_layout(guides = "collect")) & 
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank())
 # with labels to transfer in illustrator
 (p1 + p2 + plot_layout(guides = "collect")) /
-(p3 + p4 + plot_layout(guides = "collect", design = layout))
+(p3 + (p4 / p5) + plot_layout(guides = "collect"))
 
 dev.off()
 ```
