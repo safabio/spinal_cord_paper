@@ -1,0 +1,380 @@
+---
+title: "Motor neuron counting"
+author: "Fabio Sacher"
+date: "17.06.2024"
+data:
+output:
+  html_document:
+    df_print: paged
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+
+```{r libraries}
+library(dplyr)
+library(tibble)
+library(stringr)
+library(magrittr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+```
+
+# counting data
+
+Load the motor neuron counting data.
+
+```{r load-files}
+files <- list.files("~/spinal_cord_paper/data/MN_counting/", pattern = ".txt")
+
+tables <- list()
+
+for (i in seq(files)) {
+  tables[[i]] <- read.delim(paste0("~/spinal_cord_paper/data/MN_counting/", files[i]), sep = ",")
+}
+
+names(tables) <- files
+```
+
+# data wrangling
+
+Combine the tables into a single data frame and bring it into long format. Also define a split to separate sections into rostral and caudal. 
+The value used is the median of the index range by day.
+
+```{r data-wrangling}
+df <- do.call(rbind,tables) %>% 
+  rownames_to_column("tmp") %>% 
+  mutate(index = str_extract(tmp, "\\d{1,2}$")) %>% 
+  mutate(day = str_extract(tmp, "^Day\\d{1,2}")) %>% 
+  mutate(day = factor(day, levels = c("Day6", "Day8", "Day10"))) %>% 
+  mutate(embryo = str_extract(tmp, "emb_[abcdef]")) %>% 
+  mutate(index = as.integer(index)) %>% 
+  select(ctrl, poly, index, day, embryo) %>% 
+  mutate(embryo_id = paste(day, embryo, sep = "_"))
+
+# factor levels to order the embryo ids
+id_levels <- c("Day6_emb_a","Day6_emb_b","Day6_emb_c","Day6_emb_d","Day6_emb_e",
+               "Day8_emb_a","Day8_emb_b","Day8_emb_c","Day8_emb_d","Day8_emb_e",
+               "Day10_emb_a","Day10_emb_b","Day10_emb_c","Day10_emb_d", "Day8_emb_f")
+
+long_df <- gather(df, "condition", "count", -index, -day, -embryo, -embryo_id) %>% 
+  mutate(condition = factor(condition, levels = c("ctrl", "poly"))) %>% 
+  mutate(embryo_id = factor(embryo_id, levels = id_levels))
+
+# use median to split indeces into rostral and caudal
+axis_split <- long_df %>% 
+  group_by(day) %>% 
+  summarise(split = median(range(index)))
+
+splits <- axis_split$split
+names(splits) <- axis_split$day
+
+long_df <- long_df %>% 
+  mutate(axis = case_when(
+    day == names(splits)[1] & index < splits[[1]] ~ "caudal",
+    day == names(splits)[2] & index < splits[[2]] ~ "caudal",
+    day == names(splits)[3] & index < splits[[3]] ~ "caudal",
+    TRUE ~ "rostral"
+  ))  %>% 
+  mutate(split = case_when(
+    day == names(splits)[1] ~ splits[[1]],
+    day == names(splits)[2] ~ splits[[2]],
+    day == names(splits)[3] ~ splits[[3]]
+  ))
+
+```
+
+# initial data plotting
+
+Plot the raw data split by embryonic days.
+
+1. total counts by embryo
+
+2. counts split by condition by embryo
+
+3. counts split by condition
+
+```{r initial-plotting, fig.height=7, fig.width=10}
+ggplot(data = long_df, aes(x = index, y = count, color = embryo)) +
+  geom_point() +
+  geom_smooth() +
+  geom_vline(aes(xintercept = split), lty = "dashed") +
+  facet_wrap("day", nrow = 3)
+
+ggplot(data = long_df, aes(x = index, y = count, color = condition)) +
+  geom_point() +
+  geom_smooth() +
+  geom_vline(aes(xintercept = split), lty = "dashed") +
+  facet_wrap("embryo_id", nrow = 3)
+
+ggplot(data = long_df, aes(x = index, y = count, color = condition)) +
+  geom_point() +
+  geom_smooth() +
+  geom_vline(aes(xintercept = split), lty = "dashed")+
+  facet_wrap("day", nrow = 3)
+
+```
+
+# data cleaning
+
+There is an outlier in Day10, Emb_d, slide 54 with 550 nuclei. Most likely an
+added 0 (typo).
+Since it is almost 7X the 
+mean of values from slides 49 to 59 of all embryos and conditions (79.29487) 
+it is removed.
+
+Also embryo f from day 8 is removed since it was only counted partially.
+
+```{r cleaning}
+mean(long_df$count[long_df$day == "Day10" &
+                     long_df$index %in% c(49:59)],
+     na.rm = TRUE)
+# set the outlier to NA
+long_df$count[long_df$count == 550] <- NA
+# remove Day 8 embryo f
+long_df <- long_df[!(long_df$embryo_id == "Day8_emb_f"),]
+```
+
+# plotting cleaned data
+
+```{r plot-cleaned-data}
+ggplot(data = long_df, aes(x = index, y = count, color = embryo)) +
+  geom_point() +
+  geom_smooth() +
+  geom_vline(aes(xintercept = split), lty = "dashed")+
+  facet_wrap("day", nrow = 1)
+
+sup <- ggplot(data = long_df, aes(x = index, y = count, color = condition)) +
+  geom_point(size = 1, alpha = 0.5) +
+  geom_smooth(linewidth = 0.5) +
+  geom_vline(aes(xintercept = split), lty = "dashed")+
+  scale_x_reverse() +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  facet_wrap("embryo_id", nrow = 3)
+
+main <- ggplot(data = long_df, aes(x = index, y = count, color = condition, shape = condition)) +
+  geom_point(size = 1, alpha = 0.2) +
+  geom_vline(aes(xintercept = split), lty = "dashed")+
+  scale_shape_manual(values = c(1, 3)) +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  scale_x_reverse() +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs")) +
+  facet_wrap("day", nrow = 3) + theme_bw()
+
+sup
+
+main
+
+```
+
+# barplots of total MN count
+
+Next we plot barplots of total motor neuron count to see overal changes.
+
+```{r data-prep-total-barplot}
+nMN_df <- long_df %>% 
+  unite(embryo_id, condition, col = "id", sep = "-") %>% 
+  group_by(id) %>% 
+  summarize(nMN = sum(count, na.rm = TRUE)) %>%
+  separate(id, sep = "-", into = c("embryo_id", "cond")) %>%
+  mutate(day = str_extract(embryo_id, "^Day\\d{1,2}")) %>% 
+  mutate(grouping = paste(day, cond, sep = "_")) %>% 
+  group_by(grouping) %>% 
+  mutate(day = factor(day, levels = c("Day6", "Day8", "Day10")))
+
+std.error <- function(x) sd(x)/sqrt(length(x))
+
+se_df <- nMN_df %>% summarise(se = std.error(nMN))
+avg_df <- nMN_df %>% summarise(mean = mean(nMN)) %>% 
+  left_join(se_df, by = "grouping") %>% 
+  separate(grouping, sep = "_", into = c("day", "cond")) %>% 
+  mutate(day = factor(day, levels = c("Day6", "Day8", "Day10")))
+
+# Define the top and bottom of the errorbars
+limits <- aes(ymax = mean + se, ymin = mean - se)
+dodge <- position_dodge2(width=0.9)
+
+```
+
+```{r plot-total-barplot, fig.width=3}
+# total counts ctrl vs poly by day
+bar_cond <- ggplot(data = avg_df,
+       aes(x = day,
+           y = mean,
+           color = cond)) + 
+  geom_bar(position = dodge, stat="identity", fill = NA) +
+  geom_linerange(limits, position=dodge) +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  facet_wrap("day", nrow = 3, scales = "free_x") +
+  theme_bw()
+
+bar_cond
+```
+
+## run tests between groups
+
+```{r tests-between-groups}
+
+compare_means(nMN ~ cond, data = nMN_df %>% ungroup() %>% filter(day == "Day6"))
+compare_means(nMN ~ cond, data = nMN_df %>% ungroup() %>% filter(day == "Day8"))
+compare_means(nMN ~ cond, data = nMN_df %>% ungroup() %>% filter(day == "Day10"))
+
+compare_means(nMN ~ day,
+              data = nMN_df %>%
+                    ungroup() %>% 
+                    filter(cond == "ctrl"))
+
+my_comparisons <- list(c("Day6", "Day8"), c("Day8", "Day10"), c("Day6", "Day10"))
+```
+
+```{r, fig.width=5}
+box_day <- ggplot(data = nMN_df %>%
+         ungroup(),
+       aes(x = day, y = nMN, color = cond)) + 
+  geom_boxplot() +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  stat_compare_means(comparisons = my_comparisons) +
+  ggtitle("MN counts across devel") +
+  facet_wrap("cond", nrow = 2) +
+  theme_bw()
+
+box_day
+```
+
+# barplots rostral vs caudal
+
+```{r rost-vs-caud-barplot, fig.width=5}
+axis_nMN <- long_df %>% 
+  mutate(axis = case_when(
+    day == names(splits)[1] & index < splits[[1]] ~ "caudal",
+    day == names(splits)[2] & index < splits[[2]] ~ "caudal",
+    day == names(splits)[3] & index < splits[[3]] ~ "caudal",
+    TRUE ~ "rostral"
+  )) %>% 
+  unite(embryo_id, condition, axis, col = "id", sep = "-") %>% 
+  group_by(id) %>% 
+  summarize(nMN = sum(count, na.rm = TRUE)) %>%
+  separate(id, sep = "-", into = c("embryo_id", "cond", "axis")) %>%
+  mutate(day = str_extract(embryo_id, "^Day\\d{1,2}")) %>% 
+  mutate(grouping = paste(day, cond, axis, sep = "_")) %>% 
+  group_by(grouping) %>% 
+  mutate(day = factor(day, levels = c("Day6", "Day8", "Day10")))
+
+# grouping for the barplot
+axis_levels <- c("Day6_ctrl_rostral",
+                 "Day6_poly_rostral",
+                 "Day6_ctrl_caudal",
+                 "Day6_poly_caudal",
+                 "Day8_ctrl_rostral",
+                 "Day8_poly_rostral",
+                 "Day8_ctrl_caudal",
+                 "Day8_poly_caudal",
+                 "Day10_ctrl_rostral",
+                 "Day10_poly_rostral",
+                 "Day10_ctrl_caudal",
+                 "Day10_poly_caudal")
+
+se_axis_df <- axis_nMN %>% summarise(se = std.error(nMN))
+avg_axis_df <- axis_nMN %>% summarise(mean = mean(nMN)) %>% 
+  left_join(se_axis_df, by = "grouping") %>% 
+  separate(grouping, sep = "_", into = c("day", "cond", "axis"), remove = FALSE) %>% 
+  mutate(day = factor(day, levels = c("Day6", "Day8", "Day10"))) %>% 
+  mutate(grouping = factor(grouping, levels = axis_levels))
+
+# Define the top and bottom of the errorbars
+limits <- aes(ymax = mean + se, ymin = mean - se)
+
+bar_axis <- ggplot(data = avg_axis_df,
+       aes(x = grouping,
+           y = mean,
+           color = cond)) + 
+  geom_bar(position = dodge, stat="identity", fill = NA) +
+  geom_linerange(limits, position=dodge) +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  facet_wrap("day", nrow = 3, scales = "free_x") +
+  theme_bw()
+
+bar_axis
+
+my_comparisons <- list(c("Day6_ctrl_rostral", "Day6_poly_rostral"),
+                       c("Day6_ctrl_caudal",  "Day6_poly_caudal"),
+                       c("Day8_ctrl_rostral", "Day8_poly_rostral"),
+                       c("Day8_ctrl_caudal",  "Day8_poly_caudal"),
+                       c("Day10_ctrl_rostral","Day10_poly_rostral"),
+                       c("Day10_ctrl_caudal", "Day10_poly_caudal")
+                       )
+
+# total counts per day by condition
+box_axis <- ggplot(data = axis_nMN %>%
+         ungroup() %>% 
+         mutate(grouping = factor(grouping, levels = axis_levels)),
+       aes(x = grouping, y = nMN, color = cond)) + 
+  geom_boxplot() +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  stat_compare_means(comparisons = my_comparisons) +
+  ggtitle("rostral vs caudal MN counts across devel") +
+  facet_wrap("day", nrow = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+box_axis
+```
+
+# figure export
+
+```{r}
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/line_plot_MN_count_individual.pdf",
+  width = 10, height = 6,
+  plot = sup
+)
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_5_line_plot_MN_count.pdf",
+  width = 4, height = 6,
+  plot = main
+)
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_5_ctrl_vs_poly_barplot_MN_count.pdf",
+  width = 3, height = 10, 
+  plot = bar_cond
+)
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_vs_poly_boxplot_MN_count.pdf",
+  width = 3, height = 7,
+  plot = box_day
+)
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_5_barplot_split_MN_count.pdf",
+  width = 3, height = 10,
+  plot = bar_axis
+)
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_5_boxplot_split_MN_count.pdf",
+  width = 7, height = 10,
+  plot = box_axis
+)
+
+```
+
+
+
+# Session Info
+
+```{r Session-info}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
