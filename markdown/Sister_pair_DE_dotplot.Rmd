@@ -309,7 +309,7 @@ volplot <- ggplot(data = toplot,
   geom_point(shape = 21) +
   geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
   geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
-  scale_color_manual(values = c("red", "black")) +
+  scale_color_manual(values = c("goldenrod3", "black")) +
   scale_size_continuous(range = c(0.5, 4)) +
   facet_wrap("contrast", ncol = 1, scales = "free_y") +
   ylab("-log10(padj)") +
@@ -320,7 +320,7 @@ ggplotly(volplot)
 ```
 
 ```{r}
-pdf("~/spinal_cord_paper/figures/Fig_5_volcanoplots.pdf", width = 7, height = 10)
+pdf("~/spinal_cord_paper/figures/Fig_5_volcanoplots.pdf", width = 5, height = 10)
 (volplot +
   ggrepel::geom_text_repel(size = 3, color = "black"))
 
