@@ -1,0 +1,416 @@
+---
+title: "Sister pair DE analysis, doplots and volcanoplots ctrl -vs- poly"
+author: "Fabio Sacher"
+date: "18.09.2023"
+data:
+output:
+  html_document:
+    df_print: paged
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries}
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tibble)
+library(patchwork)
+library(plotly)
+```
+
+# DE table
+
+First we load the sister pair DE tables and filter for:
+
+-   absolute avg_log2FC \> 0.5 (\~41% increase)
+
+-   p_val_adj \< 0.01
+
+```{r DE-data}
+DE_list <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_sis_markers.rds")
+
+for (i in seq(DE_list)) {
+    DE_list[[i]] <- DE_list[[i]] %>% 
+    arrange(desc(avg_log2FC)) %>% 
+    filter(abs(avg_log2FC) > 0.5) %>% 
+    filter(p_val_adj < 0.01)
+}
+
+DE_table <- do.call(rbind, DE_list)
+dim(DE_table)
+```
+
+## delta pct distribution
+
+```{r delta-pct-histograms}
+par(mfrow = c(2,2))
+hist(abs(DE_list[[1]]$delta_pct), breaks = 20)
+abline(v = 0.1, lty = "dashed", col = "red")
+hist(abs(DE_list[[2]]$delta_pct), breaks = 20)
+abline(v = 0.1, lty = "dashed", col = "red")
+hist(abs(DE_list[[4]]$delta_pct), breaks = 20)
+abline(v = 0.1, lty = "dashed", col = "red")
+hist(abs(DE_list[[5]]$delta_pct), breaks = 20)
+abline(v = 0.1, lty = "dashed", col = "red")
+```
+
+Now we filter the DE lists for absolute delta percentage \> 0.1. 
+
+```{r filter-delta-pct}
+for (i in seq(DE_list)) {
+  DE_list[[i]] <- DE_list[[i]] %>% 
+  filter(abs(delta_pct) > 0.1)
+}
+
+DE_table <- do.call(rbind, DE_list)
+dim(DE_table)
+```
+
+# Broad clusters
+
+```{r cluster-order}
+broad_order <- c("progenitors",
+      "FP",
+      "RP",
+      "FP/RP",
+      "neurons",
+      "OPC",
+      "MFOL",
+      "pericytes",
+      "microglia",
+      "blood",
+      "vasculature"
+      )
+
+```
+
+# Integrated data
+
+Load the integrated control and poly data.
+
+```{r integrated-data-poly}
+int_path <- "Gg_ctrl_poly_int_seurat_250723"
+
+my.se <- readRDS(paste0("~/spinal_cord_paper/data/", int_path, ".rds"))
+  annot_int <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(int_path, "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot_int$number)) != length(table(my.se$seurat_clusters))) {
+     stop("Number of clusters must be identical!")
+  }
+  
+  # rename for left join
+  annot_int <- annot_int %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot_int))) %>% 
+    rename(seurat_clusters = number)
+  
+  ord_levels <- annot_int$fine[order(match(annot_int$broad, broad_order))]
+   
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot_int, by = "seurat_clusters") %>% 
+    mutate(fine = factor(fine, levels = ord_levels)) %>% 
+    mutate(seurat_clusters = factor(seurat_clusters, levels = str_extract(ord_levels, "\\d{1,2}$"))) %>% 
+    column_to_rownames("rowname")
+  
+  ctrl_poly_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_poly_int_combined_labels.rds")
+  
+  my.se <- AddMetaData(my.se, ctrl_poly_int_combined_labels)
+  
+```
+
+# DimPlot
+
+```{r dimplot}
+DimPlot(
+  my.se,
+  group.by = "annot_sample",
+  reduction = "tsne",
+  label = TRUE,
+  repel = TRUE
+  ) +
+  NoLegend()
+
+```
+
+# Cluster order
+
+Get the cluster order from the spearman correlation heatmap of the control and poly integrated data. Then we filter for the neuronal clusters only.
+
+```{r factor-order}
+corr_heatmap <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_poly.rds")
+
+#heatmap order
+htmp_order <- data.frame("label" = corr_heatmap[["gtable"]]$grobs[[4]]$label) %>% 
+  mutate(label = str_remove(label, "_int")) %>% 
+  mutate(label_ordered = paste(str_sub(label,6 ,-1), str_sub(label, 1, 4), sep = "_"))
+
+my.se@meta.data <- my.se@meta.data %>%
+  mutate(annot_sample = factor(annot_sample, levels = htmp_order$label_ordered))
+
+Idents(my.se) <- "annot_sample"
+
+# filter for the neuronal clusters
+my.se <- subset(my.se, idents = htmp_order$label_ordered[grepl("neurons|MN|CSF", htmp_order$label_ordered)])
+
+DimPlot(
+  my.se,
+  group.by = "annot_sample",
+  reduction = "tsne",
+  label = TRUE,
+  repel = TRUE
+  ) +
+  NoLegend()
+
+my.se@active.assay <- "RNA"
+
+```
+
+# Dotplot
+
+```{r all_DE_dotplot, fig.width=10, fig.height=30}
+
+# Dotplot of sister pair makrers
+pl_all <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample", 
+                      # reverse order of unique genes so number one is on top
+                    features = rev(unique(DE_table$Gene.stable.ID)),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+    coord_flip()
+
+pl_all
+
+pdf("~/spinal_cord_paper/figures/Sister_pair_DE_dotplot.pdf", width = 15, height = 32)
+  pl_all
+
+  
+DE_table$Gene.name[duplicated(DE_table$Gene.stable.ID)]
+```
+
+# Individual dot plots
+
+```{r individual_DE_dotplot}
+
+# select top50 by log2FC 
+for (i in seq(DE_list)) {
+    DE_list[[i]] <- DE_list[[i]] %>%
+    slice_max(order_by = abs(avg_log2FC), n = 50) %>% 
+    arrange(desc(avg_log2FC))
+}
+
+p1 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample", 
+                    assay = "RNA",
+                      # reverse order of DE genes so number one is on top
+                    features = rev(DE_list[[1]]$Gene.stable.ID),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_blank()) +
+    coord_flip() +
+    xlab(names(DE_list)[1]) +
+    ylab(element_blank())
+
+p2 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample",  
+                    assay = "RNA",
+                      # reverse order of DE genes so number one is on top
+                    features = rev(DE_list[[2]]$Gene.stable.ID),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_blank()) +
+    coord_flip() +
+    xlab(names(DE_list)[2]) +
+    ylab(element_blank())
+
+p3 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample",  
+                    assay = "RNA",
+                      # reverse order of DE genes so number one is on top
+                    features = rev(DE_list[[5]]$Gene.stable.ID),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_blank()) +
+    coord_flip() +
+    xlab(names(DE_list)[5]) +
+    ylab(element_blank())
+
+p4 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample",  
+                    assay = "RNA",
+                      # reverse order of DE genes so number one is on top
+                    features = rev(DE_list[[4]]$Gene.stable.ID),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+    coord_flip() +
+    xlab(names(DE_list)[4]) +
+    ylab(element_blank())
+
+p5 <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample",  
+                    assay = "RNA",
+                      # RELN (to ensure proper scaling) and
+                      # ND3 (filter out previously due to delta_pct = 0.009)
+                    features = c("ENSGALG00000008193", "ENSGALG00000030436"),
+                    gnames = modplots::gnames,
+          cols = c("lightgrey", "black")) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+    coord_flip() +
+    xlab(names(DE_list)[3]) +
+    ylab(element_blank())
+
+```
+
+```{r export_plots }
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_poly_dotplot_individual.pdf", height = 21, width = 7)
+# without labels for proper alignment
+(p1 + p2 + plot_layout(guides = "collect")) /
+(p3 + (p4 / p5) + plot_layout(guides = "collect")) & 
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+# with labels to transfer in illustrator
+(p1 + p2 + plot_layout(guides = "collect")) /
+(p3 + (p4 / p5) + plot_layout(guides = "collect"))
+
+dev.off()
+```
+
+# Volcanoplots
+
+```{r volcanoplots, fig.height=10, fig.width=7}
+p.adj <- 0.01
+l2fc <- 0
+
+# select top50 by log2FC 
+for (i in seq(DE_list)) {
+    DE_list[[i]] <- DE_list[[i]] %>% 
+    mutate(delta_pct_sign = case_when(
+      delta_pct < 0 ~ "-",
+      delta_pct > 0 ~ "+",
+      delta_pct == 0 ~ "0"
+    ))
+}
+ 
+
+toplot <- do.call(rbind, DE_list[c(4,1)]) %>% 
+  rownames_to_column("contrast") %>% 
+  mutate(contrast = str_remove(contrast, "\\.\\d{1,2}")) %>% 
+  mutate(contrast = str_replace_all(contrast, " ", "_"))
+
+volplot <- ggplot(data = toplot,
+       aes(x = avg_log2FC,
+           y = -log10(p_val_adj),
+           label = Gene.name,
+           color = delta_pct_sign,
+           size = abs(delta_pct)
+       )) +
+  geom_point(shape = 21) +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = c("goldenrod3", "black")) +
+  scale_size_continuous(range = c(0.5, 4)) +
+  facet_wrap("contrast", ncol = 1, scales = "free_y") +
+  ylab("-log10(padj)") +
+  theme_bw()
+
+ggplotly(volplot)
+
+```
+
+```{r}
+pdf("~/spinal_cord_paper/figures/Fig_5_volcanoplots.pdf", width = 5, height = 10)
+(volplot +
+  ggrepel::geom_text_repel(size = 3, color = "black"))
+
+```
+ 
+# Specific markers
+
+Find Markers for clusters 11_ctrl, 16_ctrl, and 15_poly.
+
+```{r specific-markers}
+gnames <- modplots::gnames
+
+markers <- list()
+
+clu <- c("inhibitory_neurons_16_ctrl",
+         "excitatory neurons_11_ctrl",
+         "excitatory_neurons_15_poly")
+
+for (i in seq(clu)) {  
+  markers[[i]] <- FindMarkers(
+      my.se,
+      ident.1 = clu[i],
+      group.by = "annot_sample",
+      assay = "RNA",
+      verbose = FALSE,
+      only.pos = TRUE, # we look for overexpressed, specific markers
+      min.pct = 0.25,
+      logfc.threshold =  0.25,
+      latent.vars = c("CC.Difference.seurat"),
+      test.use = "MAST"
+    ) %>%
+      tibble::rownames_to_column("Gene.stable.ID") %>%
+      dplyr::left_join(gnames, by = "Gene.stable.ID") %>%
+      dplyr::arrange(-avg_log2FC) %>%
+      dplyr::filter(p_val_adj < 0.05) %>%
+      dplyr::filter(abs(avg_log2FC) > 0.5) %>%
+    dplyr::mutate(delta_pct = abs(pct.1 - pct.2))
+}
+
+names(markers) <- clu
+```
+
+# Specific marker dotplot
+
+Plot the top 50 markers for clusters 11_ctrl, 16_ctrl, and 15_poly.
+
+```{r neuron-marker-dotplots, fig.width=9, fig.height=6}
+n <- 50
+
+mark_plot <- list()
+
+for (i in seq(clu)) {
+  mark_plot[[i]] <- modplots::mDotPlot2(my.se,
+                    group.by = "annot_sample", 
+                      # reverse order of markers so number one is on top
+                    features = rev(markers[[i]][1:n,"Gene.stable.ID"]),
+                    gnames = modplots::gnames) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+    coord_flip() +
+  scale_colour_gradientn(colours = c("gray90","gray80","yellow", "orange", "red", "darkred", "darkred")) +
+  ggtitle(paste0("Top ", n, " markers by log2FC for ", clu[i]))
+
+}
+
+mark_plot[[1]]
+mark_plot[[2]]
+mark_plot[[3]]
+
+
+pdf("~/spinal_cord_paper/figures/Sister_pair_neuron_marker_dotplots.pdf", width = 14, height = n/3)
+mark_plot[[1]]
+mark_plot[[2]]
+mark_plot[[3]]
+
+```
+
+```{r Session-info}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
