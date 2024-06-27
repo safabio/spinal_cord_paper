@@ -1,4 +1,5 @@
 data/
+GEO_submission/
 output/
 scripts/slurm_out/
 annotations/figures/
