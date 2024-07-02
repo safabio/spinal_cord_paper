@@ -16,6 +16,7 @@ The chickent and mouse ortholog table (~/spinal_cord_paper/data/ortho_gg_mm_v102
     -   polydactyl: poly_1 and poly_2
 -   ***Seurat_Gg_NT_int_array.sh***: Create and analyse the integrated seurat objects, run dimensionality reduction, marker detection and plot markers for cluster annotation.
 -   ***Seurat_Gg_ctrl_lumb_ctrl_poly_integration_array.sh***: Integration and analysis of the brachial & lumbar (ctrl_1, ctrl_2, lumb_1, & lumb_2), and brachial & poly (ctrl_1, ctrl_2, poly_1, & poly_2). They get an individual, combined pipeline since the time and memory allocation are higher.
+-   ***Seurat_Gg_all_int_render.sh***: Integration and analysis of all 8 samples for Supplementary figure 1 gets it own job due to time and memory demands.
 
 Cluster annotation is guided by marker gene expression:
 
@@ -71,3 +72,9 @@ The following scripts are used to create the plots for the figures, if they are 
 -   ***Vln_plots_render.sh***: Plots diagnostic violin/beeswarm plots to quickly reference mitochondrial and ribosomal gene expression by cluster.
 
 -   ***Gg_devel_scWGCNA_module_analysis_render.sh***: All the analysis of the scWGCNA modules on the development (D5, D7, and D10/ctrl1) data set.
+
+-   ***Fig_1_plots.R***: Produces the PCA of the Gg_all_int pseudobulk data shown in Supp. Fig. 1D.
+-   ***Fig_2_plots.R***: Produces the module network plots of Fig. 2A, E & I.
+-   ***Fig_3_plots.R***: Produces the additional plots for Figure 3. 
+-   ***Fig_4_plots.R***: Produces the additional plots for Figure 4 and Supp. Fig 4.
+-   ***Fig_5_plots.R***: Produces the additional plots for Figure 5 and Supp. Fig 5.
