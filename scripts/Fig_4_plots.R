@@ -282,54 +282,11 @@ my.se <- merge(ctrl, lumb)
 
 my.se[[]]
 
-# GSI correlation order
-my.htmp <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_lumb.rds")
-
-my.se@meta.data$fine <- factor(
-  my.se@meta.data$fine,
-  levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
-
-my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
-
 Idents(my.se) <- "fine" 
 my.se@active.assay <- "RNA"
 
 gnames = modplots::gnames
 
-# Dotplot and clustering on the HOX clusters 
-hox <- modplots::gnames %>% 
-  filter(grepl("^HOX", Gene.name)) %>% 
-  filter(Gene.stable.ID %in% rownames(my.se)) %>% 
-  mutate(group = str_extract(Gene.name, "HOX.")) %>% 
-  mutate(number = as.numeric(str_extract(Gene.name, "\\d{1,2}$"))) %>% 
-  arrange(group) %>% 
-  arrange(number)
-
-dpl_hox <- modplots::mDotPlot2(my.se,
-                               features = rev(hox$Gene.stable.ID),
-                               cols = c("lightgrey", "black"),
-                               cluster.idents = TRUE,
-                               gnames = gnames)
-
-dpl_hox[[1]] +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-# hclust as dendrogram
-dend.idents <- as.dendrogram(dpl_hox[[2]])
-
-pdf("~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot_dendro.pdf")
-plot(dend.idents)
-dev.off()  
-  
-ggsave(
-  filename = "~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot.pdf",
-  width = 13, height = 10,
-  plot = dpl_hox[[1]] +
-    coord_flip() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-)
-  
 ## select HOX genes
 hox_select <- rev(c("HOXB5","HOXC6","HOXC9","HOXA10","HOXC10","HOXD10","HOXA11","HOXD11"))
 
@@ -365,6 +322,42 @@ ggsave(
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 )
 
+# Dotplot and clustering on the selected HOX genes from above 
+# order the factors 
+my.se@meta.data$fine <- factor(
+  my.se@meta.data$fine,
+  levels =  dpl_hox_select[[2]][["labels"]][dpl_hox_select[[2]][["order"]]])
+
+# my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
+
+Idents(my.se) <- "fine" 
+my.se@active.assay <- "RNA"
+
+hox <- modplots::gnames %>% 
+  filter(grepl("^HOX", Gene.name)) %>% 
+  filter(Gene.stable.ID %in% rownames(my.se)) %>% 
+  mutate(group = str_extract(Gene.name, "HOX.")) %>% 
+  mutate(number = as.numeric(str_extract(Gene.name, "\\d{1,2}$"))) %>% 
+  arrange(group) %>% 
+  arrange(number)
+
+dpl_hox <- modplots::mDotPlot2(my.se,
+                               features = rev(hox$Gene.stable.ID),
+                               cols = c("lightgrey", "black"),
+                               gnames = gnames)
+
+dpl_hox +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot.pdf",
+  width = 13, height = 10,
+  plot = dpl_hox +
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+)
+
 
 ## Marker gene dotplot
 GOI <- rev(c("SOX9","SHH","RSPO1","TUBB3","NRXN3","TLX3","OLIG2","PLP1","IGFBP7","IFI30","HBBA","CDH5"))
@@ -374,6 +367,21 @@ cand <- modplots::gnames %>%
 
 cand <- cand[match(GOI, cand$Gene.name),]
 
+# GSI correlation order
+my.se <- merge(ctrl, lumb)
+
+my.se[[]]
+
+my.htmp <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_lumb.rds")
+
+my.se@meta.data$fine <- factor(
+  my.se@meta.data$fine,
+  levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
+
+# my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
+
+Idents(my.se) <- "fine" 
+my.se@active.assay <- "RNA"
 
 # Dotplot of candidate genes (GSI clust. from my.htmp)
 dpl_cand <- modplots::mDotPlot2(
