@@ -24,6 +24,7 @@ library(magrittr)
 library(tidyr)
 library(ggplot2)
 library(ggpubr)
+library(patchwork)
 ```
 
 # counting data
@@ -161,7 +162,7 @@ sup <- ggplot(data = long_df, aes(x = index, y = count, color = condition)) +
 main <- ggplot(data = long_df, aes(x = index, y = count, color = condition, shape = condition)) +
   geom_point(size = 1, alpha = 0.2) +
   geom_vline(aes(xintercept = split), lty = "dashed")+
-  scale_shape_manual(values = c(1, 3)) +
+  scale_shape_manual(values = c(1, 4)) +
   scale_color_manual(values = c("black", "darkgoldenrod3")) +
   scale_x_reverse() +
   geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs")) +
@@ -234,15 +235,34 @@ my_comparisons <- list(c("Day6", "Day8"), c("Day8", "Day10"), c("Day6", "Day10")
 ```
 
 ```{r, fig.width=5}
-box_day <- ggplot(data = nMN_df %>%
-         ungroup(),
-       aes(x = day, y = nMN, color = cond)) + 
+box_day_ctrl <- ggplot(data = nMN_df %>%
+        ungroup() %>% 
+        filter(cond == "ctrl"),
+       aes(x = day, y = nMN, color = cond, shape = cond)) + 
   geom_boxplot() +
-  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  scale_color_manual(values = c("black")) +
   stat_compare_means(comparisons = my_comparisons) +
-  ggtitle("MN counts across devel") +
-  facet_wrap("cond", nrow = 2) +
+  geom_point() +
+  scale_shape_manual(values = c(1)) +
+  ylim(4750,9050) +
   theme_bw()
+
+box_day_poly <- ggplot(data = nMN_df %>%
+        ungroup() %>% 
+        filter(cond == "poly"),
+       aes(x = day, y = nMN, color = cond, shape = cond)) + 
+  geom_boxplot() +
+  scale_color_manual(values = c("darkgoldenrod3")) +
+  stat_compare_means(comparisons = my_comparisons) +
+  geom_point() +
+  scale_shape_manual(values = c(4)) +
+  ylim(4750,9050) +
+  theme_bw()
+
+box_day <- box_day_ctrl + 
+  box_day_poly + 
+  plot_layout(guides = "collect") + 
+  plot_annotation( title = "MN counts across devel")
 
 box_day
 ```
@@ -295,8 +315,13 @@ bar_axis <- ggplot(data = avg_axis_df,
            y = mean,
            color = cond)) + 
   geom_bar(position = dodge, stat="identity", fill = NA) +
+  geom_point(data = axis_nMN,
+             aes(x = grouping,
+                 y = nMN,
+                 shape = cond)) +
   geom_linerange(limits, position=dodge) +
   scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  scale_shape_manual(values = c(1, 4)) +
   facet_wrap("day", nrow = 3, scales = "free_x") +
   theme_bw()
 
@@ -350,7 +375,7 @@ ggsave(
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Supp_Fig_5_ctrl_vs_poly_boxplot_MN_count.pdf",
-  width = 3, height = 7,
+  width = 6, height = 5,
   plot = box_day
 )
 
