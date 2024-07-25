@@ -206,8 +206,8 @@ Here we run DE analasys between terminal sister pairs of different origin from t
 ```{r}
 # sister pairs
 sis_pairs <- data.frame(
-  "ctrl" = c(16, 6, 20, 11, 8),
-  "lumb" = c(24, 20, 20, 15, 15)
+  "ctrl" = c(16, 6,  20, 11,  8, 7, 1, 4, 12, 13, 18, 23 ,15 ,3 ,2 ,5  ,9  ,22),
+  "lumb" = c(24, 20, 20, 15, 15, 2, 1 ,9 ,3  ,10 ,12 ,29 ,7  ,8 ,6 ,17 ,16 ,26)
 ) 
 
 # cell type annotations
