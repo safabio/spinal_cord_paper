@@ -74,9 +74,8 @@ Reduce(intersect, venn)
 rm(wgcna_dat)
 
 ### ### ### ### ### ### ### ### ### ### ###
-#### tSNE plots of all 5 in situ probes ####
+#### tSNE plots of new 3 in situ probes ####
 ### ### ### ### ### ### ### ### ### ### ###
-
 
 data_sets <- c("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds",
                "~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds",
@@ -92,98 +91,16 @@ plots <- list()
 for (i in seq(data_sets)) {
   my.se <- readRDS(data_sets[i])
   
-  plots[[i]] <- mFeaturePlot(my.se, my.features = probes, my.slot = "scale.data", size = 0.5, return = TRUE)
+  plots[[i]] <- mFeaturePlot(
+    my.se, 
+    my.features = probes, 
+    my.slot = "scale.data", 
+    size = 0.5, 
+    raster = TRUE,
+    return = TRUE)
   
   rm(my.se)
 }
-
-pdf("~/spinal_cord_paper/figures/CSF_probes_tsne.pdf", width = 5.5, height = 5)
-
-  # CACNA1G 
-(plots[[1]][[1]] + theme(plot.title = element_blank()) +
-    # geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
-    #              size = 0.8, color = "black", 
-    #              linejoin = "mitre", lineend = "square",
-    #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-    theme_void() +
-    NoLegend() + annotate("text", label = "brachial", x = 0, y = 110)) +
-  annotate("text", label = "A", fontface = "bold", x = -100, y = 110)  + 
-  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90)  + 
-  (plots[[2]][[1]] + theme(plot.title = element_blank()) + 
-     # geom_segment(aes(x=40,y=18,xend=41,yend=19),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() +
-     NoLegend() + 
-     annotate("text", label = "lumbar", x = 0, y = 110))  + 
-  (plots[[3]][[1]] +  theme(plot.title = element_blank())  +
-     # geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() +
-     NoLegend() + 
-     annotate("text", label = "polydactyl", x = 0, y = 110))  + 
-  # SFRP5
-  (plots[[1]][[2]] + theme(plot.title = element_blank()) +
-     # geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() + 
-     NoLegend()) + 
-  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90)  + 
-  (plots[[2]][[2]] + theme(plot.title = element_blank()) +
-     # geom_segment(aes(x=40,y=18,xend=41,yend=19),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() + 
-     NoLegend() + annotate("text", label = probes[2], fontface = "italic", x = 0, y = 110,
-                           color = "white")) + 
-  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  + 
-  (plots[[3]][[2]] + theme(plot.title = element_blank()) +
-     # geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() + 
-     NoLegend() + annotate("text", label = probes[2], fontface = "italic", x = 0, y = 110,
-                           color = "white")) + 
-  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
-  # CRTAC1
-  (plots[[1]][[3]] + theme(plot.title = element_blank()) +
-     # geom_segment(aes(x=-5,y=28,xend=-6,yend=29),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() + 
-     NoLegend()) + 
-  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90)  + 
-    (plots[[2]][[3]] + theme(plot.title = element_blank()) +
-    # geom_segment(aes(x=40,y=18,xend=41,yend=19),
-    #              size = 0.8, color = "black", 
-    #              linejoin = "mitre", lineend = "square",
-    #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-    theme_void() + 
-    NoLegend() + annotate("text", label = probes[3], fontface = "italic", x = 0, y = 110,
-                          color = "white")) + 
-  annotate("text", label = "lumbar", col = "white", x = -100, y = 0, angle = 90)  +
-  (plots[[3]][[3]] + theme(plot.title = element_blank()) +
-     # geom_segment(aes(x=-21,y=54,xend=-22,yend=53),
-     #              size = 0.8, color = "black", 
-     #              linejoin = "mitre", lineend = "square",
-     #              arrow = arrow(angle = 20, length = unit(0.25, "cm"), type = "closed")) +
-     theme_void() + 
-     NoLegend() + annotate("text", label = probes[3], fontface = "italic", x = 0, y = 110,
-                           color = "white")) + 
-  annotate("text", label = "polydactyl", col = "white", x = -100, y = 0, angle = 90)  + 
-  plot_layout(nrow = 3, byrow = TRUE) & theme(text = element_blank())
-
-dev.off()
-
-rm(data_sets, probes, gnames, plots)
 
 ### ### ### ### ### ### ### ### ### ###
 #### CSF module membership values ####
@@ -191,95 +108,187 @@ rm(data_sets, probes, gnames, plots)
 
 ctrl_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds")
 
-probes <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
+stars <- c("PKD2L1","GATA2","CACNA1G","SFRP5","CRTAC1")
+
+text_size = 7
 
 df <- ctrl_wgcna$modules[[17]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
   dplyr::left_join(gnames) %>% # add gene names 
-  arrange(desc(Membership)) %>% 
+  arrange(Membership) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
   mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
+    Gene.name %in% stars ~ "*",
     TRUE ~ ""
   ))
 
 p1 <- ggplot(df, aes(x = Gene.name,
                      y = Membership,
                      label = signif(Membership,3))) +
-  geom_col(fill = "royalblue", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
+  geom_col(fill = "royalblue") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
   xlab("Module genes") +
   ylab("Module Membership") +
   theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 17_royalblue gene Module Membership (ctrl_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
-
-rm(ctrl_wgcna)
+  theme(axis.text.x = element_text(size = text_size),
+        axis.text.y = element_text(size = text_size),
+        axis.title.x = element_text(size = text_size + 2, color = "white"),
+        axis.title.y = element_text(size = text_size + 2),
+        plot.title = element_text(
+          size = text_size + 4,
+          face = "plain",
+          hjust = -0.5,
+          color = "royalblue"
+        )) +
+  geom_text(hjust = -0.2, cex = 2) +
+  ggtitle("royalblue") +
+  geom_text(aes(label = highlight), hjust = 1.5, vjust = 0.75, cex = 8, color = "white") +
+  coord_flip()
 
 lumb_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
 
 df <- lumb_wgcna$modules[[9]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
   dplyr::left_join(gnames) %>%  # add gene names
-  arrange(desc(Membership)) %>% 
+  arrange(Membership) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
   mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
+    Gene.name %in% stars ~ "*",
     TRUE ~ ""
   ))
 
 p2 <- ggplot(df, aes(x = Gene.name,
                      y = Membership,
                      label = signif(Membership,3))) +
-  geom_col(fill = "darkmagenta", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
+  geom_col(fill = "darkmagenta") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
   xlab("Module genes") +
-  ylab("Module Membership") +
+  ylab("Module Membership                             ") +
   theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 9_darkmagenta gene Module Membership (lumb_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
-
-rm(lumb_wgcna)
+  theme(axis.text.x = element_text(size = text_size),
+        axis.text.y = element_text(size = text_size),
+        axis.title.x = element_text(size = text_size + 2),
+        axis.title.y = element_text(size = text_size + 2, color = "white"),
+        plot.title = element_text(
+          size = text_size + 4,
+          face = "plain",
+          hjust = -2,
+          color = "darkmagenta"
+        )) +
+  geom_text(hjust = -0.2, cex = 2) +
+  ggtitle("darkmagenta") +
+  geom_text(aes(label = highlight), hjust = 1.5, vjust = 0.75, cex = 5, color = "white") +
+  coord_flip()
 
 poly_wgcna <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
 
 df <- poly_wgcna$modules[[16]] %>% 
   tibble::rownames_to_column("Gene.stable.ID") %>% 
   dplyr::left_join(gnames) %>%  # add gene names
-  arrange(desc(Membership)) %>% 
+  arrange(Membership) %>% 
   mutate(Gene.name = factor(Gene.name, levels = Gene.name)) %>% 
   mutate(highlight = case_when( # add column with '*' indicating overlap genes
-    Gene.name %in% probes ~ "*",
+    Gene.name %in% stars ~ "*",
     TRUE ~ ""
   ))
 
 p3 <- ggplot(df, aes(x = Gene.name,
                      y = Membership,
                      label = signif(Membership,3))) +
-  geom_col(fill = "salmon", color = "black") +
-  scale_y_continuous(limits = c(0, 1.2), breaks = seq(0, 1, 0.2)) +
+  geom_col(fill = "salmon") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
   xlab("Module genes") +
   ylab("Module Membership") +
   theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        axis.text.y = element_text(size = 8)) +
-  geom_text(hjust = -0.2, angle = 90, cex = 3) +
-  ggtitle("Module 16_salmon gene Module Membership (poly_int)") +
-  geom_text(aes(label = highlight), vjust = 1.5, cex = 8)
+  theme(axis.text.x = element_text(size = text_size),
+        axis.text.y = element_text(size = text_size),
+        axis.title.x = element_text(size = text_size + 2, color = "white"),
+        axis.title.y = element_text(size = text_size + 2, color = "white"),
+        plot.title = element_text(
+          size = text_size + 4,
+          face = "plain",
+          hjust = -0.3,
+          color = "salmon"
+        )) +
+  geom_text(hjust = -0.2, cex = 2) +
+  ggtitle("salmon") +
+  geom_text(aes(label = highlight), hjust = 1.5, vjust = 0.75, cex = 4) +
+  coord_flip()
 
-rm(poly_wgcna)
+### ### ### ### ### ###
+#### Supp figure 3 ####
+### ### ### ### ### ##
 
-pdf("~/spinal_cord_paper/figures/CSF_module_memberships.pdf", paper = "a4", width = 10, height = 12)
-p1 / p2 / p3
+t11 <- plots[[1]][[1]] + 
+  theme_void() + 
+  theme(plot.title = element_blank()) +
+  NoLegend() +
+  annotate("text", label = "B10_int", x = 0, y = 110) +
+  annotate("text", label = "A", fontface = "bold", x = -110, y = 110) + 
+  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90)
+
+t21 <- plots[[2]][[1]] + 
+  theme_void() +
+  theme(plot.title = element_blank()) + 
+  NoLegend() + 
+  annotate("text", label = "L10_int", x = 0, y = 110) + 
+  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90, color = "white")
+
+t31 <- plots[[3]][[1]] +
+  theme_void() +
+  theme(plot.title = element_blank())  +
+  NoLegend() + 
+  annotate("text", label = "P10_int", x = 0, y = 110) + 
+  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90, color = "white")
+# SFRP5
+t12 <- plots[[1]][[2]] +
+  theme_void() + 
+  theme(plot.title = element_blank()) +
+  NoLegend() + 
+  annotate("text", label = "brachial", x = 0, y = 110, color = "white") +
+  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90)
+
+t22 <- plots[[2]][[2]] +
+  theme_void() + 
+  theme(plot.title = element_blank()) +
+  annotate("text", label = "lumbar", x = 0, y = 110, color = "white") +
+  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
+  NoLegend()
+
+t32 <- plots[[3]][[2]] +
+  theme_void() + 
+  theme(plot.title = element_blank()) +
+  annotate("text", label = "polydactyl", x = 0, y = 110, color = "white") + 
+  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
+  NoLegend() 
+# CRTAC1
+t13 <- plots[[1]][[3]] +
+  theme_void() + 
+  theme(plot.title = element_blank()) +
+  NoLegend() + 
+  annotate("text", label = "brachial", x = 0, y = 110, color = "white") +
+  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90)
+
+t23 <- plots[[2]][[3]] +
+  theme_void() + 
+  annotate("text", label = "lumbar", x = 0, y = 110, color = "white") +
+  theme(plot.title = element_blank()) + 
+  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
+  NoLegend()
+
+t33 <- plots[[3]][[3]] +
+  theme_void() + 
+  annotate("text", label = "polydactyl", x = 0, y = 110, color = "white") +
+  theme(plot.title = element_blank()) + 
+  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
+  NoLegend()
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_3.pdf", paper = "a4", width = 8.5, height = 11)
+grid.arrange(t11, t21, t31,
+             t12, t22, t32,
+             t13, t23, t32,
+             p1, p2, p3, heights=c(1,1,1,2))
 dev.off()
-
-rm(df, p1, p2, p3)
 
 ### ### ### ### ### ### ### ### ### ### ###
 #### pairwise gene expression correlation in Poly_int ####
