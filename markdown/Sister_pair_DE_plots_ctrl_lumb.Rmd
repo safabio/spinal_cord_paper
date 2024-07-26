@@ -253,9 +253,9 @@ dev.off()
 
 # Volcanoplots
 
-```{r volcanoplots, fig.height=7, fig.width=15}
+```{r volcanoplots, fig.height=15, fig.width=15}
 p.adj <- 0.01
-l2fc <- 0
+l2fc <- 0.5
 
 # select top50 by log2FC 
 for (i in seq(DE_list)) {
@@ -271,7 +271,8 @@ for (i in seq(DE_list)) {
 toplot <- do.call(rbind, DE_list) %>% 
   rownames_to_column("contrast") %>% 
   mutate(contrast = str_remove(contrast, "\\.\\d{1,2}")) %>% 
-  mutate(contrast = str_replace_all(contrast, " ", "_"))
+  mutate(contrast = str_replace_all(contrast, " ", "_")) %>% 
+  filter(!grepl("^HOX", Gene.name)) # remove hox genes
 
 volplot <- ggplot(data = toplot,
        aes(x = avg_log2FC,
@@ -285,7 +286,7 @@ volplot <- ggplot(data = toplot,
   geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
   scale_color_manual(values = c("#419c73", "black")) +
   scale_size_continuous(range = c(0.5, 4)) +
-  facet_wrap("contrast", ncol = 5) +
+  facet_wrap("contrast", ncol = 5, scales = "free") +
   ylab("-log10(padj)") +
   theme_bw()
 
@@ -294,7 +295,7 @@ ggplotly(volplot)
 ```
 
 ```{r}
-pdf("~/spinal_cord_paper/figures/Fig_4_volcanoplots.pdf", width = 15, height = 5)
+pdf("~/spinal_cord_paper/figures/Fig_4_volcanoplots.pdf", width = 15, height = 15)
 (volplot +
   ggrepel::geom_text_repel(size = 3, color = "black"))
 
