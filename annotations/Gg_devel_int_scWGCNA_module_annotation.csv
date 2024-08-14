@@ -1,8 +1,8 @@
 module,cluster,annotation
-1_black,,cell_cycle
+1_black,,cell_cycle_TOP2A
 2_blue,,pericytes
-3_brown,,neuron_devel/adhesion
-4_cyan,,Apoptosis
+3_brown,,neuron_devel_adhesion
+4_cyan,,neuron_apoptosis
 5_darkgreen,,OPC_cell_Fate
 6_darkred,,MN_transmembrane_transport
 7_green,,progenitors
@@ -11,7 +11,7 @@ module,cluster,annotation
 10_lightcyan,,blood
 11_lightgreen,,MN
 12_lightyellow,,cell_cycle
-13_magenta,,progenitor_
+13_magenta,,progenitor
 14_midnightblue,,microglia
 15_pink,,mitotic_cellcycle
 16_purple,,vasculature
