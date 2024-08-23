@@ -26,8 +26,7 @@ for (i in seq_along(samples)) {
 
 names(file_list) <- samples
 
-file_df <- bind_rows(file_list) %>% 
-  rownames_to_column("sample") %>% 
+file_df <- bind_rows(file_list, .id = "sample") %>%
   mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
   mutate(sample = case_when(
     grepl("ctrl_1", sample) ~ "B10_1",
@@ -62,8 +61,7 @@ for (i in seq_along(files)) {
 
 names(file_list) <- samples
 
-file_df <- bind_rows(file_list) %>% 
-  rownames_to_column("sample") %>% 
+file_df <- bind_rows(file_list, .id = "sample") %>% 
   mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
   mutate(sample = case_when(
     grepl("devel", sample) ~ "Devel",
