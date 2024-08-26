@@ -255,7 +255,7 @@ one.data$dispensability <- as.numeric( as.character(one.data$dispensability) )
 
 terms <- read.csv("tables/Supp_table_3.csv") %>% 
   filter(sample == "Devel") %>% 
-  filter(P.DE < 0.01)
+  filter(P.DE < 0.05)
 
 term_color <- terms[, c("ID", "module")] %>% 
   mutate(module = str_remove(module, "^\\d+_")) %>% 
