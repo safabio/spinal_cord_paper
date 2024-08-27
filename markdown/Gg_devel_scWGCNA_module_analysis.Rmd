@@ -121,42 +121,10 @@ my.wsub[[1]]= c(1:22)
 # the name of each sample, as they appear in my.files and in the metadata of the combined object
 my.samplenames = c("D05", "D07", "D10")
 
-# The subset of clusters in each of the corresponding samples
-my.subset=list(c(1:24),
-               c(1:26),
-               c(1:22))
-
 # This is just to add a little bit more sense to the modules, so that we don't get just a color. Corresponds to WGCNA_data
 my.modulenames = list()
 my.modulenames[[1]] = c(1:22)
 
-```
-
-```{r pre-process, echo=TRUE}
-
-#Subset the seurat objects if needed as defined above
-for (i in 1:length(my.ses)) {
-  my.ses[[i]] = subset(my.ses[[i]], idents = my.subset[[i]])
-}
-
-# Take only genes that are present in the all samples
-my.dcs = list()
-
-# We go trhough each WGCNA data
-for(i in 1:length(WGCNA_data)) {
-  #We start with complete modules
-  my.dc = WGCNA_data[[i]]$dynamicCols
-  
-  #Remove the few genes that are not found in the other datasets
-  my.dc = my.dc[which(names(my.dc) %in% rownames(my.ses[[1]]@assays$RNA@data))]
-  my.dc = my.dc[which(names(my.dc) %in% rownames(my.ses[[2]]@assays$RNA@data))]
-  my.dc = my.dc[which(names(my.dc) %in% rownames(my.ses[[3]]@assays$RNA@data))]
-  
-  my.dc = my.dc[which(my.dc %in% names(table(WGCNA_data[[i]]$dynamicCols))[my.wsub[[i]]])]
-  
-  my.dcs[[i]] = my.dc
-  
-}
 ```
 
 # Module gene correlation
@@ -173,77 +141,9 @@ all_col <- do.call(rbind, col_table) %>%
   select(c("color", "sample_celltype", "sample"))
 ```
 
-```{r module_expression_data, echo=TRUE, fig.height=20, fig.width=20}
+# Meta data
 
-# take the normalized data, of each single-cell object.
-my.datExpr = list()
-
-# Go trough each seurat object
-for (i in 1:length(my.ses)) {
- my.datExpr[[i]] = data.frame(my.ses[[i]]@assays$RNA@data)
-}
-
-# Calculate, for every cell, in every sample, the average expression of each of the modules.
-my.MEs = list()
-
-# For each set of WGCNA modules
-for (i in 1:length(WGCNA_data)) {
-  
-  # Make a new list
-  my.MEs[[i]] = list()
-  
-  # Populate with data frames from each seurat object
-  for (j in 1:length(my.ses)) {
-    
-    # Data frame of average module expression, per cell.
-    my.MEs[[i]][[j]] = moduleEigengenes(t(my.datExpr[[j]][names(my.dcs[[i]]),]), colors = my.dcs[[i]])
-  }
-}
-
-#Calculate average of expression, per sample and cell cluster
-my.modavg = list()
-
-for (i in 1:length(WGCNA_data)) {
-  
-  my.modavg[[i]] = list()
-  
-  for (j in 1:length(my.ses)) {
-    
-    #Make the mean per cell clusters
-    my.modavg[[i]][[j]] = aggregate(
-      my.MEs[[i]][[j]]$averageExpr,
-      list(my.ses[[j]]@meta.data$seurat_clusters),
-      mean
-      )
-    # Give the cell clusters meaningful names
-    rownames(my.modavg[[i]][[j]]) = paste0(
-      my.samplenames[j],
-      "_",
-      levels(my.ses[[j]]@meta.data$fine)[my.subset[[j]]]
-      )
-    }
-}
-
-
-
-#Gather data to plot
-
-my.wgmat = list()
-
-for (i in 1:length(WGCNA_data)) {
-  
-  #bind the expression data into one dataframe
-  my.wgmat[[i]] = data.table::rbindlist(my.modavg[[i]])
-  #Get rid of the extra column
-  my.wgmat[[i]] = data.frame(my.wgmat[[i]][,-1])
-  #Restore the rownames
-  rownames(my.wgmat[[i]]) = unlist(sapply(my.modavg[[i]], rownames))
-  
-}
-
-
-
-
+```{r meta-data}
 #Get a dataframe with annotations for all the samples and colors we need.
 my.metam <- list()
 
@@ -270,17 +170,30 @@ my.metam <- my.metam %>%
 my.colsm = c("grey", "grey30", "black")
 names(my.colsm) <- c("D05", "D07", "D10")
  
-#The colors for the samples and clusters. First the closest to the heatmap. Add a white space to easy the eye and make less confussing
-my.heatcols =list()
-for (i in 1:length(my.wgmat)) {
-  my.heatcols[[i]] = as.matrix(data.frame(
-    sample= as.character(my.colsm[match(all_col$sample, names(my.colsm))]),
-    "." = "white",
-    cluster= as.character(all_col$color[match(rownames(my.wgmat[[i]]), all_col$sample_celltype)]))
-    )
-}
+```
 
-rm(my.datExpr, my.MEs, my.dcs)
+
+# Average expression data
+
+```{r}
+
+cell_table <- my.metam %>% 
+  rownames_to_column("cell_ID") %>% 
+  select("sample_celltype", "cell_ID")
+
+avg.mod.eigengenes <- WGCNA_data[[1]]$sc.MEList$averageExpr %>% 
+  rownames_to_column("cell_ID") %>% 
+  left_join(cell_table, by = "cell_ID") %>% 
+  column_to_rownames("cell_ID")
+  
+
+# add metadata
+
+avg.mod.eigengenes.mean <- avg.mod.eigengenes %>%
+  group_by(sample_celltype) %>%
+  summarise_all("mean") %>%
+  column_to_rownames("sample_celltype")
+
 ```
 
 ## spearman correlation heatmap
@@ -289,12 +202,25 @@ rm(my.datExpr, my.MEs, my.dcs)
 
 ```{r annot-list}
 
+#The colors for the samples and clusters. First the closest to the heatmap. Add a white space to easy the eye and make less confussing
+my.heatcols <- as.matrix(data.frame(
+    sample= as.character(my.colsm[match(all_col$sample, names(my.colsm))]),
+    "." = "white",
+    cluster= as.character(all_col$color[match(rownames(avg.mod.eigengenes.mean), all_col$sample_celltype)]))
+    )
+
+
 # names and colors for the heatmap annotation
 annot_name <- data.frame(
   "Celltypes" = all_col$sample_celltype,
   "Sample"    = all_col$sample,
   row.names = all_col$sample_celltype)
   
+
+annot_module <- data.frame(
+  "Module" = colnames(avg.mod.eigengenes)[1:22],
+  row.names = colnames(avg.mod.eigengenes)[1:22]
+)
 
 pheat_col_table <- do.call(rbind, col_table) %>% 
   rownames_to_column("sample") %>% 
@@ -308,10 +234,12 @@ annot_col <- list(
   Celltypes = pheat_col_table$color,
   Sample = c(D05 = "#A4A4A4",
              D07 = "#515151",
-             D10 = "#000000")
+             D10 = "#000000"),
+  Module = str_remove(colnames(avg.mod.eigengenes)[1:22], "AE")
   )
 
 names(annot_col[[1]]) <- annot_name$Celltypes
+names(annot_col[[3]]) <- colnames(avg.mod.eigengenes)[1:22]
 
 ```
 
@@ -319,12 +247,12 @@ names(annot_col[[1]]) <- annot_name$Celltypes
 heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
 
 #Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
-my.hclust = hclust(as.dist(1-cor(t(my.wgmat[[1]]), method = "spearman")))
+my.hclust = hclust(as.dist(1-cor(t(avg.mod.eigengenes.mean), method = "spearman")))
 
 # lower limit to scale color bar
-low_limit <- 100 - abs(round(range(cor(t(my.wgmat[[1]]), method = "spearman"))[1]*100))
+low_limit <- 100 - abs(round(range(cor(t(avg.mod.eigengenes.mean), method = "spearman"))[1]*100))
 
-pheatmap(cor(t(my.wgmat[[1]]), method = "spearman"),revC = T,
+pheatmap(cor(t(avg.mod.eigengenes.mean), method = "spearman"),revC = T,
                  main = "spearman correlation of average module eigengene expression by cluster\n Dendrogram based on 'distance 1-cor'",
                  fontsize = 8,  
                  color = heat_col(200)[low_limit:200],
@@ -338,15 +266,15 @@ pheatmap(cor(t(my.wgmat[[1]]), method = "spearman"),revC = T,
                  border_color = NA
                  )
 
-colbar <- c(min(cor(t(my.wgmat[[1]]), method = "spearman")),
-            max(cor(t(my.wgmat[[1]]), method = "spearman")))
+colbar <- c(min(cor(t(avg.mod.eigengenes.mean), method = "spearman")),
+            max(cor(t(avg.mod.eigengenes.mean), method = "spearman")))
 
 #Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
-my.hclust = as.dendrogram(hclust(as.dist(1-cor(t(my.wgmat[[1]]), method = "spearman"))))
+my.hclust = as.dendrogram(hclust(as.dist(1-cor(t(avg.mod.eigengenes.mean), method = "spearman"))))
 
 #Plot!
 pdf("~/spinal_cord_paper/figures/Fig_1_module_gene_heatmap_spearman.pdf", width = 11, height = 11)
-heatmap.4(cor(t(my.wgmat[[1]]), method = "spearman"),
+heatmap.4(cor(t(avg.mod.eigengenes.mean), method = "spearman"),
           col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
           trace="none",
           lhei=c(0.2,1.6),
@@ -354,8 +282,8 @@ heatmap.4(cor(t(my.wgmat[[1]]), method = "spearman"),
           scale = "none",margins = c(10,10),
           cexCol = 0.75,
           revC = TRUE,
-          ColSideColors = my.heatcols[[1]],
-          RowSideColors = t(my.heatcols[[1]][,3:1]),Rowv = my.hclust, Colv = my.hclust)
+          ColSideColors = my.heatcols,
+          RowSideColors = t(my.heatcols[,3:1]),Rowv = my.hclust, Colv = my.hclust)
 
 
 pdf("~/spinal_cord_paper/figures/Fig_1_module_gene_heatmap_color_key_spearman.pdf", width = 10, height = 10)
@@ -374,33 +302,31 @@ heatmap.4(rbind(colbar, colbar),
 
 ```{r,  fig.height=15, fig.width=10}
 # module colors
-my.colcols = list()
+my.colcols = as.matrix(names(table(WGCNA_data[[1]]$dynamicCols)))
 
-for (i in 1:length(my.wgmat)) {
-    my.colcols[[i]] = as.matrix(names(table(WGCNA_data[[i]]$dynamicCols)))
-}
+htmp <- pheatmap(as.matrix(avg.mod.eigengenes.mean),
+         fontsize = 8,
+         scale = "column",
+         color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+         annotation_row = annot_name,
+         annotation_col = annot_module,
+         annotation_colors = annot_col,
+         annotation_legend = F,
+         border_color = NA)
 
-avg.mod.eigengenes <- WGCNA_data[[1]]$sc.MEList$averageExpr
-rm(WGCNA_data)
-
-htmp <- heatmap.4(as.matrix(my.wgmat[[1]]),
-          col = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
-          trace="none",
-          scale = "row",
-          margins = c(10,10),
-          ColSideColors = my.colcols[[1]], 
-          RowSideColors = t(my.heatcols[[1]]))
-
-module_order <- htmp[["colInd"]]
+module_order <- htmp[["tree_col"]]$order
 
 pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_heatmap.pdf", width = 7, height = 10)
-heatmap.4(as.matrix(my.wgmat[[1]]),
-          col = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
-          trace="none",
-          scale = "row",
-          margins = c(10,10),
-          ColSideColors = my.colcols[[1]], 
-          RowSideColors = t(my.heatcols[[1]]))
+pheatmap(as.matrix(avg.mod.eigengenes.mean),
+         fontsize = 8,
+         scale = "column",
+         color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+         annotation_row = annot_name,
+         annotation_col = annot_module,
+         annotation_colors = annot_col,
+         annotation_legend = F,
+         border_color = NA)
+
 
 ```
 
@@ -416,13 +342,7 @@ my.sec = readRDS("~/spinal_cord_paper/data/Gg_devel_int_seurat_250723.rds")
 
 identical(rownames(my.metam), colnames(my.sec))
 
-#Which WGCNA dataset are we using?
-my.W = 1
-
-#Choose how many groups of cell clusters we want to use. Based on the distance clustering from above
-my.clcl = cutree(hclust(as.dist(1-cor(t(my.wgmat[[my.W]])))), k = 5)
-
-my.metam$sample_celltype <- factor(my.metam$sample_celltype, levels = names(my.clcl))
+my.metam$sample_celltype <- factor(my.metam$sample_celltype, levels = all_col$sample_celltype)
 #Set the identities of the integrated data, to the annotated clusters
 my.sec = SetIdent(my.sec, value = my.metam$sample_celltype)
 
@@ -431,7 +351,7 @@ p1 <- DimPlot(
   reduction = "tsne",
   label = TRUE,
   repel = TRUE,
-  cols = my.heatcols[[1]][,"cluster"],
+  cols = all_col$color,
   split.by = "orig.ident"
   ) + 
   NoLegend()
@@ -447,11 +367,11 @@ p1
 
 tSNE DimPlots showing the average expression of each module by stage.
 
-```{r AE, fig.width=12, fig.height=40}
+```{r AE, message = FALSE, fig.width=12, fig.height=40}
 
 for (i in seq(my.ses)) {
   # prepare average expression table
-  tmp <- avg.mod.eigengenes %>%
+  tmp <- avg.mod.eigengenes[,1:22] %>%
     tibble::rownames_to_column("cell_ID") %>%
     dplyr::filter(grepl(paste0("_", i, "$"), cell_ID)) %>%
     dplyr::mutate(cell_ID = stringr::str_remove_all(cell_ID, paste0("_", i))) %>%
@@ -463,8 +383,8 @@ for (i in seq(my.ses)) {
 }
 
 #max and min expression per module (column max)
-mod_max <- apply(avg.mod.eigengenes, MARGIN = 2, FUN = max)[module_order]
-mod_min <- apply(avg.mod.eigengenes, MARGIN = 2, FUN = min)[module_order]
+mod_max <- apply(avg.mod.eigengenes[,1:22], MARGIN = 2, FUN = max)[module_order]
+mod_min <- apply(avg.mod.eigengenes[,1:22], MARGIN = 2, FUN = min)[module_order]
 
 modplots <- list()
 modplots[[1]] <- list()
@@ -480,30 +400,25 @@ for (i in seq(my.ses)) {
     modplots[[i]][[j]]  <- FeaturePlot(
       my.ses[[i]], order = TRUE,
       features = modules_in_order[j],
-      reduction = "tsne",
-      cols = c("grey90", substring(modules_in_order[j], 3))
+      reduction = "tsne"
       ) +
       ggtitle(stringr::str_remove(modules_in_order[j],"^AE")) +
       scale_color_gradient(low="ivory2", high=substring(modules_in_order[j], 3), #colors in the scale
-                 # breaks=seq(mod_min[j], mod_max[j], 0.1), #breaks in the scale bar
                  limits=c(mod_min[j], mod_max[j])) #same limits for plots
 
     
     }
 }
 
-tmp <- c(modplots[[1]], modplots[[2]], modplots[[3]])
+full_plot <- c(modplots[[1]], modplots[[2]], modplots[[3]])
 
-gridExtra::grid.arrange(grobs = tmp, ncol = 3, as.table = FALSE)
+gridExtra::grid.arrange(grobs = full_plot, ncol = 3, as.table = FALSE)
 
 pdf("~/spinal_cord_paper/figures/Fig_2_devel_modules_AE_plots.pdf", width = 12, height = 70)
-gridExtra::grid.arrange(grobs = tmp, ncol = 3, as.table = FALSE)
+gridExtra::grid.arrange(grobs = full_plot, ncol = 3, as.table = FALSE)
 
-pdf("~/spinal_cord_paper/figures/Fig_2_selected_mod_tsne.pdf", height = 21, width = 12)
-modplots[[1]][[22]] + modplots[[1]][[2]] + modplots[[1]][[6]] + modplots[[1]][[12]] + modplots[[1]][[13]] + modplots[[1]][[18]] + modplots[[1]][[21]] |
-  modplots[[2]][[22]] + modplots[[2]][[2]] + modplots[[2]][[6]] + modplots[[2]][[12]] + modplots[[2]][[13]] + modplots[[2]][[18]] + modplots[[2]][[21]] |
-  modplots[[3]][[22]] + modplots[[3]][[2]] + modplots[[3]][[6]] + modplots[[3]][[12]] + modplots[[3]][[13]] + modplots[[3]][[18]] + modplots[[3]][[21]]
-
+pdf("~/spinal_cord_paper/figures/Supp_Fig_2_modules_darkgreen_AE_plots.pdf", width = 13, height = 4)
+(full_plot[[9]] + full_plot[[31]] + full_plot[[53]]) + plot_layout(ncol = 3, guides = "collect")
 ```
 
 # AE over time
@@ -527,7 +442,7 @@ for (i in seq(my.ses)) {
 meta <- do.call(rbind, meta)
 
 # mean average expression by stage
-mean_AE <- avg.mod.eigengenes %>%
+mean_AE <- avg.mod.eigengenes[,1:22] %>%
   tibble::rownames_to_column("cell_ID") %>%
   dplyr::mutate(stage = stringr::str_sub(cell_ID, -1)) %>%
   dplyr::mutate(stage = factor(stage, levels = c(1:3), labels = c("D05", "D07", "D10"))) %>%
@@ -540,8 +455,6 @@ mean_AE <- avg.mod.eigengenes %>%
   gather(key="module", value = "AE", -stage_cl) %>%
   dplyr::left_join(mod_annot[, c(1,3)], by = "module") %>%
   tidyr::separate("stage_cl", c("stage", "broad"), sep = "_", remove = FALSE) 
-# %>%
-  # dplyr::filter(broad %in% c("progenitors", "neurons", "RP", "FP", "pericytes"))
 
 labels_dotplot <- stringr::str_remove(modules_in_order, "^AE")
 names(labels_dotplot) <- modules_in_order
@@ -672,11 +585,11 @@ my.sec$sample_celltype <- factor(
   )
 
 vln_ind <- VlnPlot(my.sec,
-                   features = c("AEdarkred", "AEpink", "AEgreen", "AEdarkgreen", "AEroyalblue", "AEcyan", "AElightgreen"),
+                   features = c("AEdarkred", "AElightgreen", "AEdarkgreen"),
                    group.by = "sample_celltype",
                    stack = TRUE,
                    flip = TRUE,
-                   cols = c("darkred", "pink", "green", "darkgreen", "royalblue", "cyan", "lightgreen"),pt.size = 1
+                   cols = c("darkred", "lightgreen", "darkgreen"),pt.size = 1
                   ) +
     NoLegend()
 
@@ -709,62 +622,6 @@ VlnPlot(
 
 
 ```
-
-# avg. module exp. by stage
-
-```{r AE-by-stage, fig.width=20, fig.height=20}
-v1 <- VlnPlot(my.sec,
-        features = mods[module_order], 
-        group.by = "orig.ident")
-v1
-
-pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_stage.pdf", height = 20, width = 20)
-v1
-
-```
-
-# module GO terms barplots
-
-```{r}
-# Load the top 50 (by limma::topGO) Go term table list from scWGCNA_Gg_devel_int.Rmd
-goterms <- readRDS("~/spinal_cord_paper/output/Gg_devel_int_module_GOTerms_250723.rds")
-# Load the devel module annotations 
-modules <- read.csv("~/spinal_cord_paper/annotations/Gg_devel_int_scWGCNA_module_annotation.csv")
-# Set list names as module number and name (e.g. "1_black")
-names(goterms) <- modules$module
-
-plot_list <- list()
-
-for (i in seq(goterms)) {
-  # Select the darkred module (motor neuron/transmembrane transport)
-  toplot <- goterms[[i]]
-  terms <- as.character(toplot$Term)
-  
-  #Plot the barplot!
-  plot_list[[i]] <- ggplot(toplot, aes(x=Term, y=-log10(P.DE), fill=Ont)) +
-    geom_bar(stat="identity") +
-    scale_fill_manual(values = str_remove(names(goterms)[i], "^\\d{1,2}_")) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1),
-          axis.text.y = element_text(size = 5)) +
-    labs(title=paste0("Top GOTerm of module ", names(goterms)[i])) +
-    coord_flip() +
-    geom_hline(yintercept = -log10(0.05), lty = "dashed") +
-    theme_cowplot()
-}
-
-rm(toplot, terms)
-
-names(plot_list) <- modules$module
-
-# Export PDF
-pdf("~/spinal_cord_paper/figures/GO_term_barplot_scWGCNA_Gg_devel_modules.pdf", width = 14, height = 7)
-for (i in seq(goterms)) {
-  grid.arrange(plot_list[[i]])
-}
-dev.off()
-
-```
-
 
 ```{r}
 # Date and time of Rendering
