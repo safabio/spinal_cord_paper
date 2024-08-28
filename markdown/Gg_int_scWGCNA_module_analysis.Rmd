@@ -26,7 +26,6 @@ library(tidyverse)
 library(cowplot)
 library(gridExtra)
 library(pheatmap)
-source("~/Neuraltube/scripts/heatmap4.R")
 ```
 
 # 
@@ -39,6 +38,10 @@ se_path <- c("Gg_ctrl_int_seurat_250723",
 wg_path <- c("~/spinal_cord_paper/output/Gg_ctrl_int_scWGCNA_250723.rds",
              "~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds",
              "~/spinal_cord_paper/output/Gg_poly_int_scWGCNA_250723.rds")
+
+annotations <- c("Gg_ctrl_int_cluster_annotation.csv",
+                 "Gg_lumb_int_cluster_annotation.csv",
+                 "Gg_poly_int_cluster_annotation.csv")
 
 clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
   rename(broad = broad_cluster) %>% 
@@ -70,9 +73,7 @@ vplots <- list()
 for (i in seq(se_path)) {
   # load the data sets
   my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
-  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
-                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
-                               full.names = TRUE))
+  annot <- read.csv(paste0("~/spinal_cord_paper/annotations/", annotations[i]))
   
   if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
      stop("Number of clusters must be identical!")
@@ -99,102 +100,83 @@ for (i in seq(se_path)) {
     mutate(fine = factor(fine, levels = annot$fine)) %>% 
     column_to_rownames("rowname")
 
-  # WGCNA data
-  my.wgcna = readRDS(wg_path[[i]])
-  
-
-  my.datExpr = data.frame(my.se@assays$RNA@data)
-  
-  # Make a new list
-  my.MEs = my.wgcna[["sc.MEList"]]
-    
-  #Calculate average of expression, per sample and cell cluster
-  my.modavg = aggregate(
-        my.MEs$averageExpr,
-        list(my.se@meta.data$seurat_clusters),
-        mean
-        )
-  # Give the cell clusters meaningful names
-  rownames(my.modavg) <-
-  levels(my.se@meta.data$fine)
-  
-  #Get rid of the extra column
-  my.modavg = data.frame(my.modavg[,-1])
   
   #Get a dataframe with annotations for all the samples and colors we need.
-  my.metam <- my.se[[]]
-  
-  my.metam <- my.metam %>% 
+  cell_table <- my.se[[]] %>% 
     tibble::rownames_to_column(var = "cell_ID") %>%
     dplyr::left_join(col_table, by = "fine") %>%
-    tibble::column_to_rownames(var = "cell_ID")
+    tibble::column_to_rownames(var = "cell_ID") %>% 
+    rownames_to_column("cell_ID") %>% 
+    select("fine", "cell_ID")
   
-  #The colors for the samples and clusters. First the closest to the heatmap. Add a white space to easy the eye and make less confussing
-  my.heatcols = as.matrix(data.frame(
-      cluster= as.character(col_table$color[match(rownames(my.modavg), col_table$fine)]))
-      )
+  
+  # WGCNA data
+  my.wgcna = readRDS(wg_path[i])
+  
+  avg.mod.eigengenes <- my.wgcna$sc.MEList$averageExpr %>% 
+    rownames_to_column("cell_ID") %>% 
+    left_join(cell_table, by = "cell_ID") %>% 
+    column_to_rownames("cell_ID")
+    
+  
+  # add metadata
+  avg.mod.eigengenes.mean <- avg.mod.eigengenes %>%
+    group_by(fine) %>%
+    summarise_all("mean") %>%
+    column_to_rownames("fine")
   
   # names and colors for the heatmap annotation
   annot_name <- data.frame(
     "Celltypes" = col_table$fine,
     row.names = col_table$fine)
   
+  annot_module <- data.frame(
+    "Module" = colnames(avg.mod.eigengenes)[1:ncol(avg.mod.eigengenes)-1],
+    row.names = colnames(avg.mod.eigengenes)[1:ncol(avg.mod.eigengenes)-1]
+  )
+  
   annot_col <- list(
-    Celltypes = col_table$color
+    Celltypes = col_table$color,
+    Module = str_remove(colnames(avg.mod.eigengenes)[1:ncol(avg.mod.eigengenes)-1], "AE")
     )
   
   names(annot_col[[1]]) <- annot_name$Celltypes
-  
-  heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
+  names(annot_col[[2]]) <- colnames(avg.mod.eigengenes)[1:ncol(avg.mod.eigengenes)-1]
 
-  #Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
-  my.hclust = hclust(as.dist(1-cor(t(my.modavg), method = "spearman")))
+  htmp <- pheatmap(as.matrix(avg.mod.eigengenes.mean),
+         fontsize = 8,
+         scale = "column",
+         color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+         annotation_row = annot_name,
+         annotation_col = annot_module,
+         annotation_colors = annot_col,
+         annotation_legend = F,
+         border_color = NA)
+  # heatmap without annotations to ensure same plot size
+  htmp_clean <- pheatmap(as.matrix(avg.mod.eigengenes.mean),
+         fontsize = 8,
+         scale = "column", 
+         show_rownames = FALSE,
+         show_colnames = FALSE,
+         annotation_names_row = FALSE,
+         annotation_names_col = FALSE,
+         silent = TRUE,
+         color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+         annotation_row = annot_name,
+         annotation_col = annot_module,
+         annotation_colors = annot_col,
+         annotation_legend = F,
+         border_color = NA)
   
-  # lower limit to scale color bar
-  low_limit <- 100 - abs(round(range(cor(t(my.modavg), method = "spearman"))[1]*100))
-  
-  pheatmap(cor(t(my.modavg), method = "spearman"),revC = T,
-                   main = "spearman correlation of average module eigengene expression by cluster\n Dendrogram based on 'distance 1-cor'",
-                   fontsize = 8,  
-                   color = heat_col(200)[low_limit:200],
-                   show_colnames = F,
-                   cluster_rows = my.hclust,
-                   cluster_cols = my.hclust,
-                   cellwidth = 10,
-                   cellheight = 10,
-                   treeheight_row = 0, 
-                   annotation_col = annot_name,
-                   annotation_colors = annot_col,
-                   annotation_legend = F,
-                   border_color = NA
-                   )
-  
-  my.colcols = as.matrix(names(table(my.wgcna$dynamicCols)))
-  
-  htmp <- heatmap.4(as.matrix(my.modavg),
-            col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
-            trace="none",
-            main = se_path[i],
-            scale = "row",
-            margins = c(10,10),
-            ColSideColors = my.colcols, 
-            RowSideColors = t(my.heatcols))
- 
-  pdf(paste0("~/spinal_cord_paper/figures/", se_path[i], "_modules_v_cluster.pdf"))
-  heatmap.4(as.matrix(my.modavg),
-            col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
-            trace="none",
-            main = se_path[i],
-            scale = "row",
-            margins = c(10,10),
-            ColSideColors = my.colcols, 
-            RowSideColors = t(my.heatcols))
+  pdf(paste0("~/spinal_cord_paper/figures/Supp_fig_3_", se_path[i], "_modules_v_cluster.pdf"), width = 6)
+  grid.arrange(htmp$gtable)
+  grid.arrange(htmp_clean$gtable)
   dev.off()
-  
-  module_order <- htmp[["colInd"]]
+
+  module_order <- htmp[["tree_col"]]$order
 
    
-  avgExp <- my.wgcna[["sc.MEList"]]$averageExpr
+  avgExp <- my.wgcna$sc.MEList$averageExpr
 
   if (identical(rownames(my.se[[]]), rownames(avgExp))) {
     my.se <- AddMetaData(my.se, avgExp)
