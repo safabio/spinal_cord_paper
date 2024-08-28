@@ -26,8 +26,6 @@ library(tidyverse)
 library(cowplot)
 library(pheatmap)
 library(gridExtra)
-source("~/Neuraltube/scripts/heatmap4.R")
-
 ```
 
 # Load individual seurat and test WGCNA data
@@ -202,14 +200,6 @@ avg.mod.eigengenes.mean <- avg.mod.eigengenes %>%
 
 ```{r annot-list}
 
-#The colors for the samples and clusters. First the closest to the heatmap. Add a white space to easy the eye and make less confussing
-my.heatcols <- as.matrix(data.frame(
-    sample= as.character(my.colsm[match(all_col$sample, names(my.colsm))]),
-    "." = "white",
-    cluster= as.character(all_col$color[match(rownames(avg.mod.eigengenes.mean), all_col$sample_celltype)]))
-    )
-
-
 # names and colors for the heatmap annotation
 annot_name <- data.frame(
   "Celltypes" = all_col$sample_celltype,
@@ -243,60 +233,6 @@ names(annot_col[[3]]) <- colnames(avg.mod.eigengenes)[1:22]
 
 ```
 
-```{r,  fig.height=10, fig.width=13}
-heat_col <- colorRampPalette(colors = c("dodgerblue4","dodgerblue", "white", "red", "darkred"))
-
-#Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
-my.hclust = hclust(as.dist(1-cor(t(avg.mod.eigengenes.mean), method = "spearman")))
-
-# lower limit to scale color bar
-low_limit <- 100 - abs(round(range(cor(t(avg.mod.eigengenes.mean), method = "spearman"))[1]*100))
-
-pheatmap(cor(t(avg.mod.eigengenes.mean), method = "spearman"),revC = T,
-                 main = "spearman correlation of average module eigengene expression by cluster\n Dendrogram based on 'distance 1-cor'",
-                 fontsize = 8,  
-                 color = heat_col(200)[low_limit:200],
-                 show_colnames = F,
-                 cluster_rows = my.hclust,
-                 cluster_cols = my.hclust,
-                 treeheight_row = 0, 
-                 annotation_col = annot_name,
-                 annotation_colors = annot_col,
-                 annotation_legend = F,
-                 border_color = NA
-                 )
-
-colbar <- c(min(cor(t(avg.mod.eigengenes.mean), method = "spearman")),
-            max(cor(t(avg.mod.eigengenes.mean), method = "spearman")))
-
-#Calculate the distance 1-cor, and then calculate dendograms to cluster the clusters
-my.hclust = as.dendrogram(hclust(as.dist(1-cor(t(avg.mod.eigengenes.mean), method = "spearman"))))
-
-#Plot!
-pdf("~/spinal_cord_paper/figures/Fig_1_module_gene_heatmap_spearman.pdf", width = 11, height = 11)
-heatmap.4(cor(t(avg.mod.eigengenes.mean), method = "spearman"),
-          col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
-          trace="none",
-          lhei=c(0.2,1.6),
-          lwid=c(0.2,1.6),
-          scale = "none",margins = c(10,10),
-          cexCol = 0.75,
-          revC = TRUE,
-          ColSideColors = my.heatcols,
-          RowSideColors = t(my.heatcols[,3:1]),Rowv = my.hclust, Colv = my.hclust)
-
-
-pdf("~/spinal_cord_paper/figures/Fig_1_module_gene_heatmap_color_key_spearman.pdf", width = 10, height = 10)
-# heatmap since color key is missing in first heatmap
-heatmap.4(rbind(colbar, colbar),
-          col = colorRampPalette(c("dodgerblue4","dodgerblue", "white", "red", "darkred"))(n = 1000),
-          trace="none",
-          lhei=c(0.2,1.6),
-          lwid=c(0.2,1.6),
-          scale = "none",margins = c(10,10),
-          cexCol = 0.75)
-
-```
 
 ## heatmap of module pseudobulk average expression
 
@@ -316,17 +252,9 @@ htmp <- pheatmap(as.matrix(avg.mod.eigengenes.mean),
 
 module_order <- htmp[["tree_col"]]$order
 
-pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_heatmap.pdf", width = 7, height = 10)
-pheatmap(as.matrix(avg.mod.eigengenes.mean),
-         fontsize = 8,
-         scale = "column",
-         color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
-         annotation_row = annot_name,
-         annotation_col = annot_module,
-         annotation_colors = annot_col,
-         annotation_legend = F,
-         border_color = NA)
-
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_heatmap.pdf", width = 8, height = 10)
+grid.arrange(htmp$gtable)
+dev.off()
 
 ```
 
