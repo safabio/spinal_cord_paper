@@ -250,10 +250,34 @@ htmp <- pheatmap(as.matrix(avg.mod.eigengenes.mean),
          annotation_legend = F,
          border_color = NA)
 
+
+# clustering from the scaled heatmap
+row_order <- htmp[["tree_row"]]
+col_order <- htmp[["tree_col"]]
+
+
+# threshold the values to abs(mat) = 5
+mat_scaled <- scale(as.matrix(avg.mod.eigengenes.mean))
+mat_scaled[mat_scaled > 5] <- 5
+mat_scaled[mat_scaled < -5] <- -5
+
+
+max5 <- pheatmap(as.matrix(mat_scaled),
+                 fontsize = 8,
+                 color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+                 cluster_rows = row_order,
+                 cluster_cols = col_order,
+                 annotation_row = annot_name,
+                 annotation_col = annot_module,
+                 annotation_colors = annot_col,
+                 annotation_legend = F,
+                 border_color = NA)
+
+# module order vector (not hclust object as above)
 module_order <- htmp[["tree_col"]]$order
 
 pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_heatmap.pdf", width = 8, height = 10)
-grid.arrange(htmp$gtable)
+grid.arrange(max5$gtable)
 dev.off()
 
 ```
