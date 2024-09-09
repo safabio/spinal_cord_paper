@@ -180,13 +180,15 @@ toplot <- neuron_lumb_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BL_neuron_barplot <- ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) +
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BL_neuron_barplot 
 ```
 
 
@@ -274,6 +276,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BL_neuron_barplot 
 dev.off()
 ```
 
@@ -333,13 +336,15 @@ toplot <- MFOL_lumb_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BL_MFOL_barplot <- ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) +
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BL_MFOL_barplot 
 ```
 
 ### Volcanoplots
@@ -426,6 +431,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BL_MFOL_barplot
 dev.off()
 ```
 
@@ -570,13 +576,15 @@ toplot <- neuron_poly_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BP_neuron_barplot <- ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) + 
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BP_neuron_barplot 
 ```
 
 
@@ -662,6 +670,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BP_neuron_barplot 
 dev.off()
 ```
 
@@ -731,13 +740,15 @@ toplot <- MFOL_poly_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BP_MFOL_barplot <- ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) +
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BP_MFOL_barplot 
 ```
 
 ### Volcanoplots
@@ -824,6 +835,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BP_MFOL_barplot
 dev.off()
 ```
 
@@ -864,13 +876,15 @@ toplot <- RPFP_poly_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BP_RPFP_barplot <- ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) +
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BP_RPFP_barplot 
 ```
 
 ### Volcanoplots
@@ -957,6 +971,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BP_RPFP_barplot
 dev.off()
 ```
 
@@ -994,13 +1009,15 @@ toplot <- NPC_poly_composition %>%
   count(annot_sample) %>% 
   mutate(label_ypos = cumsum(n)- 0.5*n)
 
-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+BP_NPC_barplot <-ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
   geom_bar(stat="identity", color = "black") +
   geom_text(aes(y=label_ypos, label=annot_sample), 
             color="black", size=3.5) +
   facet_wrap("cluster", nrow = 1) +
     theme(legend.position="none") +
   ggtitle("From which clusters do cells come?")
+
+BP_NPC_barplot 
 ```
 
 ### Volcanoplots
@@ -1087,6 +1104,7 @@ volplot_nomt +
                                                 Gene.name)),
                              size = 3,
                              color = "black")
+BP_NPC_barplot
 dev.off()
 ```
 
