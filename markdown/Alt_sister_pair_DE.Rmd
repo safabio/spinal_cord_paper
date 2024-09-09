@@ -1,0 +1,1098 @@
+---
+title: "Alternative B10-L10-int and B10-P10-int DE (neurons)"
+author: "Fabio Sacher"
+date: "03.09.2024"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries}
+library(modplots)
+library(tidyverse)
+library(Seurat)
+library(plotly)
+```
+
+```{r setup}
+# Mitochondrial genes
+mt <- c("ENSGALG00000035334", #COX3
+        "ENSGALG00000032456", #COII
+        "ENSGALG00000032142", #MT-CO1
+        "ENSGALG00000032079", #MT-CYB
+        "ENSGALG00000037838", #ND6
+        "ENSGALG00000029500", #ND5
+        "ENSGALG00000036229", #MT-ND4
+        "ENSGALG00000042478", #ND4L
+        "ENSGALG00000030436", #ND3
+        "ENSGALG00000041091", #MT-ATP6
+        "ENSGALG00000032465", #MT-ATP8
+        "ENSGALG00000043768", #MT-ND2
+        "ENSGALG00000042750") #MT-ND1
+
+# volcanoplot thresholds
+p.adj <- 0.05
+l2fc <- 0.5
+```
+
+# B10-L10-int
+
+```{r B10-L10-int}
+# seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+# cluster labels from B10int and L10int
+ctrl_lumb_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_lumb_int_combined_labels.rds")
+
+identical(colnames(my.se), rownames(ctrl_lumb_int_combined_labels))
+my.se$annot_sample  <- ctrl_lumb_int_combined_labels$annot_sample
+
+my.se@active.assay <- "RNA"
+
+```
+
+## intra cluster DE analysis
+
+We do DE analysis per cluster, contrasting B10 and L10 samples:
+
+```{r intra-cluster-DE-L10, eval=FALSE}
+markers <- list()
+numbers <- list()
+composition <-list()
+
+for (i in seq(levels(Idents(my.se)))) {
+  # subset for individual clusters
+  mn.se <- subset(x = my.se, idents = levels(Idents(my.se))[i])
+  mn.se$sample <- str_extract(mn.se$orig.ident, "ctrl|lumb")
+  
+  composition[[i]] <- mn.se[[]] %>% 
+    select(sample, annot_sample)
+  
+  Idents(mn.se) <- "sample"
+  
+  tmp_markers <- FindMarkers(mn.se,
+                             ident.1 = "ctrl",
+                             only.pos = FALSE, 
+                             min.pct = 0.25, 
+                             logfc.threshold =  0.2,
+                             latent.vars = c("CC.Difference.seurat"), 
+                             test.use = "MAST", 
+                             assay = "RNA")
+  # cell numbers per sample
+  numbers[[i]] <- data.frame(table(mn.se$sample))
+  
+  tmp_markers <- tmp_markers %>%
+    rownames_to_column("Gene.stable.ID") %>% 
+    left_join(gnames)
+  
+  markers[[i]] <- tmp_markers
+}
+
+names(markers) <- paste0("cl-", levels(Idents(my.se)))
+names(numbers) <- paste0("cl-", levels(Idents(my.se)))
+names(composition) <- paste0("cl-", levels(Idents(my.se)))
+
+# bind lists into data frames
+lumb_markers <- bind_rows(markers, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+lumb_numbers <- bind_rows(numbers, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+lumb_composition <- bind_rows(composition, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+
+saveRDS(lumb_markers, "~/spinal_cord_paper/data/Gg_ctrl_lumb_int_markers.rds")
+saveRDS(lumb_numbers, "~/spinal_cord_paper/data/Gg_ctrl_lumb_int_numbers.rds")
+saveRDS(lumb_composition, "~/spinal_cord_paper/data/Gg_ctrl_lumb_int_composition.rds")
+```
+
+```{r}
+# load the DE data
+lumb_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_markers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+lumb_numbers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_numbers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+lumb_composition <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_composition.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+```
+
+Plot the cluster compositions and the number of marker genes.
+
+```{r}
+
+DimPlot(my.se, label = TRUE, reduction = "tsne")
+
+ggplot(data = lumb_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 3) +
+  geom_text(nudge_y = 50, size = 3) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+ggplot(data = lumb_markers %>% filter(p_val_adj < 0.05 & avg_log2FC > 0.5), aes(x = cluster, group = cluster)) +
+  geom_bar() +
+  facet_wrap("cluster", nrow = 3,scales = "free_x") +
+  ggtitle("Number of sig. DE genes")
+
+
+
+```
+
+## Neurons
+
+```{r}
+gnames[grepl("TUBB3",gnames$Gene.name),]
+
+# TUBB3 expression
+VlnPlot(my.se, features = c("ENSGALG00000000059"), pt.size = 0)
+
+# vector of neuronal clusters
+neuron_clusters <- c(3,7,17,20,27,28,30)
+
+neuron_lumb_markers <- filter(lumb_markers, clust_id %in% neuron_clusters)
+neuron_lumb_numbers <- filter(lumb_numbers, clust_id %in% neuron_clusters)
+neuron_lumb_composition <- filter(lumb_composition, clust_id %in% neuron_clusters)
+```
+
+
+### Barplots
+
+Barplots showing number of cells from B10 or L10, and the contributions from the individual B10int and L10int clusters:
+
+```{r barplots-L10}
+ggplot(data = neuron_lumb_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+toplot <- neuron_lumb_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) +
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+
+### Volcanoplots
+
+```{r volplots-L10, fig.width = 10, fig.height = 6}
+toplot <- neuron_lumb_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "lumb",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          lumb = "#419c73",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            lumb = 21,
+            ns = 20)
+
+volplot <- ggplot(data = toplot,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 2, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 1000, height = 600)
+
+```
+
+Plots without HOX and mitochondrial genes:
+
+```{r,  fig.width = 10, fig.height = 6}
+# filter out HOX and MT genes
+toplot_nomt <- toplot %>% 
+  filter(!grepl("^HOX", Gene.name)) %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 2, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt, width = 1000, height = 600)
+
+```
+
+```{r}
+volplot_nomt +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_4_neuron_volcano.pdf", width = 9, height = 7)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+
+### No MN DE genes
+
+Cluster 30 (Consisting of 161 B10 vs 13 L10 cells) shows no MN related markers. Seemingly, those 13 cells are indeed motor neurons. This is supported by the fact of their expression of TUBB3, FOXP1, and SLC18A3.
+
+```{r}
+# Motor neuron cluster
+mn.se <- subset(x = my.se, idents = 30)
+mn.se$sample <- str_extract(mn.se$orig.ident, "ctrl|lumb")
+
+mn.se@active.assay <- "integrated"
+
+mn_markers <- gnames[grepl("TUBB3|FOXP1|SLC18A3", gnames$Gene.name),]
+mn_markers
+
+VlnPlot(mn.se, group.by = "sample", mn_markers$Gene.stable.ID, cols = c("darkgrey", "#419c73"))
+```
+
+## MFOLs
+
+```{r}
+gnames[grepl("^PLP1$|^MBP$|^FABP9$",gnames$Gene.name),]
+
+# MFOL marker expression
+VlnPlot(my.se, features = c("ENSGALG00000000112","ENSGALG00000013640","ENSGALG00000032453"), pt.size = 0, ncol = 1)
+
+# vector of neuronal clusters
+MFOL_clusters <- c(16, 18, 34)
+
+MFOL_lumb_markers <- filter(lumb_markers, clust_id %in% MFOL_clusters)
+MFOL_lumb_numbers <- filter(lumb_numbers, clust_id %in% MFOL_clusters)
+MFOL_lumb_composition <- filter(lumb_composition, clust_id %in% MFOL_clusters)
+```
+
+
+### Barplots
+
+Barplots showing number of cells from B10 or L10, and the contributions from the individual B10int and L10int clusters:
+
+```{r barplots-L10-MFOL}
+ggplot(data = MFOL_lumb_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+toplot <- MFOL_lumb_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) +
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+### Volcanoplots
+
+```{r volplots-L10_MFOL, fig.width = 10, fig.height = 6}
+toplot <- MFOL_lumb_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "lumb",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          lumb = "#419c73",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            lumb = 21,
+            ns = 20)
+
+volplot <- ggplot(data = toplot,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 800, height = 500)
+
+```
+
+Plots without HOX and mitochondrial genes:
+
+```{r,  fig.width = 10, fig.height = 6}
+# filter out HOX and MT genes
+toplot_nomt <- toplot %>% 
+  filter(!grepl("^HOX", Gene.name)) %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt, width = 800, height = 500)
+
+```
+
+```{r}
+volplot_nomt +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_4_MFOL_volcano.pdf", width = 7, height = 3.5)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+
+# B10-P10-int
+
+```{r B10-P10-int}
+# seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_250723.rds")
+# cluster labels from B10int and L10int
+ctrl_poly_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_poly_int_combined_labels.rds")
+
+identical(colnames(my.se), rownames(ctrl_poly_int_combined_labels))
+my.se$annot_sample  <- ctrl_poly_int_combined_labels$annot_sample
+
+my.se@active.assay <- "RNA"
+
+```
+
+## intra cluster DE analysis
+
+We do DE analysis per cluster, contrasting B10 and P10 samples:
+
+```{r intra-cluster-DE-P10, eval=FALSE}
+markers <- list()
+numbers <- list()
+composition <- list()
+
+for (i in seq(levels(Idents(my.se)))) {
+  # subset for individual clusters
+  mn.se <- subset(x = my.se, idents = levels(Idents(my.se))[i])
+  mn.se$sample <- str_extract(mn.se$orig.ident, "ctrl|poly")
+  
+  composition[[i]] <- mn.se[[]] %>% 
+    select(sample, annot_sample)
+  
+  Idents(mn.se) <- "sample"
+  
+  tmp_markers <- FindMarkers(mn.se,
+                             ident.1 = "ctrl",
+                             only.pos = FALSE, 
+                             min.pct = 0.25, 
+                             logfc.threshold =  0.2,
+                             latent.vars = c("CC.Difference.seurat"), 
+                             test.use = "MAST", 
+                             assay = "RNA")
+  # cell numbers per sample
+  numbers[[i]] <- data.frame(table(mn.se$sample))
+  
+  tmp_markers <- tmp_markers %>%
+    rownames_to_column("Gene.stable.ID") %>% 
+    left_join(gnames)
+  
+  
+  markers[[i]] <- tmp_markers
+}
+
+names(markers) <- paste0("cl-", levels(Idents(my.se)))
+names(numbers) <- paste0("cl-", levels(Idents(my.se)))
+names(composition) <- paste0("cl-", levels(Idents(my.se)))
+
+# bind lists into data frames
+poly_markers <- bind_rows(markers, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+poly_numbers <- bind_rows(numbers, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+poly_composition <- bind_rows(composition, .id = "cluster") %>% 
+  mutate(cluster = factor(cluster, levels = paste0("cl-", levels(Idents(my.se)))))
+
+saveRDS(poly_markers, "~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds")
+saveRDS(poly_numbers, "~/spinal_cord_paper/data/Gg_ctrl_poly_int_numbers.rds")
+saveRDS(poly_composition, "~/spinal_cord_paper/data/Gg_ctrl_poly_int_composition.rds")
+```
+
+
+```{r}
+# load the DE data
+poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+poly_numbers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_numbers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+poly_composition <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_composition.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-"))
+```
+
+Plot the cluster compositions and the number of marker genes.
+
+```{r}
+
+DimPlot(my.se, label = TRUE, reduction = "tsne")
+
+ggplot(data = poly_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 3) +
+  geom_text(nudge_y = 50, size = 3) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+ggplot(data = poly_markers %>% filter(p_val_adj < 0.05 & avg_log2FC > 0.5), aes(x = cluster, group = cluster)) +
+  geom_bar() +
+  facet_wrap("cluster", nrow = 3,scales = "free_x") +
+  ggtitle("Number of sig. DE genes")
+
+```
+
+## Neurons
+
+```{r}
+gnames[grepl("TUBB3",gnames$Gene.name),]
+
+# TUBB3 expression
+VlnPlot(my.se, features = c("ENSGALG00000000059"), pt.size = 0)
+
+# vector of neuronal clusters
+neuron_clusters <- c(5,6,11,20,25,27,29,30,32)
+
+neuron_poly_markers <- filter(poly_markers, clust_id %in% neuron_clusters)
+neuron_poly_numbers <- filter(poly_numbers, clust_id %in% neuron_clusters)
+neuron_poly_composition <- filter(poly_composition, clust_id %in% neuron_clusters)
+```
+
+
+
+### Barplots
+
+Barplots showing number of cells from B10 or P10, and the contributions from the individual B10int and P10int clusters:
+
+```{r barplots-P10}
+ggplot(data = neuron_poly_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+
+toplot <- neuron_poly_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) + 
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+
+### Volcanoplots
+
+```{r volplots-P10, fig.width = 10, fig.height = 6}
+toplot <- neuron_poly_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "poly",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          poly = "goldenrod3",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            poly = 21,
+            ns = 20)
+
+
+volplot <- ggplot(data = toplot,
+                       aes(x = avg_log2FC,
+                           y = -log10(p_val_adj),
+                           label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                       )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 2, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 1000, height = 600)
+```
+
+
+Plots without mitochondrial genes:
+
+```{r fig.width = 10, fig.height = 6}
+toplot_nomt <- toplot %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                       aes(x = avg_log2FC,
+                           y = -log10(p_val_adj),
+                           label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                       )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 2, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt)
+```
+
+```{r}
+volplot_nomt  +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_5_neuron_volcano.pdf", width = 11, height = 7)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+
+Single plot (no faceting due to low number of DE genes).
+
+```{r fig.width=5, fig.height=5}
+volplot_nomt_ind <- ggplot(data = toplot_nomt,
+                       aes(x = avg_log2FC,
+                           y = -log10(p_val_adj),
+                           label = Gene.name,
+                           color = gene_type,
+                           shape = cluster,
+                       )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = c("black", "grey", "goldenrod3"))+
+  scale_shape_manual(values = c(0, 16, 2, 3, 5, 16, 16, 16, 16)) +
+  xlim(c(-1,1)) +
+  ylab("-log10(padj)") +
+  theme_bw() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+volplot_nomt_ind
+
+```
+
+## MFOLs
+
+```{r}
+gnames[grepl("^PLP1$|^MBP$|^FABP9$",gnames$Gene.name),]
+
+# MFOL marker expression
+VlnPlot(my.se, features = c("ENSGALG00000000112","ENSGALG00000013640","ENSGALG00000032453"), pt.size = 0, ncol = 1)
+
+# vector of neuronal clusters
+MFOL_clusters <- c(10, 24)
+
+MFOL_poly_markers <- filter(poly_markers, clust_id %in% MFOL_clusters)
+MFOL_poly_numbers <- filter(poly_numbers, clust_id %in% MFOL_clusters)
+MFOL_poly_composition <- filter(poly_composition, clust_id %in% MFOL_clusters)
+```
+
+### Barplots
+
+Barplots showing number of cells from B10 or L10, and the contributions from the individual B10int and L10int clusters:
+
+```{r barplots-P10-MFOL}
+ggplot(data = MFOL_poly_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+toplot <- MFOL_poly_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) +
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+### Volcanoplots
+
+```{r volplots-P10_MFOL, fig.width = 10, fig.height = 6}
+toplot <- MFOL_poly_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "poly",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          poly = "goldenrod3",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            poly = 21,
+            ns = 20)
+
+volplot <- ggplot(data = toplot,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 800, height = 500)
+
+```
+
+Plots without HOX and mitochondrial genes:
+
+```{r,  fig.width = 10, fig.height = 6}
+# filter out HOX and MT genes
+toplot_nomt <- toplot %>% 
+  filter(!grepl("^HOX", Gene.name)) %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt, width = 800, height = 500)
+
+```
+
+```{r}
+volplot_nomt +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_5_MFOL_volcano.pdf", width = 5, height = 3.5)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+## RP and FP
+
+```{r}
+gnames[grepl("^RSPO1$|^SHH$",gnames$Gene.name),]
+
+# MFOL marker expression
+VlnPlot(my.se, features = c("ENSGALG00000001946","ENSGALG00000006379"), pt.size = 0, ncol = 1)
+
+# vector of neuronal clusters
+RPFP_clusters <- c(22, 23)
+
+RPFP_poly_markers <- filter(poly_markers, clust_id %in% RPFP_clusters)
+RPFP_poly_numbers <- filter(poly_numbers, clust_id %in% RPFP_clusters)
+RPFP_poly_composition <- filter(poly_composition, clust_id %in% RPFP_clusters)
+```
+
+### Barplots
+
+Barplots showing number of cells from B10 or L10, and the contributions from the individual B10int and L10int clusters:
+
+```{r barplots-P10-RPFP}
+ggplot(data = RPFP_poly_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+toplot <- RPFP_poly_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) +
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+### Volcanoplots
+
+```{r volplots-P10_RPFP, fig.width = 10, fig.height = 6}
+toplot <- RPFP_poly_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "poly",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          poly = "goldenrod3",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            poly = 21,
+            ns = 20)
+
+volplot <- ggplot(data = toplot,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 800, height = 500)
+
+```
+
+Plots without HOX and mitochondrial genes:
+
+```{r,  fig.width = 10, fig.height = 6}
+# filter out HOX and MT genes
+toplot_nomt <- toplot %>% 
+  filter(!grepl("^HOX", Gene.name)) %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt, width = 800, height = 500)
+
+```
+
+```{r}
+volplot_nomt +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_5_RPFP_volcano.pdf", width = 5, height = 3.5)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+## NPC cl-16 and cl-18
+
+Clusters 16 and 18 show the highest numbers of DE genes. They are a progenitor population
+
+```{r}
+# vector of neuronal clusters
+NPC_clusters <- c(16, 18)
+
+NPC_poly_markers <- filter(poly_markers, clust_id %in% NPC_clusters)
+NPC_poly_numbers <- filter(poly_numbers, clust_id %in% NPC_clusters)
+NPC_poly_composition <- filter(poly_composition, clust_id %in% NPC_clusters)
+```
+
+### Barplots
+
+Barplots showing number of cells from B10 or L10, and the contributions from the individual B10int and L10int clusters:
+
+```{r barplots-P10-NPC}
+ggplot(data = NPC_poly_numbers, aes(x = Var1, y = Freq, group = cluster, label = Freq)) +
+  geom_col() +
+  facet_wrap("cluster", nrow = 1) +
+  geom_text(nudge_y = 10) +
+  ggtitle("Cluster composition by sample (nCells)")
+
+```
+
+```{r}
+toplot <- NPC_poly_composition %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = factor(annot_sample)) %>% 
+  group_by(sample, cluster) %>%
+  count(annot_sample) %>% 
+  mutate(label_ypos = cumsum(n)- 0.5*n)
+
+ggplot(data=toplot, aes(x=sample, y=n, fill=fct_rev(annot_sample))) +
+  geom_bar(stat="identity", color = "black") +
+  geom_text(aes(y=label_ypos, label=annot_sample), 
+            color="black", size=3.5) +
+  facet_wrap("cluster", nrow = 1) +
+    theme(legend.position="none") +
+  ggtitle("From which clusters do cells come?")
+```
+
+### Volcanoplots
+
+```{r volplots-P10_NPC, fig.width = 10, fig.height = 6}
+toplot <- NPC_poly_markers %>% 
+  mutate(gene_type = case_when(
+    avg_log2FC >= 0.5 & p_val_adj <= 0.05 ~ "ctrl",
+    avg_log2FC <= -0.5 & p_val_adj <= 0.05 ~ "poly",
+    TRUE ~ "ns")
+  )
+
+cols <- c(ctrl = "black",
+          poly = "goldenrod3",
+          ns = "grey")
+
+shapes <- c(ctrl = 21,
+            poly = 21,
+            ns = 20)
+
+volplot <- ggplot(data = toplot,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes")
+
+ggplotly(volplot, width = 800, height = 500)
+
+```
+
+Plots without HOX and mitochondrial genes:
+
+```{r,  fig.width = 10, fig.height = 6}
+# filter out HOX and MT genes
+toplot_nomt <- toplot %>% 
+  filter(!grepl("^HOX", Gene.name)) %>% 
+  filter(!Gene.stable.ID %in% mt)
+
+volplot_nomt <- ggplot(data = toplot_nomt,
+                  aes(x = avg_log2FC,
+                      y = -log10(p_val_adj),
+                      label = Gene.name,
+                      color = gene_type,
+                      shape = gene_type
+                  )) +
+  geom_point() +
+  geom_hline(yintercept = -log10(p.adj), linetype = "dashed") +
+  geom_vline(xintercept = c(-l2fc,l2fc), linetype = "dashed") +
+  scale_color_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  facet_wrap("cluster", nrow = 1, scales = "free") +
+  ylab("-log10(padj)") +
+  theme_bw()+
+  ggtitle("Sig. marker genes (without MT and HOX genes")
+
+ggplotly(volplot_nomt, width = 800, height = 500)
+
+```
+
+```{r}
+volplot_nomt +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+
+pdf("~/spinal_cord_paper/figures/Fig_5_NPC_volcano.pdf", width = 5, height = 3.5)
+volplot_nomt +
+  NoLegend() +
+    ggrepel::geom_text_repel(aes(label = ifelse(gene_type == 'ns',
+                                                NA,
+                                                Gene.name)),
+                             size = 3,
+                             color = "black")
+dev.off()
+```
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
