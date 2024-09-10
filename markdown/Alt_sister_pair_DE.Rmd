@@ -296,6 +296,11 @@ mn_markers <- gnames[grepl("TUBB3|FOXP1|SLC18A3", gnames$Gene.name),]
 mn_markers
 
 VlnPlot(mn.se, group.by = "sample", mn_markers$Gene.stable.ID, cols = c("darkgrey", "#419c73"))
+
+mn_DE <- gnames[grepl("PRIMA1|NCAM1|^SST$|PBX3", gnames$Gene.name),]
+mn_DE
+
+VlnPlot(mn.se, group.by = "sample", mn_DE$Gene.stable.ID, cols = c("darkgrey", "#419c73"))
 ```
 
 ## MFOLs
