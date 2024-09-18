@@ -282,7 +282,7 @@ dev.off()
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
-  width = 13, height = 4,
+  width = 13, height = 3,
   plot = dpl_hox_select[[1]] +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -316,7 +316,7 @@ dpl_hox +
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Supp_fig_4_ctrl_lumb_hox_dotplot.pdf",
-  width = 13, height = 10,
+  width = 13, height = 8,
   plot = dpl_hox +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -355,7 +355,7 @@ dev.off()
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_cand_dotplot.pdf",
-  width = 13, height = 6,
+  width = 13, height = 4,
   plot = dpl_cand[[1]] +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
