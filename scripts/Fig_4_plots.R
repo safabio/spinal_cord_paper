@@ -233,56 +233,22 @@ dev.off()
 #### Ctrl_lumb int dotplot ####
 ### ### ### ### ### ### ### ###
 
-# ctrl int data with annotations
-ctrl <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
+# seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+# cluster labels from B10int and L10int
+ctrl_lumb_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_lumb_int_combined_labels.rds")
 
-ctrl_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv")
+identical(colnames(my.se), rownames(ctrl_lumb_int_combined_labels))
+my.se$annot_sample  <- ctrl_lumb_int_combined_labels$annot_sample
 
-if(length(table(ctrl_annot$number)) != length(table(ctrl$seurat_clusters))) {
-  stop("Number of clusters must be identical!")
-}
-
-# rename for left join
-ctrl_annot <- ctrl_annot %>% 
-  mutate(fine = paste(fine, number, sep = "_")) %>% 
-  mutate(number = factor(number, levels = 1:nrow(ctrl_annot))) %>% 
-  rename(seurat_clusters = number) %>% 
-  mutate(fine = paste("ctrl_int", fine, sep = "_"))
-
-# add cluster annotation to meta data
-ctrl@meta.data <- ctrl@meta.data %>% 
-  rownames_to_column("rowname") %>% 
-  left_join(ctrl_annot, by = "seurat_clusters") %>% 
-  column_to_rownames("rowname")
-
-# lumb int data with annotations
-lumb <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
-
-lumb_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_lumb_int_cluster_annotation.csv")
-
-if(length(table(lumb_annot$number)) != length(table(lumb$seurat_clusters))) {
-  stop("Number of clusters must be identical!")
-}
-
-# rename for left join
-lumb_annot <- lumb_annot %>% 
-  mutate(fine = paste(fine, number, sep = "_")) %>% 
-  mutate(number = factor(number, levels = 1:nrow(lumb_annot))) %>% 
-  rename(seurat_clusters = number) %>% 
-  mutate(fine = paste("lumb_int", fine, sep = "_"))
-
-# add cluster annotation to meta data
-lumb@meta.data <- lumb@meta.data %>% 
-  rownames_to_column("rowname") %>% 
-  left_join(lumb_annot, by = "seurat_clusters") %>% 
-  column_to_rownames("rowname")
-
-# merge ctrl and lumb data
-my.se <- merge(ctrl, lumb)
+my.se@active.assay <- "RNA"
 
 my.se[[]]
 
-Idents(my.se) <- "fine" 
+my.se$sample <- str_extract(my.se$orig.ident, "ctrl|lumb")
+my.se$split_clusters <- paste(my.se$seurat_clusters, my.se$sample, sep = "_")
+
+Idents(my.se) <- "split_clusters" 
 my.se@active.assay <- "RNA"
 
 gnames = modplots::gnames
@@ -296,7 +262,7 @@ cand <- modplots::gnames %>%
 cand <- cand[match(hox_select, cand$Gene.name),]
 
 dpl_hox_select <- modplots::mDotPlot2(
-  my.se,
+  my.se, 
   features = cand$Gene.stable.ID,
   cols = c("lightgrey", "black"),
   cluster.idents = TRUE,
@@ -316,7 +282,7 @@ dev.off()
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
-  width = 13, height = 5.5,
+  width = 13, height = 4,
   plot = dpl_hox_select[[1]] +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -324,14 +290,12 @@ ggsave(
 
 # Dotplot and clustering on the selected HOX genes from above 
 # order the factors 
-my.se@meta.data$fine <- factor(
-  my.se@meta.data$fine,
+my.se@meta.data$split_clusters <- factor(
+  my.se@meta.data$split_clusters,
   levels =  dpl_hox_select[[2]][["labels"]][dpl_hox_select[[2]][["order"]]])
 
-# my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
-
-Idents(my.se) <- "fine" 
-my.se@active.assay <- "RNA"
+# my.se@meta.data$split_clusters <- forcats::fct_rev(my.se@meta.data$split_clusters)
+Idents(my.se) <- "split_clusters" 
 
 hox <- modplots::gnames %>% 
   filter(grepl("^HOX", Gene.name)) %>% 
@@ -367,34 +331,32 @@ cand <- modplots::gnames %>%
 
 cand <- cand[match(GOI, cand$Gene.name),]
 
-# GSI correlation order
-my.se <- merge(ctrl, lumb)
-
-my.se[[]]
-
-my.htmp <- readRDS("~/spinal_cord_paper/output/heatmap_spearman_ctrl_lumb.rds")
-
-my.se@meta.data$fine <- factor(
-  my.se@meta.data$fine,
-  levels =  my.htmp[["tree_row"]][["labels"]][my.htmp[["tree_row"]][["order"]]])
-
-# my.se@meta.data$fine <- forcats::fct_rev(my.se@meta.data$fine)
-
-Idents(my.se) <- "fine" 
-my.se@active.assay <- "RNA"
 
 # Dotplot of candidate genes (GSI clust. from my.htmp)
 dpl_cand <- modplots::mDotPlot2(
   my.se,
   features = cand$Gene.stable.ID,
-  cols = c("lightgrey", "black"),
+  cols = c("lightgrey", "black"), 
+  cluster.idents = TRUE,
   gnames = gnames
-) +
+)
+
+dpl_cand[[1]] +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+# hclust as dendrogram
+dend.idents.cand <- as.dendrogram(dpl_cand[[2]])
+
+pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_cand_dotplot_dendro.pdf")
+plot(dend.idents.cand)
+dev.off()  
+
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_cand_dotplot.pdf",
   width = 13, height = 6,
-  plot = dpl_cand
+  plot = dpl_cand[[1]] +
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 )
