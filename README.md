@@ -10,12 +10,12 @@ The Initial QC filtering and seurat object creation markdown files are rendered 
 -   ***Seurat_Gg_NT_array.sh***: create and analyse [Seurat](https://github.com/satijalab/seurat) objects for all the individual samples, run dimensionality reduction, marker detection and plot markers for cluster annotation.
 The chickent and mouse ortholog table (~/spinal_cord_paper/data/ortho_gg_mm_v102.rds) is retrieved from [BioMart](http://nov2020.archive.ensembl.org/biomart/martview/) (release 102).
 -   ***Seurat_integration_array.sh***: Integration step of the 4 integrated data sets
-    -   Devel: B05, B07, and B10 $_{1}$ (day 5, 7, and 10) brachial samples
-    -   brachial: B10_1 and B10<sub>2</sub>
-    -   lumbar: L10_1 and L10_2
-    -   polydactyl: P10_1 and P10_2
+    -   Devel: B05, B07, and B10<sub>1</sub> (day 5, 7, and 10) brachial samples
+    -   brachial: B10<sub>1</sub> and B10<sub>2</sub>
+    -   lumbar: L10<sub>1</sub> and L10<sub>2</sub>
+    -   polydactyl: P10<sub>1</sub> and P10<sub>2</sub>
 -   ***Seurat_Gg_NT_int_array.sh***: Create and analyse the integrated seurat objects, run dimensionality reduction, marker detection and plot markers for cluster annotation.
--   ***Seurat_Gg_ctrl_lumb_ctrl_poly_integration_array.sh***: Integration and analysis of the brachial & lumbar (B10_1, ctrl_2, lumb_1, & lumb_2), and brachial & poly (ctrl_1, ctrl_2, poly_1, & poly_2). They get an individual, combined pipeline since the time and memory allocation are higher.
+-   ***Seurat_Gg_ctrl_lumb_ctrl_poly_integration_array.sh***: Integration and analysis of the brachial & lumbar (B/L10<sub>int</sub>: B10<sub>1</sub>, B10<sub>2</sub>, L10<sub>1</sub>, & L10<sub>2</sub>), and brachial & poly (B/P10<sub>int</sub>:  B10<sub>1</sub>, B10<sub>2</sub>, P10<sub>1</sub>, & P10<sub>2</sub>). They get an individual, combined pipeline since the time and memory allocation are higher.
 -   ***Seurat_Gg_all_int_render.sh***: Integration and analysis of all 8 samples for Supplementary figure 1 gets it own job due to time and memory demands.
 
 Cluster annotation is guided by marker gene expression:
