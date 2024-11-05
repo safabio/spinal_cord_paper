@@ -38,12 +38,6 @@ Differential abundance is calculated with [miloR](https://github.com/MarioniLab/
 
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
-## augur Cell Type Prioritisation
-
-[augur](https://github.com/neurorestore/Augur) is used to prioritise cell types based on ther response to an experimental condition:
-
--   ***augur_Gg_ctrl_lumb_ctrl_poly_int_array.sh***:  Runs augur between ctrl and lumb, as well as ctrl and poly. 
-
 ## Sister Pair DE analysis
 
 This script runs DE analysis of closest neuronal clusters between ctrl & lumb, as well as ctrl & poly. Not only strict sister pairs, but also the next closest cluster from the other sample was considered.
