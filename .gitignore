@@ -10,9 +10,11 @@ figures/poly_overlay_ctrl_clust_16.pdf
 markdown/DAseq_Gg_ctrl_*
 markdown/overlay_plots_ctrl_vs_poly.*
 markdown/spec_markers_ctrl_dotplots.*
+markdown/Vln_plots.*
 scripts/augur_*
 scripts/DAseq_Gg_ctrl_*
 scripts/Sister_pair_DE_analysis.sh
+scripts/Vln_plots_render.sh
 figures/CSF_probes_poly_cl26_corr_heatmap.pdf
 figures/CSF_probes_poly_int_corr_heatmap.pdf
 figures/ctrl_poly_candidates_dotplots.pdf
