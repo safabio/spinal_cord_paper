@@ -38,6 +38,12 @@ Differential abundance is calculated with [miloR](https://github.com/MarioniLab/
 
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
+## motor neuron counting
+
+Preparing the manual count data for the motor neuron counting, line plots and bar plots (Figure 5).
+
+- ***MN_counting.Rmd***
+
 ## Plotting
 
 The following scripts are used to create the plots for the figures, if they are not already produced by the pipelines above:
@@ -53,7 +59,7 @@ The following scripts are used to create the plots for the figures, if they are 
 -   ***Gg_devel_scWGCNA_module_analysis_render.sh***: All the analysis of the scWGCNA modules on the development (D5, D7, and D10/ctrl1) data set.
 
 -   ***Fig_1_plots.R***: Produces the PCA of the Gg_all_int pseudobulk data shown in Supp. Fig. 1D.
--   ***Fig_2_plots.R***: Produces the module network plots of Fig. 2A, E & I.
+-   ***Fig_2_plots.R***: Produces the module network plots of Fig. 2A-C.
 -   ***Fig_3_plots.R***: Produces the additional plots for Figure 3. 
 -   ***Fig_4_plots.R***: Produces the additional plots for Figure 4 and Supp. Fig 4.
 -   ***Fig_5_plots.R***: Produces the additional plots for Figure 5 and Supp. Fig 5.
