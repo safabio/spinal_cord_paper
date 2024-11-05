@@ -32,11 +32,10 @@ Next we run the comparative scWGCNA pipeline to calculate module conservation be
 
 -   ***comparative_scWGCNA_array.sh***: compares each data set's modules with the other two data sets. Produces the "Gg_*_int_comp_scWGCNA.pdf" plots.
 
-## DA (differential abundance)
+## miloR (differential abundance)
 
-Differential abundance is calculated with [DAseq](https://github.com/KlugerLab/DAseq) and [miloR](https://github.com/MarioniLab/miloR). Again the scripts are called with separate array jobs:
+Differential abundance is calculated with [miloR](https://github.com/MarioniLab/miloR). Again the script is called with a  separate array job:
 
--   ***DAseq_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs DAseq to calculate differential abundance. Requires a python3 verison available (install with anaconda).
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
 ## augur Cell Type Prioritisation
