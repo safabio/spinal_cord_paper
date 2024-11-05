@@ -11,3 +11,4 @@ markdown/DAseq_Gg_ctrl_*
 markdown/overlay_plots_ctrl_vs_poly.*
 markdown/spec_markers_ctrl_dotplots.*
 scripts/DAseq_Gg_ctrl_*
+scripts/Sister_pair_DE_analysis.sh
