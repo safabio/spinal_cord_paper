@@ -38,14 +38,6 @@ Differential abundance is calculated with [miloR](https://github.com/MarioniLab/
 
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
-## Ctrl vs Poly
-
-- ***Sister_pair_DE_dotplot.Rmd***: Select the DE genes between the closest control and poly neuron clusters and plot the top 50 of each in a dotplot. The script also runs DE for the ctrl cl_11 and cl_16 to identify their specific markers.
-- ***spec_markers_ctrl_dotplots.Rmd***: Plot the most promising markers for ctrl cl_11 and cl_16 as dotplots for ctrl_int, lumb_int and poly_int.
-- ***ctrl_poly_candidates_dotplots.Rmd***: Plot the ISH probe candidates as dotplots for ctrl_int, lumb_int and poly_int (SPOCK1, RELN, and RUNX1T1).
-- ***overlay_plots_ctrl_vs_poly.Rmd***: Creates overlay plots on ctrl_int and poly_int for the ctrl cl_11 and cl_16 markers and the candidates that seem to change between ctrl and poly dats.
-
-
 ## Plotting
 
 The following scripts are used to create the plots for the figures, if they are not already produced by the pipelines above:
