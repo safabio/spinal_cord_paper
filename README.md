@@ -10,8 +10,8 @@ The Initial QC filtering and seurat object creation markdown files are rendered 
 -   ***Seurat_Gg_NT_array.sh***: create and analyse [Seurat](https://github.com/satijalab/seurat) objects for all the individual samples, run dimensionality reduction, marker detection and plot markers for cluster annotation.
 The chickent and mouse ortholog table (~/spinal_cord_paper/data/ortho_gg_mm_v102.rds) is retrieved from [BioMart](http://nov2020.archive.ensembl.org/biomart/martview/) (release 102).
 -   ***Seurat_integration_array.sh***: Integration step of the 4 integrated data sets
-    -   Devel: B05, B07, and B10$_{1}$ (day 5, 7, and 10) brachial samples
-    -   brachial: B10_1 and B10_2
+    -   Devel: B05, B07, and B10 $_{1}$ (day 5, 7, and 10) brachial samples
+    -   brachial: B10_1 and B10<sub>2</sub>
     -   lumbar: L10_1 and L10_2
     -   polydactyl: P10_1 and P10_2
 -   ***Seurat_Gg_NT_int_array.sh***: Create and analyse the integrated seurat objects, run dimensionality reduction, marker detection and plot markers for cluster annotation.
