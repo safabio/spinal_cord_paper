@@ -13,3 +13,16 @@ markdown/spec_markers_ctrl_dotplots.*
 scripts/augur_*
 scripts/DAseq_Gg_ctrl_*
 scripts/Sister_pair_DE_analysis.sh
+figures/CSF_probes_poly_cl26_corr_heatmap.pdf
+figures/CSF_probes_poly_int_corr_heatmap.pdf
+figures/ctrl_poly_candidates_dotplots.pdf
+figures/Fig_5_ctrl_poly_DE_htmp.pdf
+figures/FP_module_overlap_tsne.pdf
+figures/Gg_ctrl_int_seurat_250723_modules_v_cluster.pdf
+figures/Gg_ctrl_lumb_int_augur_prios_tsne.pdf
+figures/Gg_ctrl_lumb_int_DAseq.pdf
+figures/NRP2_PKD2L1_blend_tsne.pdf
+figures/spec_markers_ctrl_dotplots.pdf
+figures/Supplementary_Figure_3.pdf
+figures/test_vln_plots.pdf
+figures/poly_mod_salmon_3d.html
