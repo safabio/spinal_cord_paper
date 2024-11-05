@@ -38,12 +38,6 @@ Differential abundance is calculated with [miloR](https://github.com/MarioniLab/
 
 -   ***miloR_Gg_ctrl_lumb_cltr_poly_int_array.sh***: Runs miloR to calculate differential abundance.
 
-## Sister Pair DE analysis
-
-This script runs DE analysis of closest neuronal clusters between ctrl & lumb, as well as ctrl & poly. Not only strict sister pairs, but also the next closest cluster from the other sample was considered.
-
--   ***Sister_pair_DE_analysis_render.sh***: Loads the ctrl, lumbar and poly int data sets, transfers the cluster labels to the ctrl_lumb_int and ctrl_poly_int respectively. Then on the integrated data, DE between the sister pairs (or adjacent clusters) as by the spearman cor heatmaps ordering.
-
 ## Ctrl vs Poly
 
 - ***Sister_pair_DE_dotplot.Rmd***: Select the DE genes between the closest control and poly neuron clusters and plot the top 50 of each in a dotplot. The script also runs DE for the ctrl cl_11 and cl_16 to identify their specific markers.
