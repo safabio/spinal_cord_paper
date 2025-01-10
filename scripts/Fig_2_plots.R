@@ -9,17 +9,22 @@
 
 # code is taken and adapted from scWGCNA::scW.p.network
 
+library(ggplot2)
+
 # scWGNA.data
 scWGCNA.data = readRDS("~/spinal_cord_paper/output/Gg_devel_int_scWGCNA_250723.rds")
 gnames = modplots::gnames
 rownames(gnames) <- gnames[,1]
-modules = c("darkred", "darkgreen", "lightgreen")
+modules = c("darkred", "darkgreen", "lightgreen", "tan")
 
 
 # get the module colors
 my.cols = levels(as.factor(scWGCNA.data[["dynamicCols"]]))
 
 nwrk <- list()
+
+text_size <- list(5,5,5,2)
+maxN_size <- list(23,23,23,15)
 
 for (i in seq(modules)) {
   col <- modules[i]
@@ -36,9 +41,9 @@ for (i in seq(modules)) {
                   layout.par = list(repulse.rad = network::network.size(mynet)^1.1,
                                     area = network::network.size(mynet)^2.3),
                   node.size = network::get.vertex.attribute(mynet, "membership01"),
-                  max_size = 23,
+                  max_size = maxN_size[[i]],
                   node.color = col, 
-                  edge.size = "weight02", 
+                  edge.size = "weight02"/2, 
                   edge.color = "black",
                   edge.alpha = network::get.edge.attribute(mynet, "weight01")) +
     ggplot2::theme(legend.position = "none") +
@@ -46,10 +51,10 @@ for (i in seq(modules)) {
                        alpha = 1,
                        color = "black",
                        fontface = "italic",
-                       size = 5
+                       size = text_size[[i]]
   )
   
-  ggsave(paste0("~/spinal_cord_paper/figures/Fig_2_", col,"_network.pdf"), width = 5, height = 5)
+  ggsave(paste0("~/test/spinal_cord_paper/figures/Fig_2_", col,"_network.pdf"), width = 5, height = 5)
 }
 
 
