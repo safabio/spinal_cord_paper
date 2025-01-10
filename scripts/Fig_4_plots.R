@@ -9,7 +9,8 @@ library(stringr)
 library(ggplot2)
 library(magrittr)
 library(tibble)
-
+library(cowplot)
+library(gridExtra)
 
 ### ### ### ### ### ### ### ### ### ### ###
 #### detailed venn diagram of RP and FP module overlap ####
@@ -206,20 +207,33 @@ my.se[[1]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_int_seurat_250723.rds")
 my.se[[2]] <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
 my.se[[3]] <- readRDS("~/spinal_cord_paper/data/Gg_poly_int_seurat_250723.rds")
 
-names(my.ses) <- c("ctrl_int", "lumb_int", "poly_int")
+names(my.se) <- c("ctrl_int", "lumb_int", "poly_int")
+
+annot <- list()
+annot[[1]] <- read.csv("~/spinal_cord_paper/annotations/Gg_ctrl_int_cluster_annotation.csv") %>% 
+  mutate(fine = paste(number, fine, sep = "_"))
+annot[[2]] <- read.csv("~/spinal_cord_paper/annotations/Gg_lumb_int_cluster_annotation.csv") %>% 
+  mutate(fine = paste(number, fine, sep = "_"))
+annot[[3]] <- read.csv("~/spinal_cord_paper/annotations/Gg_poly_int_cluster_annotation.csv") %>% 
+  mutate(fine = paste(number, fine, sep = "_"))
 
 plots <- list()
 
 for (i in seq_along(my.se)) {
   # cluster ids and id summary (frequency table)
+  my.se[[i]]$seurat_clusters <- factor(my.se[[i]]$seurat_clusters, labels = annot[[i]]$fine)
   cl_sizes <- data.frame(cluster = my.se[[i]]$seurat_clusters)
   # plot cluster size 
   plots[[i]] <- ggplot(cl_sizes, aes(x = cluster)) +
     geom_bar(fill = "lightgrey", color = "black",stat = "count") + 
     stat_count(geom = "text", colour = "black", size = 2.5,
-               aes(label = ..count..),position=position_stack(vjust=0.5)) +
+               aes(label = after_stat(count)),position=position_stack(vjust=0.5)) +
     ggtitle(names(my.se)[i]) +
-    theme_cowplot()
+    theme_cowplot() +
+    scale_x_discrete(labels = levels(cl_sizes$cluster)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    # plot total number of cells
+    annotate("text", x = 20, y = 500, label = paste("N cells =", dim(my.se[[i]])[2]))
   
 }
 
