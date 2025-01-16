@@ -17,7 +17,6 @@ files <- list.files("annotations/",
 
 samples <- str_remove(files, "_cluster_annotation.csv$")
 
-
 file_list <- list()
 
 for (i in seq_along(samples)) {
@@ -32,17 +31,19 @@ file_df <- bind_rows(file_list, .id = "sample") %>%
     grepl("ctrl_1", sample) ~ "B10_1",
     grepl("ctrl_2", sample) ~ "B10_2",
     grepl("ctrl_int", sample) ~ "B10_int",
-    grepl("D05", sample) ~ "B05_1",
-    grepl("D07", sample) ~ "B07_1",
+    grepl("D05_ctrl", sample) ~ "B05_1",
+    grepl("D07_ctrl", sample) ~ "B07_1",
     grepl("lumb_1", sample) ~ "L10_1",
     grepl("lumb_2", sample) ~ "L10_2",
-    grepl("lumb_int", sample) ~ "B10_int",
-    grepl("poly_1", sample) ~ "P10_1",
-    grepl("poly_2", sample) ~ "P10_2",
-    grepl("poly_int", sample) ~ "P10_int"
+    grepl("lumb_int", sample) ~ "L10_int",
+    grepl("poly_1", sample) ~ "Poly10_1",
+    grepl("poly_2", sample) ~ "Poly10_2",
+    grepl("poly_int", sample) ~ "Poly10_int"
   ))
 
 write.csv(file_df, file = "tables/Supp_table_1.csv")
+
+rm(file_df, file_list, files, samples, i)
 
 ### ### ### ### ### ### ### ### ### ### ### ### ###
 ####  Supp table 2 / scWGCNA module annotations #### 
@@ -64,20 +65,25 @@ names(file_list) <- samples
 file_df <- bind_rows(file_list, .id = "sample") %>% 
   mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
   mutate(sample = case_when(
-    grepl("devel", sample) ~ "Devel",
     grepl("ctrl", sample) ~ "B10_int",
     grepl("lumb", sample) ~ "L10_int",
-    grepl("poly", sample) ~ "P10_int"
-  ))
+    grepl("poly", sample) ~ "Poly10_int",
+    grepl("devel", sample) ~ "Devel_int"
+  )) %>% 
+  tidyr::separate_wider_delim(
+    module,
+    names = c("module_number", "module"),
+    delim = "_", too_few = "align_start")
 
 write.csv(file_df, file = "tables/Supp_table_2.csv")
 
-### ### ### ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 3 & 4 / GO Terms and Kegg Pathways #### 
-### ### ### ### ### ### ### ### ### ### ### ### ### ###
+rm(file_df, file_list, files, samples, i)
 
-files <- list.files("output/", pattern = ".rds") %>% 
-  `[`(grepl("\\_module_all_.*_080824.rds$", .))
+### ### ### ### ### ### ### ### ###
+#### Supp table 3 / GO Terms  #### 
+### ### ### ### ### ### ### ### ###
+
+files <- list.files("output/", pattern = "GOTerms_080824.rds$")
 
 table_list <- list()
 
@@ -85,41 +91,81 @@ for (i in seq_along(files)) {
   
   x <- readRDS(paste0("output/",files[i]))
   
-  name <- str_remove(files[i], "\\_module_all_.*_080824.rds$")
+  name <- str_remove(files[i], "\\_module_all_GOTerms_080824.rds")
   
-  table_list[[i]] <- bind_rows(x, .id = "module") %>% 
-    rownames_to_column("ID") %>% 
-    mutate(ID = str_remove(ID, pattern = "\\.+\\d+$")) %>% 
-    separate(
+  table_list[[i]] <- do.call(rbind, x) %>% 
+    rownames_to_column("tmp") %>% 
+    tidyr::separate_wider_delim(
+      tmp,
+      names = c("module", "ID"),
+      delim = ".", too_few = "align_start") %>% 
+    tidyr::separate_wider_delim(
       module,
-      into = c("module_number", "module"),
-      sep = "_",
-      fill = "left") %>% 
+      names = c("module_number", "module"),
+      delim = "_", too_few = "align_start") %>% 
     mutate(type = case_when(
-      grepl("^GO", ID) ~ "GOTerms",
-      grepl("^path", ID) ~ "KEGGpath"
+      grepl("^GO", ID) ~ "GOTerms"
     )) %>% 
-    mutate(sample = name) %>% 
-    mutate(sample = case_when(
-      sample == "Gg_devel_int"~ "Devel",
-      sample == "Gg_ctrl_int" ~ "B10_int",
-      sample == "Gg_lumb_int" ~ "L10_int",
-      sample == "Gg_poly_int" ~ "P10_int"
-    ))
-  
-  
+    mutate(sample = name)
 }
 
-Go_terms <- bind_rows(table_list[c(1,3,5,7)])
+Go_terms <- do.call(rbind, table_list) %>% 
+  mutate(sample = case_when(
+    grepl("ctrl", sample) ~ "B10_int",
+    grepl("lumb", sample) ~ "L10_int",
+    grepl("poly", sample) ~ "Poly10_int",
+    grepl("devel", sample) ~ "Devel_int"
+  )) %>% 
+  relocate(sample)
 
 write.csv(Go_terms, "tables/Supp_table_3.csv")
 
-Kegg_path <- bind_rows(table_list[c(2,4,6,8)])
+rm(Go_terms, table_list, x, files, i, name)
 
-write.csv(Kegg_path, "tables/Supp_table_4.csv")
+### ### ### ### ### ### ### ### ### ###
+#### Supp table 4 /  Kegg Pathways #### 
+### ### ### ### ### ### ### ### ### ###
+
+files <- list.files("output/", pattern = "KEGGPath_080824.rds$")
+
+table_list <- list()
+
+for (i in seq_along(files)) {
+  
+  x <- readRDS(paste0("output/",files[i]))
+  
+  name <- str_remove(files[i], "\\_module_all_KEGGPath_080824.rds$")
+  
+  table_list[[i]] <- do.call(rbind, x) %>% 
+    rownames_to_column("tmp") %>% 
+    tidyr::separate_wider_delim(
+      tmp,
+      names = c("module", "ID"),
+      delim = ".", too_few = "align_start") %>% 
+    tidyr::separate_wider_delim(
+      module,
+      names = c("module_number", "module"),
+      delim = "_", too_few = "align_start") %>% 
+    mutate(type = case_when(
+      grepl("^path", ID) ~ "KEGGPath"
+    )) %>% 
+    mutate(sample = name)
+  
+}
+
+Kegg_paths <- do.call(rbind, table_list) %>% 
+  mutate(sample = case_when(
+    grepl("ctrl", sample) ~ "B10_int",
+    grepl("lumb", sample) ~ "L10_int",
+    grepl("poly", sample) ~ "Poly10_int",
+    grepl("devel", sample) ~ "Devel_int"
+  )) %>% 
+  relocate(sample)
 
 
+write.csv(Kegg_paths, "tables/Supp_table_4.csv")
 
+rm(Kegg_paths, table_list, x, files, i, name)
 
 
 
