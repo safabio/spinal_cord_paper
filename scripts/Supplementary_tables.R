@@ -41,7 +41,7 @@ file_df <- bind_rows(file_list, .id = "sample") %>%
     grepl("poly_int", sample) ~ "Poly10_int"
   ))
 
-write.csv(file_df, file = "tables/Supp_table_1.csv")
+write.csv(file_df, file = "tables/Supp_table_1.csv", row.names = FALSE)
 
 rm(file_df, file_list, files, samples, i)
 
@@ -75,7 +75,7 @@ file_df <- bind_rows(file_list, .id = "sample") %>%
     names = c("module_number", "module"),
     delim = "_", too_few = "align_start")
 
-write.csv(file_df, file = "tables/Supp_table_2.csv")
+write.csv(file_df, file = "tables/Supp_table_2.csv", row.names = FALSE)
 
 rm(file_df, file_list, files, samples, i)
 
@@ -118,7 +118,7 @@ Go_terms <- do.call(rbind, table_list) %>%
   )) %>% 
   relocate(sample)
 
-write.csv(Go_terms, "tables/Supp_table_3.csv")
+write.csv(Go_terms, "tables/Supp_table_3.csv", row.names = FALSE)
 
 rm(Go_terms, table_list, x, files, i, name)
 
@@ -163,7 +163,7 @@ Kegg_paths <- do.call(rbind, table_list) %>%
   relocate(sample)
 
 
-write.csv(Kegg_paths, "tables/Supp_table_4.csv")
+write.csv(Kegg_paths, "tables/Supp_table_4.csv", row.names = FALSE)
 
 rm(Kegg_paths, table_list, x, files, i, name)
 
@@ -199,7 +199,7 @@ marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_ma
 
 marker_df <- do.call(rbind, marker_list)
 
-write.csv(marker_df, "tables/Supp_table_5.csv")
+write.csv(marker_df, "tables/Supp_table_5.csv", row.names = FALSE)
 
 rm(marker_list, marker_df)
 
