@@ -191,3 +191,53 @@ ggsave(
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 )
+
+### ### ### ### ### ### ### ### 
+#### GB module network plot ###
+### ### ### ### ### ### ### ###
+
+# scWGNA.data
+scWGCNA.data = readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
+gnames = modplots::gnames
+rownames(gnames) <- gnames[,1]
+modules = c("brown4","magenta")
+
+# get the module colors
+my.cols = levels(as.factor(scWGCNA.data[["dynamicCols"]]))
+
+nwrk <- list()
+
+text_size <- list(5,2)
+maxN_size <- list(20,15)
+
+for (i in seq(modules)) {
+  col <- modules[i]
+  # get index if color is provided
+  module = which(my.cols == col)
+  # extract the module
+  mynet = scWGCNA.data[["networks"]][[module]]
+  
+  gene.labs = gnames[network::network.vertex.names(mynet),2]
+  set.seed(42)
+  
+  GGally::ggnet2(mynet,
+                 mode = "fruchtermanreingold",
+                 layout.par = list(repulse.rad = network::network.size(mynet)^1.1,
+                                   area = network::network.size(mynet)^2.3),
+                 node.size = network::get.vertex.attribute(mynet, "membership01"),
+                 max_size = maxN_size[[i]],
+                 node.color = col, 
+                 edge.size = "weight02", 
+                 edge.color = "black",
+                 edge.alpha = network::get.edge.attribute(mynet, "weight01")) +
+    ggplot2::theme(legend.position = "none") +
+    ggplot2::geom_text(ggplot2::aes(label = gene.labs),
+                       alpha = 1,
+                       color = "black",
+                       fontface = "italic",
+                       size = text_size[[i]]
+    )
+  
+  ggsave(paste0("~/spinal_cord_paper/figures/Fig_4_", col,"_network.pdf"), width = 5, height = 5)
+}
+
