@@ -11,7 +11,7 @@
 
 
 module purge
-ml load R/4.1.0-foss-2018b
-ml Pandoc/2.7.3
+ml load R/4.4.1-foss-2023b
+ml Pandoc/2.13
 
 Rscript -e "rmarkdown::render('~/spinal_cord_paper/markdown/dotplots_broad.Rmd')"

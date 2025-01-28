@@ -66,8 +66,9 @@ markers <- rev(c("SOX9",
              "SHH",
              "RSPO1",
              "TUBB3",
-             "NRXN3", #inhibitory
              "TLX3", #excitatory
+             "NRXN3", #inhibitory
+             "FOXP1",
              "OLIG2", "PLP1",
              "IGFBP7",
              "IFI30",
@@ -88,7 +89,8 @@ for (i in seq(se_path)) {
   # load the data sets
   my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
   annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
-                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               pattern = paste0(str_remove(se_path[i], "_seurat_\\d{6}"),
+                                                "_cluster_annotation"),
                                full.names = TRUE))
   
   if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
