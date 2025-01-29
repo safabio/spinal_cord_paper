@@ -12,7 +12,7 @@
 
 
 module purge
-ml load R/4.1.0-foss-2018b
-ml Pandoc/2.7.3
+ml load R/4.4.1-foss-2023b
+ml Pandoc/2.13
 
 $(head -$SLURM_ARRAY_TASK_ID miloR_Gg_ctrl_lumb_ctrl_poly_int.cmd | tail -1) 

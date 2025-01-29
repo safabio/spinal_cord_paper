@@ -225,6 +225,8 @@ da.results$seurat_clusters <- ifelse(da.results$seurat_clusters_fraction < 0.95,
 Plot logFC of the nhoods by cell type (cluster):
 
 ```{r DA-beeswarm}
+da.results$seurat_clusters <- factor(da.results$seurat_clusters, levels = rev(c("Mixed", as.character(1:34))))
+
 plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0)
 ```
 
@@ -235,35 +237,18 @@ saveRDS(my.milo, paste0("~/spinal_cord_paper/output/",my.se@project.name ,"_milo
 
 # pdf export figures
 pdf(paste0("~/spinal_cord_paper/figures/",my.se@project.name ,"_milo_",format(Sys.Date(), "%d%m%y"),".pdf"), width = 5, height = 5)
-
 dim1 + ggtitle(my.se@project.name)
-dim2 + ggtitle(my.se@project.name)
-pca + ggtitle(my.se@project.name)
-res_1
-res_2
-DimPlot(my.se,
-        reduction = "tsne",
-        group.by = "cond")
 plotNhoodGraphDA(my.milo,
                  da.results,
                  alpha=0.9,
                  layout = "TSNE") + NoLegend()
-
-
-DimPlot(my.se,
-        reduction = "umap",
-        group.by = "cond")
-plotNhoodGraphDA(my.milo,
-                 da.results,
-                 alpha=0.9,
-                 layout = "UMAP")
-
-plotNhoodSizeHist(my.milo)
-
-ggplot(da.results, aes(seurat_clusters_fraction)) + geom_histogram(bins=50)
-
-plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0)
 dev.off()
+
+pdf("~/spinal_cord_paper/figures/Fig_4_BL10int_milo_volplot.pdf", height = 10, width = 5)
+plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0) 
+dev.off()
+
+
 ```
 
 
