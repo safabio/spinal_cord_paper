@@ -4,11 +4,7 @@
 ### ### ### ### ### ### ### ### ### ### ###
 
 library(Seurat)
-library(dplyr)
-library(stringr)
-library(ggplot2)
-library(magrittr)
-library(tibble)
+library(tidyverse)
 library(cowplot)
 library(gridExtra)
 
@@ -85,7 +81,7 @@ my.se@active.assay <- "RNA"
 gnames = modplots::gnames
 
 ## select HOX genes
-hox_select <- rev(c("HOXB5","HOXC6","HOXC9","HOXA10","HOXC10","HOXD10","HOXA11","HOXD11"))
+hox_select <- rev(c("HOXD3","HOXD4","HOXC6","HOXC9","HOXD9","HOXC10","HOXD10","HOXA11","HOXD11"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% hox_select)
@@ -100,23 +96,18 @@ dpl_hox_select <- modplots::mDotPlot2(
   gnames = gnames
 )
 
-dpl_hox_select[[1]] +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+lab_cols <- ifelse(grepl("lumb", dpl_hox_select[[2]]$labels[dpl_hox_select[[2]]$order]), "#419c73", "black")
 
-# hclust as dendrogram
-dend.idents.hox <- as.dendrogram(dpl_hox_select[[2]])
-
-pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot_dendro.pdf")
+pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot_dendro.pdf", height = 4, width = 14)
 plot(dend.idents.hox)
 dev.off()  
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
-  width = 13, height = 3,
+  width = 15, height = 3,
   plot = dpl_hox_select[[1]] +
     coord_flip() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
 )
 
 # Dotplot and clustering on the selected HOX genes from above 
