@@ -241,3 +241,107 @@ for (i in seq(modules)) {
   ggsave(paste0("~/spinal_cord_paper/figures/Fig_4_", col,"_network.pdf"), width = 5, height = 5)
 }
 
+### ### ### ### ### ### ### ### ### ### 
+#### GB module networks on B/L10int ###
+### ### ### ### ### ### ### ### ### ### 
+
+# devel_int WGCNA data
+wgcna <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
+# MN modules magenta and brown4
+modules <- c(26, 5)
+
+dev_mods <- wgcna$module.genes[modules]
+names(dev_mods) <- names(wgcna$modules)[modules]
+
+# Lumb int seurat 
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+# calculate scores
+my.se <- AddModuleScore(
+  my.se,
+  dev_mods,
+  name = "module",
+  assay = "RNA"
+)
+
+colnames(my.se[[]])[(ncol(my.se[[]])-length(dev_mods)+1):ncol(my.se[[]])] <- names(dev_mods)
+
+head(my.se[[]])
+
+mod_plots <- list()
+void_plots <- list()
+
+for (i in seq(modules)) {
+  # get the module color
+  curr_mod <- str_remove(names(dev_mods)[i], "^\\d{1,2}_")
+  # plot
+  mod_plots[[i]] <- FeaturePlot(
+    my.se,
+    names(dev_mods)[i],
+    cols = c("gray90", curr_mod),
+    reduction = "tsne",
+    order = TRUE
+  ) 
+  void_plots[[i]] <- FeaturePlot(
+    my.se,
+    names(dev_mods)[i],
+    cols = c("gray90", curr_mod),
+    reduction = "tsne", 
+    order = TRUE
+  )  + theme_void()+ NoLegend()
+  
+}
+
+pdf("~/spinal_cord_paper/figures/Fig_4_L10int_GB_modules_on_BL10int_addmodulescore.pdf")
+gridExtra::grid.arrange(grobs = mod_plots[1])
+gridExtra::grid.arrange(grobs = mod_plots[2])
+gridExtra::grid.arrange(grobs = void_plots[1])
+gridExtra::grid.arrange(grobs = void_plots[2])
+dev.off()
+
+# avg expression of module of interest
+# the lumbar cells have the _3 and _4 added to cellIDs
+MOI <- wgcna[["sc.MEList"]][["averageExpr"]] %>% 
+  tibble::rownames_to_column("CellID") %>% 
+  mutate(CellID = str_replace(CellID, "_1$", "_3")) %>% 
+  mutate(CellID = str_replace(CellID, "_2$", "_4")) %>% 
+  tibble::column_to_rownames("CellID") %>% 
+  select(AEmagenta, AEbrown4)
+
+table(rownames(MOI) %in% rownames(my.se[[]]))
+
+my.se <- AddMetaData(my.se, MOI)
+
+pdf("~/spinal_cord_paper/figures/Fig_4_L10int_GB_modules_on_BL10int_labeltransfer.pdf")
+FeaturePlot(
+  my.se,
+  "AEmagenta",
+  cols = c("gray90", "magenta"),
+  reduction = "tsne",
+  order = TRUE
+)
+
+FeaturePlot(
+  my.se,
+  "AEbrown4",
+  cols = c("gray90", "brown4"),
+  reduction = "tsne",
+  order = TRUE
+) 
+
+FeaturePlot(
+  my.se,
+  "AEmagenta",
+  cols = c("gray90", "magenta"),
+  reduction = "tsne",
+  order = TRUE
+) + theme_void() + NoLegend()
+
+FeaturePlot(
+  my.se,
+  "AEbrown4",
+  cols = c("gray90", "brown4"),
+  reduction = "tsne",
+  order = TRUE
+) + theme_void() + NoLegend()
+dev.off()
+
