@@ -153,7 +153,7 @@ dev.off()
 poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
   mutate(clust_id = str_remove(cluster, "^cl-")) %>% 
   mutate(clust_id = factor(clust_id, levels = c(1:32))) %>% 
-  mutate(clust_id = fct_rev(clust_id)) %>% 
+  # mutate(clust_id = fct_rev(clust_id)) %>% 
   # filter for significant DEs
   # p_val_adj < 0.05 & abs(avg_log2FC) > 0.5)
   filter(p_val_adj < 0.05) %>% 
@@ -171,6 +171,10 @@ poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds")
   )) 
 
 
+ggplot(poly_markers, aes(x = avg_log2FC, y = cluster)) +
+  geom_point() +
+  scale_y_discrete(drop = FALSE)
+
 
 #code taken and modified from miloR::plotDAbeeswarm()
 
@@ -181,7 +185,8 @@ beeswarm_pos <- ggplot_build(
   poly_markers %>% 
     arrange(clust_id) %>%
     ggplot(aes(clust_id, avg_log2FC)) +
-    geom_quasirandom()
+    geom_quasirandom() +
+    scale_x_discrete(drop = FALSE)
 )
 
 pos_x <- beeswarm_pos$data[[1]]$x
@@ -198,12 +203,14 @@ alpha <- poly_markers %>%
   ylab("Log Fold Change") + 
   scale_alpha_continuous(range = c(0,1)) +
   scale_x_continuous(breaks = seq(1, n_groups),
+                     limits = c(0.5,n_groups+0.5),
                      labels = setNames(levels(poly_markers$clust_id), seq(1, n_groups))) +
   geom_point(pch = 16) + 
   ylim(c(-3,3)) +
   coord_flip() + 
   theme_bw(base_size = 22) +
-  theme(strip.text.y = element_text(angle = 0))
+  theme(strip.text.y = element_text(angle = 0),
+        axis.text.y = element_text(angle = 180))
 
 alpha_size <- poly_markers %>% 
   arrange(clust_id) %>% 
@@ -216,12 +223,14 @@ alpha_size <- poly_markers %>%
   ylab("Log Fold Change") + 
   scale_alpha_continuous(range = c(0.1,1)) +
   scale_x_continuous(breaks = seq(1, n_groups),
+                     limits = c(0.5, n_groups+1), 
                      labels = setNames(levels(poly_markers$clust_id), seq(1, n_groups))) +
   geom_point(pch = 16) + 
   ylim(c(-3,3)) +
   coord_flip() + 
   theme_bw(base_size = 22) +
-  theme(strip.text.y = element_text(angle = 0))
+  theme(strip.text.y = element_text(angle = 0),
+        axis.text.y = element_text(angle = 180))
 
 pdf("~/spinal_cord_paper/figures/Fig_5_BPoly10int_flat_DE_volplot.pdf", height = 10, width = 5)
 alpha + 
