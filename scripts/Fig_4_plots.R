@@ -7,6 +7,7 @@ library(Seurat)
 library(tidyverse)
 library(cowplot)
 library(gridExtra)
+library(modplots)
 
 
 ### ### ### ### ### ### ### ### ###
@@ -54,6 +55,71 @@ grid.arrange(grobs = plots, ncol = 1)
 
 pdf(file = "~/spinal_cord_paper/figures/Int_data_cluster_sizes.pdf", height = 13)
 grid.arrange(grobs = plots, ncol = 1)
+dev.off()
+
+#########################
+# Glycogen Body dotplot #
+#########################
+
+# Gg_lumb_int
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+my.se@active.assay <- "RNA"
+
+l10int_markers <- read.table("~/spinal_cord_paper/data/Gg_lumb_int_fullDE_250723.txt") %>% 
+  filter(cluster %in% c(4, 14)) %>% 
+  group_by(cluster) %>% 
+  slice_max(avg_log2FC, n = 50) 
+
+dup_genes <- l10int_markers$Gene.name[duplicated(l10int_markers$Gene.name)]
+
+markers_avihu <- c("GBE1","GYG2","MSX1","MSX2","PAX3","LMX1A","ENSGALG00000028041","ROR2","WNT7B","GDF7")
+
+GOI <- c(markers_avihu, dup_genes)
+GOI <- GOI[!duplicated(GOI)]
+
+gnames <- modplots::gnames
+
+IOI <- gnames[gnames$Gene.name %in% GOI,] %>% 
+  mutate(Gene.name = factor(Gene.name, levels = GOI))
+
+IOI <- IOI[match(GOI, IOI$Gene.name), ]
+
+cl_order <- DotPlot(my.se,
+        group.by = "seurat_clusters",
+        cluster.idents = TRUE,
+        features = rev(IOI$Gene.stable.ID)) +
+  coord_flip() +
+  ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(hjust = 0.5))
+
+
+mdot <- mDotPlot2(my.se,
+                        group.by = "seurat_clusters",
+                        features = rev(IOI$Gene.stable.ID), 
+                        gnames = modplots::gnames,
+                        cols = c("lightgrey", "black")) +
+  coord_flip() +
+  ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(hjust = 0.5))
+
+my.se$seurat_clusters <- factor(my.se$seurat_clusters, levels = levels(cl_order$data$id))
+
+
+mdot_clust <- mDotPlot2(my.se,
+                        group.by = "seurat_clusters",
+                        features = rev(IOI$Gene.stable.ID), 
+                        gnames = modplots::gnames,
+                        cols = c("lightgrey", "black")) +
+  coord_flip() +
+  ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(hjust = 0.5))
+
+pdf("~/spinal_cord_paper/figures/Fig_4_GB_dotplot.pdf", height = 9, width = 9)
+mdot
+mdot_clust
 dev.off()
 
 ### ### ### ### ### ### ### ### 
