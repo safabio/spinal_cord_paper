@@ -72,8 +72,12 @@ my.se@active.assay <- "RNA"
 
 my.se[[]]
 
+cl_ord <- c(2,5,6,10,11,13,19,23,25,15,12,21,22,3,7,17,20,27,28,30,1,4,8,9,24,26,29,33,16,18,34,14,31,32)
+
 my.se$sample <- str_extract(my.se$orig.ident, "ctrl|lumb")
 my.se$split_clusters <- paste(my.se$seurat_clusters, my.se$sample, sep = "_")
+my.se$split_clusters <- factor(my.se$split_clusters, 
+                               levels = c(paste0(c(cl_ord), "_ctrl"), paste0(c(cl_ord), "_lumb")))
 
 Idents(my.se) <- "split_clusters" 
 my.se@active.assay <- "RNA"
@@ -81,7 +85,7 @@ my.se@active.assay <- "RNA"
 gnames = modplots::gnames
 
 ## select HOX genes
-hox_select <- rev(c("HOXD3","HOXD4","HOXC6","HOXC9","HOXD9","HOXC10","HOXD10","HOXA11","HOXD11"))
+hox_select <- rev(c("HOXC6","HOXC9","HOXC10","HOXD3","HOXD4","HOXD9","HOXD10","HOXD11","HOXA11"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% hox_select)
@@ -92,29 +96,20 @@ dpl_hox_select <- modplots::mDotPlot2(
   my.se, 
   features = cand$Gene.stable.ID,
   cols = c("lightgrey", "black"),
-  cluster.idents = TRUE,
+  # cluster.idents = TRUE,
   gnames = gnames
 )
 
-lab_cols <- ifelse(grepl("lumb", dpl_hox_select[[2]]$labels[dpl_hox_select[[2]]$order]), "#419c73", "black")
+lab_cols <- ifelse(grepl("lumb", levels(Idents((my.se)))), "#419c73", "black")
 
-pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot_dendro.pdf", height = 4, width = 14)
-plot(dend.idents.hox)
-dev.off()  
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_selected_dotplot.pdf",
   width = 15, height = 3,
-  plot = dpl_hox_select[[1]] +
+  plot = dpl_hox_select +
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
 )
-
-# Dotplot and clustering on the selected HOX genes from above 
-# order the factors 
-my.se@meta.data$split_clusters <- factor(
-  my.se@meta.data$split_clusters,
-  levels =  dpl_hox_select[[2]][["labels"]][dpl_hox_select[[2]][["order"]]])
 
 # my.se@meta.data$split_clusters <- forcats::fct_rev(my.se@meta.data$split_clusters)
 Idents(my.se) <- "split_clusters" 
