@@ -61,19 +61,34 @@ dev.off()
 # Glycogen Body dotplot #
 #########################
 
-# Gg_lumb_int
-my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+# Gg_brach_lumb_int
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+my.se@active.assay <- "RNA"
+# indiidual labels
+ctrl_lumb_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_lumb_int_combined_labels.rds")
+
+identical(colnames(my.se), rownames(ctrl_lumb_int_combined_labels))
+my.se$annot_sample  <- ctrl_lumb_int_combined_labels$annot_sample
+
+# split clusters by sample
+my.se$sample <- str_extract(my.se$orig.ident, "ctrl|lumb")
+my.se$split_clusters <- paste(my.se$seurat_clusters, my.se$sample, sep = "_")
+
+Idents(my.se) <- "split_clusters" 
 my.se@active.assay <- "RNA"
 
-l10int_markers <- read.table("~/spinal_cord_paper/data/Gg_lumb_int_fullDE_250723.txt") %>% 
-  filter(cluster %in% c(4, 14)) %>% 
+# Get the top 50 markers (cluster vs rest)
+bl10int_markers <- read.table("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_fullDE_250723.txt") %>% 
+  filter(cluster %in% c(21, 22)) %>% 
   group_by(cluster) %>% 
   slice_max(avg_log2FC, n = 50) 
 
-dup_genes <- l10int_markers$Gene.name[duplicated(l10int_markers$Gene.name)]
+# shared top 50 genes
+dup_genes <- bl10int_markers$Gene.name[duplicated(bl10int_markers$Gene.name)]
 
 markers_avihu <- c("GBE1","GYG2","MSX1","MSX2","PAX3","LMX1A","ENSGALG00000028041","ROR2","WNT7B","GDF7")
 
+# remove duplicates from shared markers and cand. list
 GOI <- c(markers_avihu, dup_genes)
 GOI <- GOI[!duplicated(GOI)]
 
@@ -84,42 +99,35 @@ IOI <- gnames[gnames$Gene.name %in% GOI,] %>%
 
 IOI <- IOI[match(GOI, IOI$Gene.name), ]
 
-cl_order <- DotPlot(my.se,
-        group.by = "seurat_clusters",
-        cluster.idents = TRUE,
-        features = rev(IOI$Gene.stable.ID)) +
-  coord_flip() +
-  ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        plot.title = element_text(hjust = 0.5))
+my.sub <- subset(my.se, subset = sample == "lumb")
 
-
-mdot <- mDotPlot2(my.se,
-                        group.by = "seurat_clusters",
+mdot_clust <- modplots::mDotPlot2(my.sub,
+                        group.by = "split_clusters",
                         features = rev(IOI$Gene.stable.ID), 
                         gnames = modplots::gnames,
-                        cols = c("lightgrey", "black")) +
+                        cluster.idents = TRUE,
+                        cols = c("lightgrey", "black"))
+
+# order factors on ordered dotplot
+my.sub$split_clusters <- factor(my.sub$split_clusters,
+                                levels = mdot_clust[[2]]$labels[mdot_clust[[2]]$order])
+
+p1 <- modplots::mDotPlot2(my.sub,
+                          group.by = "split_clusters",
+                          features = rev(IOI$Gene.stable.ID), 
+                          gnames = modplots::gnames,
+                          cols = c("lightgrey", "black")) +
   coord_flip() +
   ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
 
-my.se$seurat_clusters <- factor(my.se$seurat_clusters, levels = levels(cl_order$data$id))
+# hclust as dendrogram
+dend.idents.cand <- as.dendrogram(mdot_clust[[2]])
 
-
-mdot_clust <- mDotPlot2(my.se,
-                        group.by = "seurat_clusters",
-                        features = rev(IOI$Gene.stable.ID), 
-                        gnames = modplots::gnames,
-                        cols = c("lightgrey", "black")) +
-  coord_flip() +
-  ggtitle(paste0(my.se@project.name, " marker Dotplot")) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        plot.title = element_text(hjust = 0.5))
-
-pdf("~/spinal_cord_paper/figures/Fig_4_GB_dotplot.pdf", height = 9, width = 9)
-mdot
-mdot_clust
+pdf("~/spinal_cord_paper/figures/Fig_4_GB_dotplot.pdf", height = 6.5, width = 10.5)
+plot(dend.idents.cand)
+p1
 dev.off()
 
 ### ### ### ### ### ### ### ### 
