@@ -170,7 +170,6 @@ dpl_hox_select <- modplots::mDotPlot2(
   my.se, 
   features = cand$Gene.stable.ID,
   cols = c("lightgrey", "black"),
-  # cluster.idents = TRUE,
   gnames = gnames
 )
 
@@ -184,6 +183,42 @@ ggsave(
     coord_flip() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
 )
+
+## all HOX genes
+hox_alphanum <- modplots::gnames %>% 
+  filter(grepl("^HOX", Gene.name)) %>% 
+  mutate(hoxnum = as.numeric(str_remove(Gene.name, "HOX[ABCD]"))) %>% 
+  mutate(hoxgroup = substr(Gene.name, 4, 4)) %>% 
+  arrange(hoxgroup) %>% 
+  arrange(hoxnum)
+
+dpl_hox_alphanum <- modplots::mDotPlot2(
+  my.se, 
+  features = rev(hox_alphanum$Gene.stable.ID),
+  cols = c("lightgrey", "black"),
+  gnames = gnames) +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
+
+hox_groups <- modplots::gnames %>% 
+  filter(grepl("^HOX", Gene.name)) %>% 
+  mutate(hoxnum = as.numeric(str_remove(Gene.name, "HOX[ABCD]"))) %>% 
+  mutate(hoxgroup = substr(Gene.name, 4, 4)) %>% 
+  arrange(hoxnum) %>% 
+  arrange(hoxgroup)
+
+dpl_hox_groups <- modplots::mDotPlot2(
+  my.se, 
+  features = rev(hox_groups$Gene.stable.ID),
+  cols = c("lightgrey", "black"),
+  gnames = gnames)+
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
+
+pdf("~/spinal_cord_paper/figures/Fig_4_ctrl_lumb_hox_all_dotplots.pdf", width = 16, height = 9)
+dpl_hox_alphanum
+dpl_hox_groups
+dev.off()
 
 ### ### ### ### ### ### ### ### 
 #### GB module network plot ###
