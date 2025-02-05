@@ -404,7 +404,7 @@ volplot_nomt <- ggplot(data = toplot_nomt,
   scale_color_manual(values = cols) +
   scale_shape_manual(values = shapes) +
   xlim(c(-1.5, 1.5)) +
-  facet_wrap("cluster", nrow = 1) +
+  facet_wrap("cluster", nrow = 1, scales = "free_y") +
   ylab("-log10(padj)") +
   theme_bw()+
   ggtitle("Sig. marker genes (without MT and HOX genes)")
