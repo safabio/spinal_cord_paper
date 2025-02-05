@@ -88,6 +88,9 @@ dup_genes <- bl10int_markers$Gene.name[duplicated(bl10int_markers$Gene.name)]
 
 markers_avihu <- c("GBE1","GYG2","MSX1","MSX2","PAX3","LMX1A","ENSGALG00000028041","ROR2","WNT7B","GDF7")
 
+intersect(markers_avihu, dup_genes)
+# [1] "GBE1" "MSX2"
+
 # remove duplicates from shared markers and cand. list
 GOI <- c(markers_avihu, dup_genes)
 GOI <- GOI[!duplicated(GOI)]
@@ -373,3 +376,73 @@ FeaturePlot(
 ) + theme_void() + NoLegend()
 dev.off()
 
+##############################
+# B/L10int cl-3 vs cl-7 DE ###
+##############################
+# seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+my.se@active.assay <- "RNA"
+
+DimPlot(my.se, reduction = "tsne", label = TRUE)
+
+gnames <- modplots::gnames
+# markers cl3 vs cl7
+tmp <- FindMarkers(my.se,
+                   ident.1 = 3,
+                   ident.2 = 7,
+                   only.pos = FALSE,
+                   min.pct = 0.25,
+                   logfc.threshold =  0.2,
+                   latent.vars = c("CC.Difference.seurat"),
+                   test.use = "MAST",
+                   assay = "RNA")
+# filter for avg_log2FC > 0.5
+cl3v7DE <- tmp %>%
+  rownames_to_column("Gene.stable.ID") %>% 
+  left_join(gnames) %>% 
+  filter(abs(avg_log2FC) > 0.5)
+
+# dorsal and ventral markers for cl3 and 7
+GOI <- c("PBX3","MEIS1","SNCG","PROX1","PRDM8","BHLHE22","PAX2")
+
+gnames <- modplots::gnames
+
+IOI <- gnames[gnames$Gene.name %in% GOI,] %>% 
+  mutate(Gene.name = factor(Gene.name, levels = GOI))
+
+IOI <- IOI[match(GOI, IOI$Gene.name), ]
+# subset for cl3 and cl7 only
+my.sub <- subset(x = my.se, idents = c(3, 7))
+# dotplot of selected markers
+dot_sel <- mDotPlot2(my.sub,
+                     group.by = "seurat_clusters",
+                     features = rev(IOI$Gene.stable.ID), 
+                     gnames = modplots::gnames,
+                     cols = c("lightgrey", "black")) +
+  coord_flip() +
+  ggtitle(paste0(my.se@project.name, " dorsal ventral markers Dotplot")) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(hjust = 0.5))
+# top 25 markers per cluster by log2FC
+top_markers <- cl3v7DE %>% 
+  mutate(cluster = case_when(
+    avg_log2FC > 0 ~ "cl3",
+    avg_log2FC < 0 ~ "cl7"
+  )) %>% 
+  group_by(cluster) %>% 
+  slice_max(abs(avg_log2FC), n = 25) 
+# dotplot of top 25 markers
+dot_top <- mDotPlot2(my.sub,
+                     group.by = "seurat_clusters",
+                     features = rev(top_markers$Gene.stable.ID), 
+                     gnames = modplots::gnames,
+                     cols = c("lightgrey", "black")) +
+  coord_flip() +
+  ggtitle(paste0(my.se@project.name, " cl3 v cl7 top DE marker dotplot")) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(hjust = 0.5))
+
+pdf("~/spinal_cord_paper/figures/Supp_fig_4_BL10_int_cl3_v_cl7_dotplots.pdf", height = 8, width = 4)
+dot_top
+dot_sel
+dev.off()
