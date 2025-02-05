@@ -171,7 +171,7 @@ ggplot(data = select_lumb_numbers, aes(x = Var1, y = Freq, group = cluster, labe
 
 ```{r}
 toplot <- select_lumb_composition %>% 
-  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}(?=trl|umb)")) %>% 
   mutate(annot_sample = factor(annot_sample)) %>% 
   group_by(sample, cluster) %>%
   count(annot_sample) %>% 
@@ -320,7 +320,7 @@ ggplot(data = low_lumb_numbers, aes(x = Var1, y = Freq, group = cluster, label =
 
 ```{r}
 toplot <- low_lumb_composition %>% 
-  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}")) %>% 
+  mutate(annot_sample = str_extract(annot_sample, "\\d{1,2}_.{1}(?=trl|umb)")) %>% 
   mutate(annot_sample = factor(annot_sample)) %>% 
   group_by(sample, cluster) %>%
   count(annot_sample) %>% 
