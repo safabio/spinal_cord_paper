@@ -340,12 +340,23 @@ MOI <- wgcna[["sc.MEList"]][["averageExpr"]] %>%
 
 table(rownames(MOI) %in% rownames(my.se[[]]))
 
-my.se <- AddMetaData(my.se, MOI)
+my.lumb <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
 
-pdf("~/spinal_cord_paper/figures/Fig_4_L10int_GB_modules_on_BL10int_labeltransfer.pdf")
+MOI_lumb <- wgcna[["sc.MEList"]][["averageExpr"]] %>%
+  select(AEmagenta, AEbrown4)
+
+table(rownames(MOI_lumb) %in% rownames(my.lumb[[]]))
+
+my.se <- AddMetaData(my.se, MOI)
+my.lumb <- AddMetaData(my.lumb, MOI_lumb)
+
+pt_size <- 1.5
+
+pdf("~/spinal_cord_paper/figures/Fig_4_L10int_GB_modules_on_B10int_and_BL10int_labeltransfer.pdf")
 FeaturePlot(
   my.se,
-  "AEmagenta",
+  "AEmagenta", 
+  pt.size = pt_size,
   cols = c("gray90", "magenta"),
   reduction = "tsne",
   order = TRUE
@@ -353,7 +364,26 @@ FeaturePlot(
 
 FeaturePlot(
   my.se,
-  "AEbrown4",
+  "AEbrown4", 
+  pt.size = pt_size,
+  cols = c("gray90", "brown4"),
+  reduction = "tsne",
+  order = TRUE
+) 
+
+FeaturePlot(
+  my.lumb,
+  "AEmagenta", 
+  pt.size = pt_size,
+  cols = c("gray90", "magenta"),
+  reduction = "tsne",
+  order = TRUE
+)
+
+FeaturePlot(
+  my.lumb,
+  "AEbrown4", 
+  pt.size = pt_size,
   cols = c("gray90", "brown4"),
   reduction = "tsne",
   order = TRUE
@@ -361,7 +391,8 @@ FeaturePlot(
 
 FeaturePlot(
   my.se,
-  "AEmagenta",
+  "AEmagenta", 
+  pt.size = pt_size,
   cols = c("gray90", "magenta"),
   reduction = "tsne",
   order = TRUE
@@ -369,7 +400,26 @@ FeaturePlot(
 
 FeaturePlot(
   my.se,
-  "AEbrown4",
+  "AEbrown4", 
+  pt.size = pt_size,
+  cols = c("gray90", "brown4"),
+  reduction = "tsne",
+  order = TRUE
+) + theme_void() + NoLegend()
+
+FeaturePlot(
+  my.lumb,
+  "AEmagenta", 
+  pt.size = pt_size,
+  cols = c("gray90", "magenta"),
+  reduction = "tsne",
+  order = TRUE
+) + theme_void() + NoLegend()
+
+FeaturePlot(
+  my.lumb,
+  "AEbrown4", 
+  pt.size = pt_size,
   cols = c("gray90", "brown4"),
   reduction = "tsne",
   order = TRUE
