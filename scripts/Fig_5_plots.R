@@ -153,11 +153,7 @@ dev.off()
 poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
   mutate(clust_id = str_remove(cluster, "^cl-")) %>% 
   mutate(clust_id = factor(clust_id, levels = c(1:32))) %>% 
-  # mutate(clust_id = fct_rev(clust_id)) %>% 
-  # filter for significant DEs
-  # p_val_adj < 0.05 & abs(avg_log2FC) > 0.5)
   filter(p_val_adj < 0.05) %>% 
-  # filter(abs(avg_log2FC) > 0.5) %>% 
   mutate(sample = case_when(
     avg_log2FC > 0 ~ "B10int",
     avg_log2FC < 0 ~ "Poly10int"
@@ -171,16 +167,45 @@ poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds")
   )) 
 
 
+# extract DA values from da.results
+da_BL10int <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_poly_int_milo_da_results050225.rds")
+
+miloR::plotDAbeeswarm(da_BL10int, group.by = "seurat_clusters", alpha=1.0)
+
+# get the avg abs DA logFC per cluster
+da_abs_logFC <- da_BL10int %>% 
+  select(logFC, seurat_clusters) %>% 
+  mutate(abs_logFC = abs(logFC)) %>% 
+  group_by(seurat_clusters) %>% 
+  summarise_all(mean) %>% 
+  mutate(seurat_clusters_num = as.numeric(as.character(seurat_clusters))) %>% 
+  mutate(cluster = factor(paste0("cl-", seurat_clusters)))
+
+da_abs_logFC[da_abs_logFC$seurat_clusters=="Mixed", 
+             "seurat_clusters_num"] <- 0
+
 ggplot(poly_markers, aes(x = avg_log2FC, y = cluster)) +
   geom_point() +
   scale_y_discrete(drop = FALSE)
 
+# testing wether the logFC calculations were correct
+vol_logFC <- miloR::plotDAbeeswarm(da_BL10int, group.by = "seurat_clusters", alpha=1.0) + 
+  geom_point(data = da_abs_logFC, 
+             mapping = aes(x=rev(seurat_clusters_num+1),
+                           y=logFC),
+             pch = 3,
+             inherit.aes = FALSE) +
+  ggtitle("mean logFC change")
+
+vol_abslogFC <- miloR::plotDAbeeswarm(da_BL10int, group.by = "seurat_clusters", alpha=1.0) + 
+  geom_point(data = da_abs_logFC, 
+             mapping = aes(x=rev(seurat_clusters_num+1),
+                           y=abs_logFC),
+             pch = 3,
+             inherit.aes = FALSE) +
+  ggtitle("mean abs(logFC) change")
 
 #code taken and modified from miloR::plotDAbeeswarm()
-
-# group.by = NULL
-# subset.nhoods = NULL
-
 beeswarm_pos <- ggplot_build(
   poly_markers %>% 
     arrange(clust_id) %>%
@@ -193,10 +218,14 @@ pos_x <- beeswarm_pos$data[[1]]$x
 pos_y <- beeswarm_pos$data[[1]]$y
 n_groups <- length(levels(poly_markers$clust_id))
 
+abs_logFC_df <- da_abs_logFC %>% 
+  select(cluster, abs_logFC) %>% 
+  # rename to prevent confusion
+  rename("abs_DA_logFC" = "abs_logFC")
+
 alpha <- poly_markers %>% 
   arrange(clust_id) %>% 
   mutate(pos_x = pos_x, pos_y = pos_y) %>% 
-  # ggplot(aes(pos_x, pos_y, color = avg_log2FC)) +
   ggplot(aes(pos_x, pos_y, color = sample, alpha = p_alpha)) +
   scale_color_manual(values = c("black", "goldenrod3")) +
   xlab("clust_id") +
@@ -213,11 +242,17 @@ alpha <- poly_markers %>%
         axis.text.y = element_text(angle = 180))
 
 alpha_size <- poly_markers %>% 
-  arrange(clust_id) %>% 
+  arrange(clust_id) %>%
+  left_join(abs_logFC_df, by = "cluster") %>%
+  # min max (scale to 0 - 1) and invert (-1*x)+1
+  mutate(scale_inv_abs_DA_logFC = (-1*((abs_DA_logFC-min(abs_DA_logFC))/(max(abs_DA_logFC)-min(abs_DA_logFC))))+1) %>%
   mutate(pos_x = pos_x, pos_y = pos_y) %>% 
-  # ggplot(aes(pos_x, pos_y, color = avg_log2FC)) +
-  ggplot(aes(pos_x, pos_y, color = sample, alpha = p_alpha, size = p_alpha)) +
-  scale_size(range = c(0.4,2)) +
+  ggplot(aes(pos_x,
+             pos_y, 
+             color = sample, 
+             alpha = p_alpha, 
+             size = scale_inv_abs_DA_logFC)) +
+  scale_size(range = c(0.1,2)) +
   scale_color_manual(values = c("black", "goldenrod3")) +
   xlab("clust_id") +
   ylab("Log Fold Change") + 
@@ -233,14 +268,18 @@ alpha_size <- poly_markers %>%
         axis.text.y = element_text(angle = 180))
 
 pdf("~/spinal_cord_paper/figures/Fig_5_BPoly10int_flat_DE_volplot.pdf", height = 10, width = 5)
+vol_logFC
+vol_abslogFC
 alpha + 
   ggtitle("aes(alpha)")
 alpha + 
   NoLegend()
 alpha_size + 
-  labs(alpha = "-log10(log2FC)\nthres = 20",
-                  size = "-log10(log2FC)\nthres = 20") +
+  labs(alpha = "-log10(p_val_adj)\nthres = 20",
+                  size = "scaled_inv_\nabs_DA_logFC") +
   ggtitle("aes(alpha, size)")
 alpha_size + 
   NoLegend()
 dev.off()
+
+
