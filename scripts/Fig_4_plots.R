@@ -57,9 +57,9 @@ pdf(file = "~/spinal_cord_paper/figures/Int_data_cluster_sizes.pdf", height = 13
 grid.arrange(grobs = plots, ncol = 1)
 dev.off()
 
-#########################
-# Glycogen Body dotplot #
-#########################
+### ### ### ### ### ### ### ###
+#### Glycogen Body dotplot #####
+### ### ### ### ## ### ### ## ###
 
 # Gg_brach_lumb_int
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
@@ -224,7 +224,7 @@ dpl_hox_groups
 dev.off()
 
 ### ### ### ### ### ### ### ### 
-#### GB module network plot ###
+#### GB module network plot ####
 ### ### ### ### ### ### ### ###
 
 # scWGNA.data
@@ -273,7 +273,7 @@ for (i in seq(modules)) {
 }
 
 ### ### ### ### ### ### ### ### ### ### 
-#### GB module networks on B/L10int ###
+#### GB module networks on B/L10int ####
 ### ### ### ### ### ### ### ### ### ### 
 
 # devel_int WGCNA data
@@ -350,85 +350,82 @@ table(rownames(MOI_lumb) %in% rownames(my.lumb[[]]))
 my.se <- AddMetaData(my.se, MOI)
 my.lumb <- AddMetaData(my.lumb, MOI_lumb)
 
-pt_size <- 1.5
+my.se <- AddMetaData(my.se, Embeddings(my.se, reduction = "tsne"))
+my.lumb <- AddMetaData(my.lumb, Embeddings(my.lumb, reduction = "tsne"))
+
+pt_size <- 2
+
+# brachial lumb integrated
+BL10int_M <- my.se[[]] %>% 
+  arrange(AEmagenta) %>%  
+  drop_na(AEmagenta) %>%
+  ggplot(aes(
+    x = tsne_1,
+    y = tsne_2)
+  ) +
+  geom_point(aes(color = AEmagenta), size = pt_size) +
+  scale_colour_gradientn(colours = c("gray90","gray80","magenta")) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, size = 40, face = "bold"))
+
+BL10int_B <- my.se[[]] %>% 
+  arrange(AEbrown4) %>%  
+  drop_na(AEbrown4) %>%
+  ggplot(aes(
+    x = tsne_1,
+    y = tsne_2)
+  ) +
+  geom_point(aes(color = AEbrown4), size = pt_size) +
+  scale_colour_gradientn(colours = c("gray90","gray80","brown4")) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, size = 40, face = "bold"))
+
+# lumbar only
+L10int_M <- my.lumb[[]] %>% 
+  arrange(AEmagenta) %>%  
+  drop_na(AEmagenta) %>%
+  ggplot(aes(
+    x = tsne_1,
+    y = tsne_2)
+  ) +
+  geom_point(aes(color = AEmagenta), size = pt_size) +
+  scale_colour_gradientn(colours = c("gray90","gray80","magenta")) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, size = 40, face = "bold"))
+
+L10int_B <- my.lumb[[]] %>% 
+  arrange(AEbrown4) %>%  
+  drop_na(AEbrown4) %>%
+  ggplot(aes(
+    x = tsne_1,
+    y = tsne_2)
+  ) +
+  geom_point(aes(color = AEbrown4), size = pt_size) +
+  scale_colour_gradientn(colours = c("gray90","gray80","brown4")) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, size = 40, face = "bold"))
+
 
 pdf("~/spinal_cord_paper/figures/Fig_4_L10int_GB_modules_on_B10int_and_BL10int_labeltransfer.pdf")
-FeaturePlot(
-  my.se,
-  "AEmagenta", 
-  pt.size = pt_size,
-  cols = c("gray90", "magenta"),
-  reduction = "tsne",
-  order = TRUE
-)
 
-FeaturePlot(
-  my.se,
-  "AEbrown4", 
-  pt.size = pt_size,
-  cols = c("gray90", "brown4"),
-  reduction = "tsne",
-  order = TRUE
-) 
+BL10int_M + ggtitle("Magenta BL10int")
+BL10int_M + theme_void() + NoLegend()
 
-FeaturePlot(
-  my.lumb,
-  "AEmagenta", 
-  pt.size = pt_size,
-  cols = c("gray90", "magenta"),
-  reduction = "tsne",
-  order = TRUE
-)
+BL10int_B + ggtitle("Brown4 BL10int")
+BL10int_B + theme_void() + NoLegend()
 
-FeaturePlot(
-  my.lumb,
-  "AEbrown4", 
-  pt.size = pt_size,
-  cols = c("gray90", "brown4"),
-  reduction = "tsne",
-  order = TRUE
-) 
+L10int_M + ggtitle("Magenta L10int")
+L10int_M + theme_void() + NoLegend()
 
-FeaturePlot(
-  my.se,
-  "AEmagenta", 
-  pt.size = pt_size,
-  cols = c("gray90", "magenta"),
-  reduction = "tsne",
-  order = TRUE
-) + theme_void() + NoLegend()
+L10int_B + ggtitle("Brown4 L10int")
+L10int_B + theme_void() + NoLegend()
 
-FeaturePlot(
-  my.se,
-  "AEbrown4", 
-  pt.size = pt_size,
-  cols = c("gray90", "brown4"),
-  reduction = "tsne",
-  order = TRUE
-) + theme_void() + NoLegend()
-
-FeaturePlot(
-  my.lumb,
-  "AEmagenta", 
-  pt.size = pt_size,
-  cols = c("gray90", "magenta"),
-  reduction = "tsne",
-  order = TRUE
-) + theme_void() + NoLegend()
-
-FeaturePlot(
-  my.lumb,
-  "AEbrown4", 
-  pt.size = pt_size,
-  cols = c("gray90", "brown4"),
-  reduction = "tsne",
-  order = TRUE
-) + theme_void() + NoLegend()
 dev.off()
 
-##############################
-# B/L10int cl-3 vs cl-7 DE ###
-##############################
+### ### ### ### ### ### ### ### 
+#### B/L10int cl-3 vs cl-7 DE ####
+### ### ### ### ### ### ### ### 
+
 # seurat object
 my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
 my.se@active.assay <- "RNA"
