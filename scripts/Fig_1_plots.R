@@ -208,3 +208,62 @@ ggsave(
   plot = pca_ptchw
 )
 
+### ### ### ### ### ### ###
+#### HINTW violin plot ####
+### ### ### ### ### ### ###
+
+# combined samples seurat object
+my.int <- readRDS("~/spinal_cord_paper/data/Gg_all_int_seurat_270524.rds")
+DefaultAssay(my.int) <- "RNA"
+
+my.int[[]]$orig.ident <- factor(my.int[[]]$orig.ident,
+                                levels = c("Gg_D05_ctrl",
+                                           "Gg_D07_ctrl",
+                                           "Gg_ctrl_1",
+                                           "Gg_ctrl_2",
+                                           "Gg_lumb_1",
+                                           "Gg_lumb_2",
+                                           "Gg_poly_1",
+                                           "Gg_poly_2"))
+
+colnames(my.int[[]])
+
+gnames <- modplots::gnames
+# HINTW ID (marker for female cells/samples)
+hintw <- gnames[grepl("HINTW", gnames$Gene.name),]
+
+cols <- c(
+  "#A4A4A4",
+  "#515151",
+  "#000000",
+  "#000000",
+  "#419c73",
+  "#419c73",
+  "goldenrod3",
+  "goldenrod3"
+)
+
+svol <- VlnPlot(
+  my.int,
+  features = hintw$Gene.stable.ID,
+  group.by = "orig.ident",
+  cols = cols
+) +
+  ggtitle("HINTW expression by sample")
+# remove beeswarm
+svol_empty <- VlnPlot(
+  my.int,
+  features = hintw$Gene.stable.ID,
+  group.by = "orig.ident",
+  pt.size = 0,
+  cols = cols
+) +
+  ggtitle("HINTW expression by sample")
+
+# export plot
+ggsave("~/spinal_cord_paper/figures/Violinplot_HINTW_by_sample.pdf",
+       width = 7,
+       height = 7,
+       (svol / svol_empty) + plot_layout(guides = "collect"))
+
+
