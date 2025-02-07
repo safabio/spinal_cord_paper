@@ -162,7 +162,7 @@ my.se@active.assay <- "RNA"
 gnames = modplots::gnames
 
 ## select HOX genes
-hox_select <- rev(c("HOXC6","HOXC9","HOXC10","HOXD3","HOXD4","HOXD9","HOXD10","HOXD11","HOXA11"))
+hox_select <- rev(c("HOXA11","HOXD3","HOXD4","HOXD8","HOXD9","HOXD10","HOXD11"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% hox_select)
