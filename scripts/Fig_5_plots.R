@@ -8,6 +8,34 @@ library(tidyverse)
 library(gridExtra)
 library(magrittr)
 library(ggbeeswarm)
+library(miloR)
+library(patchwork)
+
+### ### ### ### ### ### ### ### ###
+#### Milo Neighborhood DA plot ####
+### ### ### ### ### ### ### ### ###
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_250723.rds")
+my.se$cond <- substr(my.se$orig.ident, 1, 4)
+
+my.milo <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_poly_int_milo_050225.rds")
+da.results <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_poly_int_milo_da_results050225.rds")
+
+DimPlot(my.se,
+        reduction = "tsne",
+        group.by = "cond") + 
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
+  plot_layout(guides="collect")
+
+
+nhg <- plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
+  theme_void() +
+  NoLegend()
+
+ggsave(filename = "~/spinal_cord_paper/figures/Fig_5_milo_network.pdf",
+       width = 4,
+       height = 4,
+       nhg)
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 #### Compare ctrl and poly 1 & 2 FP/RP cluster size ####
