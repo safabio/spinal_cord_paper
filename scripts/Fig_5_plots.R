@@ -21,21 +21,35 @@ my.se$cond <- substr(my.se$orig.ident, 1, 4)
 my.milo <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_poly_int_milo_050225.rds")
 da.results <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_poly_int_milo_da_results050225.rds")
 
-DimPlot(my.se,
-        reduction = "tsne",
-        group.by = "cond") + 
-  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
-  plot_layout(guides="collect")
+cust_pal <- c(
+  "#923b37",
+  "#b36d66",
+  "#d0a099",
+  "#edd4d1",
+  "#F7F7F7",
+  "#F7F7F7",
+  "#F7F7F7",
+  "#c8c2e0",
+  "#9b92c7",
+  "#6f64ad",
+  "#3d3e99"
+)
 
+nhg <- plotNhoodGraphDA(my.milo, da.results, alpha=1, layout = "TSNE") +
+  scale_fill_gradientn(colours = cust_pal, limits = c(-7.5,7.5))
 
-nhg <- plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
+pdf("~/spinal_cord_paper/figures/Fig_5_milo_network.pdf", width = 4, height = 4)
+nhg +
   theme_void() +
   NoLegend()
+nhg
+dev.off()
 
-ggsave(filename = "~/spinal_cord_paper/figures/Fig_5_milo_network.pdf",
-       width = 4,
-       height = 4,
-       nhg)
+pdf("~/spinal_cord_paper/figures/Fig_5_milo_volplot.pdf", height = 10, width = 5)
+plotDAbeeswarm(da.results, group.by = "seurat_clusters", alpha=1.0) +
+  ylim(c(-7.5,7.5)) +
+  scale_color_gradientn(colours = cust_pal, limits = c(-7.5,7.5))
+dev.off()
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 #### Compare ctrl and poly 1 & 2 FP/RP cluster size ####
