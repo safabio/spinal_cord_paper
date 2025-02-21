@@ -10,6 +10,7 @@ library(gridExtra)
 library(modplots)
 library(miloR)
 library(patchwork)
+library(pheatmap)
 
 ### ### ### ### ### ### ### ### ###
 #### Milo Neighborhood DA plot ####
@@ -124,41 +125,42 @@ bl10int_markers <- read.table("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_fullDE_
   group_by(cluster) %>% 
   slice_max(avg_log2FC, n = 50) 
 
-# shared top 50 genes
+# shared top 50 marker genes (17 in total)
 dup_genes <- bl10int_markers$Gene.name[duplicated(bl10int_markers$Gene.name)]
-
-markers_avihu <- c("GBE1","GYG2","MSX1","MSX2","PAX3","LMX1A","ENSGALG00000028041","ROR2","WNT7B","GDF7")
-
-intersect(markers_avihu, dup_genes)
-# [1] "GBE1" "MSX2"
-
-# remove duplicates from shared markers and cand. list
-GOI <- c(markers_avihu, dup_genes)
-GOI <- GOI[!duplicated(GOI)]
 
 gnames <- modplots::gnames
 
-IOI <- gnames[gnames$Gene.name %in% GOI,] %>% 
-  mutate(Gene.name = factor(Gene.name, levels = GOI))
+IOI <- gnames[gnames$Gene.name %in% dup_genes,] %>% 
+  mutate(Gene.name = factor(Gene.name, levels = dup_genes))
 
-IOI <- IOI[match(GOI, IOI$Gene.name), ]
+IOI <- IOI[match(dup_genes, IOI$Gene.name), ]
 
+# subset for lumbar cells
 my.sub <- subset(my.se, subset = sample == "lumb")
 
-mdot_clust <- modplots::mDotPlot2(my.sub,
-                        group.by = "split_clusters",
-                        features = rev(IOI$Gene.stable.ID), 
-                        gnames = modplots::gnames,
-                        cluster.idents = TRUE,
-                        cols = c("lightgrey", "black"))
+# calculate average expression
+my.av <- AverageExpression(my.sub,
+                             group.by = "split_clusters",
+                             features = rev(IOI$Gene.stable.ID))
+# heatmap to order genes and clusters
+htmp <- pheatmap(my.av[["RNA"]], 
+         scale = "row", 
+         color = colorRampPalette(c("lightgrey","lightgrey", "black"))(200),
+         cellwidth = 13,
+         cellheight = 13)
 
-# order factors on ordered dotplot
-my.sub$split_clusters <- factor(my.sub$split_clusters,
-                                levels = mdot_clust[[2]]$labels[mdot_clust[[2]]$order])
+# convert labels back to original
+htmp$tree_col$labels <- str_remove(htmp$tree_col$labels, "^g") %>% 
+  str_replace("-", "_")
+
+clust_order <- htmp$tree_col$labels[htmp$tree_col$order]
+gene_order <- htmp$tree_row$labels[htmp$tree_row$order]
+# set factor levels according to heatmap
+my.sub$split_clusters <- factor(my.sub$split_clusters, levels = clust_order)
 
 p1 <- modplots::mDotPlot2(my.sub,
                           group.by = "split_clusters",
-                          features = rev(IOI$Gene.stable.ID), 
+                          features = rev(gene_order), 
                           gnames = modplots::gnames,
                           cols = c("lightgrey", "black")) +
   coord_flip() +
@@ -166,11 +168,8 @@ p1 <- modplots::mDotPlot2(my.sub,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
 
-# hclust as dendrogram
-dend.idents.cand <- as.dendrogram(mdot_clust[[2]])
-
 pdf("~/spinal_cord_paper/figures/Fig_4_GB_dotplot.pdf", height = 6.5, width = 10.5)
-plot(dend.idents.cand)
+htmp
 p1
 dev.off()
 
