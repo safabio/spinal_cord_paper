@@ -203,3 +203,42 @@ write.csv(marker_df, "tables/Supp_table_5.csv", row.names = FALSE)
 
 rm(marker_list, marker_df)
 
+### ### ### ### ### ### ### ### ### ### ### ###
+#### Supp table 6 / DE genes all se objects #### 
+### ### ### ### ### ### ### ### ### ### ### ###
+
+files <- list.files("data/", 
+                    pattern = "_fullDE_") %>% 
+  `[`(!grepl("all_int|devel", .))
+
+samples <- str_remove(files, "_fullDE_\\d{6}.txt$")
+
+file_list <- list()
+
+for (i in seq_along(samples)) {
+  file_list[[i]] <- read.delim(paste0("data/",files[i]))
+}
+
+names(file_list) <- samples
+
+file_df <- bind_rows(file_list, .id = "sample") %>%
+  mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
+  mutate(sample = case_when(
+    grepl("^Gg_ctrl_1", sample) ~ "B10_1",
+    grepl("^Gg_ctrl_2", sample) ~ "B10_2",
+    grepl("^Gg_ctrl_int", sample) ~ "B10_int",
+    grepl("^Gg_D05_ctrl", sample) ~ "B05_1",
+    grepl("^Gg_D07_ctrl", sample) ~ "B07_1",
+    grepl("^Gg_lumb_1", sample) ~ "L10_1",
+    grepl("^Gg_lumb_2", sample) ~ "L10_2",
+    grepl("^Gg_lumb_int", sample) ~ "L10_int",
+    grepl("^Gg_poly_1", sample) ~ "Poly10_1",
+    grepl("^Gg_poly_2", sample) ~ "Poly10_2",
+    grepl("^Gg_poly_int", sample) ~ "Poly10_int",
+    grepl("^Gg_ctrl_lumb", sample) ~ "B_L10int",
+    grepl("^Gg_ctrl_poly", sample) ~ "B_P10int"
+  ))
+
+write.csv(file_df, file = "tables/Supp_table_6.csv", row.names = FALSE)
+
+rm(file_df, file_list, files, samples, i)
