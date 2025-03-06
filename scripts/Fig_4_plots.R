@@ -571,7 +571,7 @@ GOI <- rev(
     #inhibitory vs excitatory
     "GAD1","GAD2","NRXN3","TLX3",
     #glutamate transporter VGLUT2
-    "SLC17A6"))
+    "SLC17A6", "SNCG"))
 
 cand <- modplots::gnames %>% 
   filter(Gene.name %in% GOI)
