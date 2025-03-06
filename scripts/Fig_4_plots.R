@@ -533,3 +533,76 @@ pdf("~/spinal_cord_paper/figures/Supp_fig_4_BL10_int_cl3_v_cl7_dotplots.pdf", he
 dot_top
 dot_sel
 dev.off()
+
+### ### ### ### ### ### ### ### ### ### 
+#### Dotplot B/L10int cl-3 vs cl-7 ####
+### ### ### ### ### ### ### ### ### ###
+
+# seurat object
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_seurat_250723.rds")
+# cluster labels from B10int and L10int
+ctrl_lumb_int_combined_labels <- readRDS("~/spinal_cord_paper/annotations/ctrl_lumb_int_combined_labels.rds")
+
+identical(colnames(my.se), rownames(ctrl_lumb_int_combined_labels))
+my.se$annot_sample  <- ctrl_lumb_int_combined_labels$annot_sample
+
+my.se@active.assay <- "RNA"
+
+my.sub <- subset(x = my.se, idents = c("3","7"))
+
+cl_ord <- c(3,7)
+
+my.sub[[]]
+
+my.sub$sample <- str_extract(my.sub$orig.ident, "ctrl|lumb")
+my.sub$split_clusters <- paste(my.sub$seurat_clusters, my.sub$sample, sep = "_")
+my.sub$split_clusters <- factor(my.sub$split_clusters,
+                               levels = c(paste0(c(cl_ord), "_ctrl"), paste0(c(cl_ord), "_lumb")))
+
+Idents(my.sub) <- "split_clusters" 
+my.sub@active.assay <- "RNA"
+
+gnames = modplots::gnames
+
+## select genes
+GOI <- rev(
+  # cl3 vs 7, dorsal vs ventral?
+  c("PBX3","MEIS1","SNCA", "SNCB", "PROX1","PRDM8","ZIC1","PAX2",
+    #inhibitory vs excitatory
+    "GAD1","GAD2","NRXN3","TLX3",
+    #glutamate transporter VGLUT2
+    "SLC17A6"))
+
+cand <- modplots::gnames %>% 
+  filter(Gene.name %in% GOI)
+
+cand <- cand[match(GOI, cand$Gene.name),]
+
+dpl_select <- modplots::mDotPlot2(
+  my.sub, 
+  features = cand$Gene.stable.ID,
+  cols = c("lightgrey", "black"),
+  gnames = gnames
+)
+
+lab_cols <- ifelse(grepl("lumb", levels(Idents((my.sub)))), "#419c73", "black")
+
+
+ggsave(
+  filename = "~/spinal_cord_paper/figures/Fig_4_BL10_cl3_v_7_selected_dotplot.pdf",
+  width = 4, height = 4,
+  plot = dpl_select +
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, colour = lab_cols))
+)
+
+
+
+
+
+
+
+
+
+
+
