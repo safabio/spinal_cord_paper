@@ -242,3 +242,40 @@ file_df <- bind_rows(file_list, .id = "sample") %>%
 write.csv(file_df, file = "tables/Supp_table_6.csv", row.names = FALSE)
 
 rm(file_df, file_list, files, samples, i)
+
+### ### ### ### ### ### ### ### ### ### ### ###
+#### Supp table 7 / scWGCNA moduels #### 
+### ### ### ### ### ### ### ### ### ### ### ###
+
+files <- list.files("output/", 
+                    pattern = "scWGCNA_250723.rds$")
+
+samples <- str_remove(files, "_scWGCNA_250723.rds$")
+
+file_list <- list()
+
+for (i in seq_along(files)) {
+  tmp <- readRDS(paste0("output/",files[i]))
+  
+  file_list[[i]] <- do.call(rbind, tmp[["modules"]]) %>% 
+    rownames_to_column("tmp") %>% 
+    separate_wider_delim(tmp, ".", names = c("module", "Gene.stable.ID")) %>% 
+    mutate(sample = samples[i])
+}
+
+
+file_df <- bind_rows(file_list) %>% 
+  mutate(sample = case_when(
+    grepl("ctrl", sample) ~ "B10_int",
+    grepl("lumb", sample) ~ "L10_int",
+    grepl("poly", sample) ~ "Poly10_int",
+    grepl("devel", sample) ~ "Devel_int"
+  )) %>% 
+  left_join(modplots::gnames) %>% 
+  select(-c(Membership, p.val))
+
+write.csv(file_df, file = "tables/Supp_table_7.csv", row.names = FALSE)
+
+rm(file_df, file_list, files, samples, i, tmp)
+
+
