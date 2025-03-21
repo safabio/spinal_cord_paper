@@ -260,7 +260,8 @@ marker_list[["L10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_ma
     clust_id == 17 ~ "exc_neuron_1",
     clust_id == 18 ~ "MFOL_late",
     clust_id == 27 ~ "exc_neuron_2"
-  ))
+  )) %>% 
+  select(-cell_type)
 
 marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
   mutate(clust_id = as.numeric(str_remove(cluster, "^cl-"))) %>% 
@@ -270,7 +271,8 @@ marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_ma
   mutate(cell_type = case_when(
     clust_id == 24 ~ "MFOL",
     clust_id == 25 ~ "motor_neurons"
-  ))
+  )) %>% 
+  select(-cell_type)
 
 marker_df <- do.call(rbind, marker_list)
 
