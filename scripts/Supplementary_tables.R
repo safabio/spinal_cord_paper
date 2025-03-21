@@ -45,8 +45,48 @@ write.csv(file_df, file = "tables/Supp_table_1.csv", row.names = FALSE)
 
 rm(file_df, file_list, files, samples, i)
 
+### ### ### ### ### ### ### ### ### ### ### ### #
+####  Supp table 2 / DE genes all se objects #### 
+### ### ### ### ### ### ### ### ### ### ### ### #
+
+files <- list.files("data/", 
+                    pattern = "_fullDE_") %>% 
+  `[`(!grepl("all_int|devel", .))
+
+samples <- str_remove(files, "_fullDE_\\d{6}.txt$")
+
+file_list <- list()
+
+for (i in seq_along(samples)) {
+  file_list[[i]] <- read.delim(paste0("data/",files[i]))
+}
+
+names(file_list) <- samples
+
+file_df <- bind_rows(file_list, .id = "sample") %>%
+  mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
+  mutate(sample = case_when(
+    grepl("^Gg_ctrl_1", sample) ~ "B10_1",
+    grepl("^Gg_ctrl_2", sample) ~ "B10_2",
+    grepl("^Gg_ctrl_int", sample) ~ "B10_int",
+    grepl("^Gg_D05_ctrl", sample) ~ "B05_1",
+    grepl("^Gg_D07_ctrl", sample) ~ "B07_1",
+    grepl("^Gg_lumb_1", sample) ~ "L10_1",
+    grepl("^Gg_lumb_2", sample) ~ "L10_2",
+    grepl("^Gg_lumb_int", sample) ~ "L10_int",
+    grepl("^Gg_poly_1", sample) ~ "Poly10_1",
+    grepl("^Gg_poly_2", sample) ~ "Poly10_2",
+    grepl("^Gg_poly_int", sample) ~ "Poly10_int",
+    grepl("^Gg_ctrl_lumb", sample) ~ "B_L10int",
+    grepl("^Gg_ctrl_poly", sample) ~ "B_P10int"
+  ))
+
+write.csv(file_df, file = "tables/Supp_table_2.csv", row.names = FALSE)
+
+rm(file_df, file_list, files, samples, i)
+
 ### ### ### ### ### ### ### ### ### ### ### ### ###
-####  Supp table 2 / scWGCNA module annotations #### 
+#### Supp table 3 / scWGCNA module annotations #### 
 ### ### ### ### ### ### ### ### ### ### ### ### ###
 
 files <- list.files("annotations/", 
@@ -75,13 +115,48 @@ file_df <- bind_rows(file_list, .id = "sample") %>%
     names = c("module_number", "module"),
     delim = "_", too_few = "align_start")
 
-write.csv(file_df, file = "tables/Supp_table_2.csv", row.names = FALSE)
+write.csv(file_df, file = "tables/Supp_table_3.csv", row.names = FALSE)
 
 rm(file_df, file_list, files, samples, i)
 
-### ### ### ### ### ### ### ### ###
-#### Supp table 3 / GO Terms  #### 
-### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ###
+#### Supp table 4 / scWGCNA modules #### 
+### ### ### ### ### ### ### ### ### ###
+
+files <- list.files("output/", 
+                    pattern = "scWGCNA_250723.rds$")
+
+samples <- str_remove(files, "_scWGCNA_250723.rds$")
+
+file_list <- list()
+
+for (i in seq_along(files)) {
+  tmp <- readRDS(paste0("output/",files[i]))
+  
+  file_list[[i]] <- do.call(rbind, tmp[["modules"]]) %>% 
+    rownames_to_column("tmp") %>% 
+    separate_wider_delim(tmp, ".", names = c("module", "Gene.stable.ID")) %>% 
+    mutate(sample = samples[i])
+}
+
+
+file_df <- bind_rows(file_list) %>% 
+  mutate(sample = case_when(
+    grepl("ctrl", sample) ~ "B10_int",
+    grepl("lumb", sample) ~ "L10_int",
+    grepl("poly", sample) ~ "Poly10_int",
+    grepl("devel", sample) ~ "Devel_int"
+  )) %>% 
+  left_join(modplots::gnames) %>% 
+  select(-c(Membership, p.val))
+
+write.csv(file_df, file = "tables/Supp_table_4.csv", row.names = FALSE)
+
+rm(file_df, file_list, files, samples, i, tmp)
+
+### ### ### ### ### ### ### ### #
+#### Supp table 5 / GO Terms #### 
+### ### ### ### ### ### ### ### #
 
 files <- list.files("output/", pattern = "GOTerms_080824.rds$")
 
@@ -118,13 +193,15 @@ Go_terms <- do.call(rbind, table_list) %>%
   )) %>% 
   relocate(sample)
 
-write.csv(Go_terms, "tables/Supp_table_3.csv", row.names = FALSE)
+write.csv(Go_terms, "tables/Supp_table_5.csv", row.names = FALSE)
 
 rm(Go_terms, table_list, x, files, i, name)
 
-### ### ### ### ### ### ### ### ### ###
-#### Supp table 4 /  Kegg Pathways #### 
-### ### ### ### ### ### ### ### ### ###
+
+
+### ### ### ### ### ### ### ### ### ##
+#### Supp table 6 / Kegg Pathways #### 
+### ### ### ### ### ### ### ### ### ##
 
 files <- list.files("output/", pattern = "KEGGPath_080824.rds$")
 
@@ -163,12 +240,12 @@ Kegg_paths <- do.call(rbind, table_list) %>%
   relocate(sample)
 
 
-write.csv(Kegg_paths, "tables/Supp_table_4.csv", row.names = FALSE)
+write.csv(Kegg_paths, "tables/Supp_table_6.csv", row.names = FALSE)
 
 rm(Kegg_paths, table_list, x, files, i, name)
 
 ### ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 5 /  Volcano plot DE genes #### 
+#### Supp table 7 / Volcano plot DE genes  #### 
 ### ### ### ### ### ### ### ### ### ### ### ###
 
 marker_list <- list()
@@ -195,87 +272,15 @@ marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_ma
     clust_id == 25 ~ "motor_neurons"
   ))
 
-
-
 marker_df <- do.call(rbind, marker_list)
 
-write.csv(marker_df, "tables/Supp_table_5.csv", row.names = FALSE)
+write.csv(marker_df, "tables/Supp_table_7.csv", row.names = FALSE)
 
 rm(marker_list, marker_df)
 
-### ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 6 / DE genes all se objects #### 
-### ### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ### ###
+#### Supp table 8 / ISH Probe Primers  #### 
+### ### ### ### ### ### ### ### ### ### ###
 
-files <- list.files("data/", 
-                    pattern = "_fullDE_") %>% 
-  `[`(!grepl("all_int|devel", .))
-
-samples <- str_remove(files, "_fullDE_\\d{6}.txt$")
-
-file_list <- list()
-
-for (i in seq_along(samples)) {
-  file_list[[i]] <- read.delim(paste0("data/",files[i]))
-}
-
-names(file_list) <- samples
-
-file_df <- bind_rows(file_list, .id = "sample") %>%
-  mutate(sample = str_remove(sample, "\\.\\d+")) %>% 
-  mutate(sample = case_when(
-    grepl("^Gg_ctrl_1", sample) ~ "B10_1",
-    grepl("^Gg_ctrl_2", sample) ~ "B10_2",
-    grepl("^Gg_ctrl_int", sample) ~ "B10_int",
-    grepl("^Gg_D05_ctrl", sample) ~ "B05_1",
-    grepl("^Gg_D07_ctrl", sample) ~ "B07_1",
-    grepl("^Gg_lumb_1", sample) ~ "L10_1",
-    grepl("^Gg_lumb_2", sample) ~ "L10_2",
-    grepl("^Gg_lumb_int", sample) ~ "L10_int",
-    grepl("^Gg_poly_1", sample) ~ "Poly10_1",
-    grepl("^Gg_poly_2", sample) ~ "Poly10_2",
-    grepl("^Gg_poly_int", sample) ~ "Poly10_int",
-    grepl("^Gg_ctrl_lumb", sample) ~ "B_L10int",
-    grepl("^Gg_ctrl_poly", sample) ~ "B_P10int"
-  ))
-
-write.csv(file_df, file = "tables/Supp_table_6.csv", row.names = FALSE)
-
-rm(file_df, file_list, files, samples, i)
-
-### ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 7 / scWGCNA moduels #### 
-### ### ### ### ### ### ### ### ### ### ### ###
-
-files <- list.files("output/", 
-                    pattern = "scWGCNA_250723.rds$")
-
-samples <- str_remove(files, "_scWGCNA_250723.rds$")
-
-file_list <- list()
-
-for (i in seq_along(files)) {
-  tmp <- readRDS(paste0("output/",files[i]))
-  
-  file_list[[i]] <- do.call(rbind, tmp[["modules"]]) %>% 
-    rownames_to_column("tmp") %>% 
-    separate_wider_delim(tmp, ".", names = c("module", "Gene.stable.ID")) %>% 
-    mutate(sample = samples[i])
-}
-
-
-file_df <- bind_rows(file_list) %>% 
-  mutate(sample = case_when(
-    grepl("ctrl", sample) ~ "B10_int",
-    grepl("lumb", sample) ~ "L10_int",
-    grepl("poly", sample) ~ "Poly10_int",
-    grepl("devel", sample) ~ "Devel_int"
-  )) %>% 
-  left_join(modplots::gnames) %>% 
-  select(-c(Membership, p.val))
-
-write.csv(file_df, file = "tables/Supp_table_7.csv", row.names = FALSE)
-
-rm(file_df, file_list, files, samples, i, tmp)
 
 
