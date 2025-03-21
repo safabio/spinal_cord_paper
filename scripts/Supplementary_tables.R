@@ -252,7 +252,7 @@ marker_list <- list()
 
 marker_list[["L10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_markers.rds") %>% 
   mutate(clust_id = as.numeric(str_remove(cluster, "^cl-"))) %>% 
-  filter(clust_id %in% c(16, 17, 18, 27)) %>%  
+  filter(clust_id %in% c(17)) %>%  
   mutate(cluster = fct_drop(cluster)) %>% 
   mutate(data = "B10int_vs_L10int") %>% 
   mutate(cell_type = case_when(
@@ -264,7 +264,7 @@ marker_list[["L10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_ma
 
 marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
   mutate(clust_id = as.numeric(str_remove(cluster, "^cl-"))) %>% 
-  filter(clust_id %in% c(24, 25)) %>%  
+  filter(clust_id %in% c(5, 11, 18, 23, 25)) %>%  
   mutate(cluster = fct_drop(cluster)) %>% 
   mutate(data = "B10int_vs_Poly10int") %>% 
   mutate(cell_type = case_when(
