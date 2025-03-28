@@ -489,8 +489,8 @@ cl3v7DE <- tmp %>%
   left_join(gnames) %>% 
   filter(abs(avg_log2FC) > 0.5)
 
-# dorsal and ventral markers for cl3 and 7
-GOI <- c("PBX3","MEIS1","SNCG","PROX1","PRDM8","BHLHE22","PAX2")
+# dorsal and ventral markers for cl3 and 7 (and SLC17A6)
+GOI <- c("PBX3","MEIS1","SLC17A6","PROX1","PRDM8","BHLHE22","PAX2")
 
 gnames <- modplots::gnames
 
@@ -510,27 +510,9 @@ dot_sel <- mDotPlot2(my.sub,
   ggtitle(paste0(my.se@project.name, " dorsal ventral markers Dotplot")) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         plot.title = element_text(hjust = 0.5))
-# top 25 markers per cluster by log2FC
-top_markers <- cl3v7DE %>% 
-  mutate(cluster = case_when(
-    avg_log2FC > 0 ~ "cl3",
-    avg_log2FC < 0 ~ "cl7"
-  )) %>% 
-  group_by(cluster) %>% 
-  slice_max(abs(avg_log2FC), n = 25) 
-# dotplot of top 25 markers
-dot_top <- mDotPlot2(my.sub,
-                     group.by = "seurat_clusters",
-                     features = rev(top_markers$Gene.stable.ID), 
-                     gnames = modplots::gnames,
-                     cols = c("lightgrey", "black")) +
-  coord_flip() +
-  ggtitle(paste0(my.se@project.name, " cl3 v cl7 top DE marker dotplot")) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        plot.title = element_text(hjust = 0.5))
 
-pdf("~/spinal_cord_paper/figures/Supp_fig_4_BL10_int_cl3_v_cl7_dotplots.pdf", height = 8, width = 4)
-dot_top
+
+pdf("~/spinal_cord_paper/figures/Supp_fig_4_BL10_int_cl3_v_cl7_dotplots.pdf", height = 3, width = 3)
 dot_sel
 dev.off()
 

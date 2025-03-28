@@ -61,6 +61,10 @@ for (i in seq(modules)) {
   ggsave(paste0("~/spinal_cord_paper/figures/Fig_2_", col,"_network.pdf"), width = 5, height = 5)
 }
 
+### ### ### ### ### ### ### ### ### ### ###
+#### tan and darkgreen avg exp tsne ####
+### ### ### ### ### ### ### ### ### ### ###
+
 ###
 # 10.01.2025
 # Ubuntu R-4.4.1
@@ -119,7 +123,9 @@ pdf("~/spinal_cord_paper/figures/Supp_Fig_2_modules_darkgreen_tan_AE_plots.pdf",
   plot_layout(ncol = 3, guides = "collect")
 dev.off()
 
-## Violin plots
+### ### ### ### ### ### ### ### ### ### ###
+#### Fig 2 violin plots scWGCNA mod exp ####
+### ### ### ### ### ### ### ### ### ### ###
 
 # integrated data set of all devel samples.
 my.sec = readRDS("~/spinal_cord_paper/data/Gg_devel_int_seurat_250723.rds")
