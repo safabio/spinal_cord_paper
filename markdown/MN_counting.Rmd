@@ -327,6 +327,31 @@ bar_axis <- ggplot(data = avg_axis_df,
 
 bar_axis
 
+boxpl_axis <- axis_nMN %>% 
+  mutate(grouping = factor(grouping, levels = axis_levels)) %>% 
+  ggplot(aes(x = grouping,
+              y = nMN,
+              color = cond)) + 
+  geom_boxplot() +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  facet_wrap("day", nrow = 3, scales = "free_x") +
+  theme_bw()
+
+boxpl_axis
+
+boxpl_0_axis <- axis_nMN %>% 
+  mutate(grouping = factor(grouping, levels = axis_levels)) %>% 
+  ggplot(aes(x = grouping,
+              y = nMN,
+              color = cond)) + 
+  geom_boxplot() +
+  ylim(c(0,4700)) +
+  scale_color_manual(values = c("black", "darkgoldenrod3")) +
+  facet_wrap("day", nrow = 3, scales = "free_x") +
+  theme_bw()
+
+boxpl_0_axis
+
 my_comparisons <- list(c("Day6_ctrl_rostral", "Day6_poly_rostral"),
                        c("Day6_ctrl_caudal",  "Day6_poly_caudal"),
                        c("Day8_ctrl_rostral", "Day8_poly_rostral"),
@@ -379,11 +404,11 @@ ggsave(
   plot = box_day
 )
 
-ggsave(
-  filename = "~/spinal_cord_paper/figures/Fig_5_barplot_split_MN_count.pdf",
-  width = 3, height = 10,
-  plot = bar_axis
-)
+pdf("~/spinal_cord_paper/figures/Fig_5_barplot_split_MN_count.pdf", width = 3, height = 10)
+bar_axis
+boxpl_axis
+boxpl_0_axis
+dev.off()
 
 ggsave(
   filename = "~/spinal_cord_paper/figures/Fig_5_boxplot_split_MN_count.pdf",
