@@ -543,7 +543,7 @@ ggplot(data = poly_markers %>% filter(p_val_adj < 0.05 & avg_log2FC > 0.5), aes(
 
 ```{r}
 # vector of neuronal clusters
-fig5_clusters <- c(5,11,18,23,25)
+fig5_clusters <- c(5,11,18,22,25)
 
 fig5_poly_markers <- filter(poly_markers, clust_id %in% fig5_clusters)
 fig5_poly_numbers <- filter(poly_numbers, clust_id %in% fig5_clusters)
