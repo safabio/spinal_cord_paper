@@ -127,6 +127,126 @@ dev.off()
 #### Fig 2 violin plots scWGCNA mod exp ####
 ### ### ### ### ### ### ### ### ### ### ###
 
+# load seurat objects and add annotations
+se_path <- c("Gg_D05_ctrl_seurat_070323",
+             "Gg_D07_ctrl_seurat_070323",
+             "Gg_ctrl_1_seurat_070323")
+
+# broad cluster order
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+
+# custom colors
+clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
+  rename(broad = broad_cluster) %>% 
+  select(-marker)
+
+my.ses <- list()
+col_table <- list()
+ord_levels <- list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+    stop("Number of clusters must be identical!")
+    
+  }
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number) 
+  # create index for color coding
+  col_table[[i]] <- annot %>%
+    left_join(clust_col, by = "broad") %>% 
+    select(c("fine", "color"))
+  # cluster order for vln plots
+  ord_levels[[i]] <- annot$fine[order(match(annot$broad, broad_order))]
+  
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    mutate(fine = factor(fine, levels = annot$fine)) %>% 
+    column_to_rownames("rowname")
+
+  my.ses[[i]] <- my.se
+}
+
+
+names(my.ses) <- c("D05", "D07", "D10")
+names(col_table) <- c("D05", "D07", "D10")
+names(ord_levels) <- c("D05", "D07", "D10")
+
+# rm(my.se, annot)
+
+# scWGCNA data
+WGCNA_data = list()
+WGCNA_data[[1]] = readRDS("~/spinal_cord_paper/output/Gg_devel_int_scWGCNA_250723.rds")
+my.wsub =list()
+my.wsub[[1]]= c(1:22)
+
+# This is just to add a little bit more sense to the modules, so that we don't get just a color. Corresponds to WGCNA_data
+my.modulenames = list()
+my.modulenames[[1]] = c(1:22)
+
+# broad cluster color table
+all_col <- do.call(rbind, col_table) %>%
+  rownames_to_column("sample") %>%
+  mutate(sample = substr(sample, 1, 3)) %>%
+  mutate(sample_celltype = paste(sample, fine, sep = "_")) %>%
+  select(c("color", "sample_celltype", "sample"))
+
+#Get a dataframe with annotations for all the samples and colors we need.
+my.metam <- list()
+
+for (i in seq(my.ses)) {
+  my.metam[[i]] <- my.ses[[i]][[]]
+  rownames(my.metam[[i]]) <- paste0(rownames(my.metam[[i]]), "_", i)
+}
+
+my.metam <- do.call(rbind, my.metam)
+
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_D05_ctrl", "D05")
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_D07_ctrl", "D07")
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_ctrl_1", "D10")
+# my.metam$sample_celltype = paste0(substr(my.metam$orig.ident,7,9),"_",my.metam$seurat_clusters)
+my.metam$sample_celltype = paste0(my.metam$orig.ident, "_", my.metam$fine)
+
+my.metam <- my.metam %>% 
+  tibble::rownames_to_column(var = "cell_ID") %>%
+  dplyr::left_join(all_col, by = "sample_celltype") %>%
+  tibble::column_to_rownames(var = "cell_ID")
+
+cell_table <- my.metam %>% 
+  rownames_to_column("cell_ID") %>% 
+  select("sample_celltype", "cell_ID")
+
+avg.mod.eigengenes <- WGCNA_data[[1]]$sc.MEList$averageExpr %>% 
+  rownames_to_column("cell_ID") %>% 
+  left_join(cell_table, by = "cell_ID") %>% 
+  column_to_rownames("cell_ID")
+
+# mean eigengenes
+avg.mod.eigengenes.mean <- avg.mod.eigengenes %>%
+  group_by(sample_celltype) %>%
+  summarise_all("mean") %>%
+  column_to_rownames("sample_celltype")
+
 # integrated data set of all devel samples.
 my.sec = readRDS("~/spinal_cord_paper/data/Gg_devel_int_seurat_250723.rds")
 
@@ -158,6 +278,7 @@ vln_ind <- VlnPlot(my.sec,
                    flip = TRUE,
                    cols = c("darkred", "lightgreen", "darkgreen", "tan"),pt.size = 1
 ) +
+  geom_boxplot(outlier.shape = NA) +
   NoLegend()
 
 pdf("~/spinal_cord_paper/figures/Fig_2_AE_selected_mod.pdf", height = 25, width = 20)
