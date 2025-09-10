@@ -1,0 +1,594 @@
+---
+title: "Devel_int WGCNA modules expression in NT D5, D7, and D10 samples"
+author: "Fabio Sacher"
+date: "04.08.2023"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r library}
+library(tidyverse)
+library(Seurat)
+library(ggrepel)
+library(gridExtra)
+library(pheatmap)
+library(cowplot)
+library(soilphysics)
+```
+
+
+# TF subset
+
+```{r devel-WGCNA-tf-subset}
+# TF table
+tfs <- read.delim("~/../GROUP/references/genomes/TFs/Gallus_gallus_TF_AnimalTFDB3_edited.txt")
+# gene names
+gnames <- modplots::gnames
+
+# Devel int scWGCNA
+myWGCNA <- readRDS("~/spinal_cord_paper/output/Gg_devel_int_scWGCNA_250723.rds")
+
+dev_modules <- lapply(myWGCNA[["module.genes"]], function(x) x[x %in% tfs$Ensembl])
+names(dev_modules) <- paste0(names(myWGCNA[["modules"]]),"_")
+
+# TF subset of devel modules 
+mod_tf <- data.frame(Gene.stable.ID = unlist(dev_modules)) %>% 
+  rownames_to_column("module") %>% 
+  left_join(gnames, by = "Gene.stable.ID") %>% 
+  mutate(module = str_remove(module, "_\\d{0,3}$")) %>% 
+  mutate(module = str_remove(module, "^\\d{1,3}_")) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID))
+```
+
+# Average module expression
+
+```{r avg_module-exp}
+# module average expression
+avg_mod_exp <- myWGCNA[["sc.MEList"]][["averageExpr"]] 
+colnames(avg_mod_exp) <- str_remove(colnames(avg_mod_exp), "^AE") 
+```
+
+# Module order and manual thresholds
+
+The thresholds are manually set!
+
+```{r}
+# module order
+module_order <- c("lightgreen","darkred","turquoise","brown","cyan",
+                  "purple","midnightblue","lightcyan","blue","salmon",
+                  "lightyellow","pink","royalblue","darkgreen","tan",
+                  "yellow","grey60","greenyellow","green","red",
+                  "magenta","black")
+
+
+# elbowbplots of avg module expression
+names <- c("black","blue","brown","cyan","darkgreen","darkred",
+           "green","greenyellow","grey60","lightcyan","lightgreen",
+           "lightyellow","magenta","midnightblue","pink","purple",
+           "red","royalblue","salmon","tan","turquoise","yellow")
+
+
+```
+
+```{r elbowplots_model, fig.height= 4, fig.width=8}
+fit_elbow <- list()
+model_exp <- list()
+fitted_values <- list()
+coef_list <- list()
+
+# shift values by min scaled expression (so all values are > 0)
+shift_exp <- data.frame(apply(avg_mod_exp, 2, function(x) x - min(x)))
+
+modules_to_plot <- rev(c("lightgreen","darkred","purple","lightcyan",
+                     "blue","pink","royalblue","darkgreen","tan","yellow"))
+
+
+b = c(0.003, 0.02, 0.0007, 0.0007,0.0003,0.005,0.01,0.01,0.001,0.003)
+c = c(1.3,0.7,2.3,1.7,2.2,1.4,1.6,1.6,1.6,1.6)
+
+for (i in seq(modules_to_plot)) {
+  module <- modules_to_plot[i]
+  
+  toplot <-  shift_exp %>% 
+    arrange(desc(.data[[module]])) %>% 
+    mutate(rank = as.numeric(row_number())) %>% 
+    select(!!sym(module),rank) %>% 
+    dplyr::rename("mod_exp" = !!sym(module))
+  
+  # fit exponential curve
+  model_exp[[i]] <- nls(mod_exp ~ a * (1 + b * rank) ^ -c, data = toplot, start = list(a = max(toplot$mod_exp), b = b[i], c = c[i]))
+  
+  coef_list[[i]] <- coef(model_exp[[i]])
+  
+  fitted_values[[i]] <- predict( model_exp[[i]], newdata = toplot)
+
+  fit_elbow[[i]] <- ggplot(toplot, aes(x = rank, y = (mod_exp))) +
+    geom_line(col = module) +
+    geom_line(aes(y = fitted_values[[i]])) +
+    scale_x_continuous(breaks = seq(1, 15000, by = 14999))+
+    ggtitle(module) +
+    theme(
+      axis.text.y = element_blank(),
+      axis.ticks.length.y = unit(0, "cm"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+
+}
+
+names(fit_elbow) <-(modules_to_plot)
+
+elbow_fit <- grid.arrange(grobs = fit_elbow[modules_to_plot], ncol = 5, nrow = 2)
+```
+
+```{r}
+
+pd_x <- list()
+spline <- list()
+
+for (i in seq(modules_to_plot)) {
+  a <- coef_list[[i]][1]
+  b <- coef_list[[i]][2]
+  c <- coef_list[[i]][3]
+  f <- function(x) a*(1+b*x)^-c
+  # get a x value by perpendicular distance from secant line
+  pd_x[[i]] <- maxcurv(x.range = c(1,5000), f, method = "pd", col = modules_to_plot[i])
+  # use x limit from above in spline to obtain local maximum curvature
+  spline[[i]] <- maxcurv(x.range = c(1,5000), f, method = "spline", x0ini = pd_x[[i]]["x0"], col = modules_to_plot[i])
+}
+
+names(pd_x) <- modules_to_plot
+names(spline) <- modules_to_plot
+
+
+```
+
+```{r}
+elbowplots_thres <- list()
+# only the modules with clear elbows, on off states
+mod_to_plot <- avg_mod_exp[modules_to_plot]
+
+exp_min <- apply(mod_to_plot, 2, min)
+
+adj_thresholds <- rep(0,length(exp_min))
+
+for (i in seq(ncol(mod_to_plot))) {
+  module <- modules_to_plot[i]
+  
+  toplot <-  avg_mod_exp %>% 
+    arrange(desc(.data[[module]])) %>% 
+    mutate(rank = as.numeric(row_number())) %>% 
+    select(!!sym(module),rank) %>% 
+    dplyr::rename("mod_exp" = !!sym(module))
+  
+  # since the data was shifted by min(avg_mod_exp) for model fitting
+  # we have to add the min (negative) to the threshold
+  adj_thresholds[i] <- unname(spline[[module]]$y0)+unname(exp_min[module])
+  
+  elbowplots_thres[[i]] <- ggplot(toplot, aes(x = rank, y = mod_exp)) +
+    geom_hline(yintercept =  adj_thresholds[i], lty = "dashed") +
+    geom_line(col = module) +
+    scale_x_continuous(breaks = seq(1, 15000, by = 14999))+
+    ggtitle(module) +
+    theme(
+      axis.text.y = element_blank(),
+      axis.ticks.length.y = unit(0, "cm"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+
+}
+
+names(elbowplots_thres) <- modules_to_plot
+names(adj_thresholds) <- modules_to_plot
+
+elbowplots_thres_overall <- grid.arrange(grobs = elbowplots_thres[modules_to_plot], ncol = 5, nrow = 2)
+```
+
+# elbow plots of module expression
+
+Lines indicate detection threshold.
+
+```{r elbowplots, fig.height= 6, fig.width=8}
+elbowplots <- list()
+
+thresholds <- data.frame(module = colnames(avg_mod_exp))
+
+tresh_df <- data.frame(adj_thresholds) %>% 
+  rownames_to_column("module") %>% 
+  right_join(thresholds) %>% 
+  column_to_rownames("module")
+ 
+for (i in seq(ncol(avg_mod_exp))) {
+  module <- colnames(avg_mod_exp)[i]
+  
+  toplot <-  avg_mod_exp %>% 
+    arrange(desc(.data[[module]])) %>% 
+    mutate(rank = as.numeric(row_number())) %>% 
+    select(!!sym(module),rank) %>% 
+    dplyr::rename("mod_exp" = !!sym(module))
+  
+  elbowplots[[i]] <- ggplot(toplot, aes(x = rank, y = mod_exp)) +
+    geom_hline(yintercept = tresh_df[module, 1], lty = "dashed") +
+    geom_line(col = module) +
+    scale_x_continuous(breaks = seq(1, 15000, by = 14999))+
+    ggtitle(module) +
+    theme(
+      axis.text.y = element_blank(),
+      axis.ticks.length.y = unit(0, "cm"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+
+}
+
+names(elbowplots) <- colnames(avg_mod_exp)
+
+elbow_overall <- grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 6, nrow = 4)
+```
+
+
+# TF vs module expression correlations
+
+```{r tf-expression}
+# seurat object to extrace TF expression from
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_devel_int_seurat_250723.rds")
+
+exp_data <- my.se[["RNA"]]$data
+
+tf_exp <- exp_data[rownames(exp_data) %in% tfs$Ensembl, ]
+tf_exp <- tf_exp[!rowSums(tf_exp) == 0,]
+# transform
+tf_exp <- t(tf_exp)
+
+```
+
+## pearson
+
+```{r pearson_cor, fig.width= 8, fig.height=6}
+# Calculate Pearson correlation between each TF and module (apply takes 10 seconds)
+ps_correlations <- apply(tf_exp, 
+                         MARGIN = 2, 
+                         function(x) apply(avg_mod_exp,
+                                           MARGIN = 2,
+                                           function(y) cor(x, y, method = "pear")))
+
+# Convert correlations to a data frame for easier analysis
+
+ps_cor_long <- ps_correlations %>% 
+  data.frame() %>% 
+  rownames_to_column("module") %>% 
+  mutate(module = factor(module, levels = module_order)) %>% 
+  gather(key = "Gene.stable.ID", value = "corr", (2:(ncol(ps_correlations)+1))) %>% 
+  left_join(gnames) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID)) %>%
+  mutate(member = case_when(
+    tf_member %in% mod_tf$tf_member ~ "yes", 
+    TRUE ~ "no"))
+
+range(ps_cor_long$corr)
+
+ps_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(min)
+
+ps_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(max)
+
+ps_cor_boxplot <- ps_cor_long %>% 
+  mutate(outlier = case_when(
+    abs(corr) > 0.5 ~ Gene.name,
+    TRUE ~ NA
+  )) %>% 
+  ggplot(aes(x = module, y = corr, color = module, label = outlier)) +
+  geom_boxplot() +
+  scale_color_manual(values = module_order) +
+  ylim(c(-1,1)) +
+  geom_hline(yintercept = c(-0.5,0.5), lty = "dashed") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position = "none") +
+  ggrepel::geom_text_repel(color = "black", max.overlaps = 20) +
+  ggtitle("pearson corr TF vs module expression")
+
+
+ps_cor_boxplot
+
+ps_cor_filt <- ps_cor_long %>% 
+  filter(abs(corr) > 0.5)
+```
+
+## spearman
+
+```{r spearman, fig.width= 8, fig.height=6}
+# Calculate Pearson correlation between each TF and module (apply takes 100 seconds)
+sm_correlations <- apply(tf_exp, 
+                         MARGIN = 2, 
+                         function(x) apply(avg_mod_exp,
+                                           MARGIN = 2,
+                                           function(y) cor(x, y, method = "spearman")))
+
+# Convert correlations to a data frame for easier analysis
+
+sm_cor_long <- sm_correlations %>% 
+  data.frame() %>% 
+  rownames_to_column("module") %>% 
+  mutate(module = factor(module, levels = module_order)) %>% 
+  gather(key = "Gene.stable.ID", value = "corr", (2:(ncol(sm_correlations)+1))) %>% 
+  left_join(gnames) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID)) %>%
+  mutate(member = case_when(
+    tf_member %in% mod_tf$tf_member ~ "yes", 
+    TRUE ~ "no"))
+
+range(sm_cor_long$corr)
+
+sm_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(min)
+
+sm_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(max)
+
+sm_cor_boxplot <- sm_cor_long %>% 
+  mutate(outlier = case_when(
+    abs(corr) > 0.5 ~ Gene.name,
+    TRUE ~ NA
+  )) %>% 
+  ggplot(aes(x = module, y = corr, color = module, label = outlier)) +
+  geom_boxplot() +
+  scale_color_manual(values = module_order) +
+  ylim(c(-1,1)) +
+  geom_hline(yintercept = c(-0.5,0.5), lty = "dashed") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position = "none") +
+  ggrepel::geom_text_repel(color = "black", max.overlaps = 20) +
+  ggtitle("spearman corr TF vs module expression")
+
+sm_cor_boxplot
+
+sm_cor_filt <- sm_cor_long %>% 
+  filter(abs(corr) > 0.5)
+```
+
+```{r tf_intesection}
+intersect(sm_cor_filt$Gene.name, ps_cor_filt$Gene.name)
+```
+
+# Cell to cluster lookup table
+
+```{r}
+se_path <- c("Gg_D05_ctrl_seurat_070323",
+             "Gg_D07_ctrl_seurat_070323",
+             "Gg_ctrl_1_seurat_070323")
+
+# clust_col <- read.csv("~/spinal_cord_paper/annotations/broad_cluster_marker_colors.csv") %>% 
+#   rename(broad = broad_cluster) %>% 
+#   select(-marker)
+
+broad_order <- c("progenitors",
+                 "FP",
+                 "RP",
+                 "FP/RP",
+                 "neurons",
+                 "OPC",
+                 "MFOL",
+                 "pericytes",
+                 "microglia",
+                 "blood",
+                 "vasculature"
+)
+
+my.ses <- list()
+col_table <- list()
+ord_levels <- list()
+
+for (i in seq(se_path)) {
+  # load the data sets
+  my.se <- readRDS(paste0("~/spinal_cord_paper/data/", se_path[i], ".rds"))
+  annot <- read.csv(list.files("~/spinal_cord_paper/annotations",
+                               pattern = str_remove(se_path[i], "_seurat_\\d{6}"),
+                               full.names = TRUE))
+  
+  if(length(table(annot$number)) != length(table(my.se$seurat_clusters))) {
+    stop("Number of clusters must be identical!")
+  }
+  
+  # rename for left join
+  annot <- annot %>% 
+    mutate(fine = paste(fine, number, sep = "_")) %>% 
+    mutate(number = factor(number, levels = 1:nrow(annot))) %>% 
+    rename(seurat_clusters = number) 
+  
+  # cluster order for vln plots
+  ord_levels[[i]] <- annot$fine[order(match(annot$broad, broad_order))]
+  
+  # add cluster annotation to meta data
+  my.se@meta.data <- my.se@meta.data %>% 
+    rownames_to_column("rowname") %>% 
+    left_join(annot, by = "seurat_clusters") %>% 
+    mutate(fine = factor(fine, levels = annot$fine)) %>% 
+    column_to_rownames("rowname")
+  
+  my.ses[[i]] <- my.se
+  
+}
+
+names(my.ses) <- c("D05", "D07", "D10")
+names(ord_levels) <- c("D05", "D07", "D10")
+
+rm(my.se, annot)
+
+#Get a dataframe with annotations for all the samples and colors we need.
+my.metam <- list()
+
+for (i in seq(my.ses)) {
+  my.metam[[i]] <- my.ses[[i]][[]]
+  rownames(my.metam[[i]]) <- paste0(rownames(my.metam[[i]]), "_", i)
+}
+my.metam <- do.call(rbind, my.metam)
+
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_D05_ctrl", "D05")
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_D07_ctrl", "D07")
+my.metam$orig.ident <- str_replace_all(my.metam$orig.ident, pattern =  "Gg_ctrl_1", "D10")
+
+# my.metam$sample_celltype = paste0(substr(my.metam$orig.ident,7,9),"_",my.metam$seurat_clusters)
+my.metam$sample_celltype = paste0(my.metam$orig.ident, "_", my.metam$fine)
+
+
+cell_table <- my.metam %>% 
+  rownames_to_column("cell_ID") %>% 
+  select("sample_celltype", "cell_ID")
+
+
+rm(my.metam, my.ses)
+```
+
+# module detection rate
+
+calulate detection rate per individual clusters based on the thresholds set above.
+
+```{r detection-rate}
+
+trsh_df <- data.frame(module = names(adj_thresholds),
+                      thresholds = adj_thresholds)
+
+detect_df <- mod_to_plot %>% 
+  rownames_to_column("cell_ID") %>% 
+  gather(key = "module", value = "avg_mod_exp", 2:11) %>% 
+  left_join(trsh_df, by = "module") %>% 
+  mutate(detection = case_when(
+    avg_mod_exp > thresholds ~ TRUE,
+    TRUE ~ FALSE
+  )) %>% 
+  left_join(cell_table, by = "cell_ID")
+
+detect_rate <- detect_df %>% 
+  mutate(key = paste(sample_celltype, module, sep = "/")) %>% 
+  group_by(key) %>% 
+  summarise(detection_rate = mean(detection == TRUE)) 
+
+detect_rate %>% 
+  separate_wider_delim(key, delim = "/", names = c("sample_celltype", "module")) %>% 
+  arrange(desc(detection_rate)) %>%  
+  mutate(rank = row_number()) %>% 
+  ggplot(aes(x = rank, y = detection_rate)) +
+  geom_line() 
+```
+
+# mean module expression per module
+
+```{r mean-clust-exp, fig.height= 10, fig.width=8}
+cluster_mod_exp <- mod_to_plot %>% 
+  rownames_to_column("cell_ID") %>% 
+  left_join(cell_table, by = "cell_ID") %>% 
+  column_to_rownames("cell_ID") %>%
+  group_by(sample_celltype) %>%
+  summarise_all("mean") %>% 
+  column_to_rownames("sample_celltype")
+
+# heatmap to get the row and col orders
+htmp <- pheatmap(as.matrix(cluster_mod_exp),
+                 fontsize = 8,
+                 scale = "column",
+                 color = colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000),
+                 annotation_legend = F,
+                 border_color = NA)
+
+celltype_order <- htmp$tree_row$labels[htmp$tree_row$order]
+module_order <- htmp$tree_col$labels[htmp$tree_col$order]
+```
+
+# scaled module expression
+
+```{r scaled-avg-exp-toplot}
+toplot_avg_exp <- cluster_mod_exp %>% 
+  rownames_to_column("sample_celltype") %>%
+  gather(key = "module", value = "avg_clust_mod_exp", 2:11) %>% 
+  mutate(key = paste(sample_celltype, module, sep = "/")) %>% 
+  left_join(detect_rate, by = "key") %>% 
+  mutate(sample_celltype = factor(sample_celltype, levels = rev(celltype_order))) %>% 
+  mutate(module = factor(module, levels = rev(module_order)))
+
+# calculate module mean expresion and sd
+scale_factors <- toplot_avg_exp %>%
+  group_by(module) %>% 
+  reframe(sd = sd(avg_clust_mod_exp),
+          mean = mean(avg_clust_mod_exp))
+
+toplot_avg_exp_scaled <- toplot_avg_exp %>% 
+  left_join(scale_factors, by = "module") %>% 
+  mutate(exp_scaled = (avg_clust_mod_exp - mean)/sd) %>% 
+  # cap scaled values at abs(5)
+  mutate(exp_scaled_5 = case_when(
+    exp_scaled > 5 ~ 5,
+    exp_scaled < -5 ~ -5,
+    TRUE ~ exp_scaled
+  ))
+```
+
+# dotplot
+
+```{r, fig.height= 10, fig.width=6}
+
+palette <- colorRampPalette(c("#4d2d87","#7c55a3", "white", "#ed9921", "#895d25"))(n = 1000)
+palette <- palette[floor(500+min(toplot_avg_exp_scaled$exp_scaled_5)*100):1000]
+
+
+dotplot <- ggplot(toplot_avg_exp_scaled, 
+       aes(x = module, 
+           y = sample_celltype,
+           size = detection_rate,
+           color = exp_scaled_5)) +
+  geom_point() +
+  scale_size(range = c(0.5,3.5)) +
+  scale_color_gradientn(colors = palette) +
+  theme_cowplot() +
+  ggtitle("scaled avg_module_expression (values capped at abs(5)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text = element_text(size = 7))
+
+dotplot
+```
+
+```{r export}
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_elbowplots.pdf", width = 8, height = 6)
+grid.arrange(grobs = elbowplots[module_order], ncol = 6, nrow = 4)
+dev.off()
+
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_fitted_elbowplots.pdf", width = 8, height = 6)
+grid.arrange(grobs = fit_elbow[modules_to_plot], ncol = 5, nrow = 2)
+grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 6, nrow = 4)
+dev.off()
+
+
+
+pdf("~/spinal_cord_paper/figures/Fig_1_TF_devel_module_correlation.pdf", width = 8, height = 6)
+ps_cor_boxplot
+sm_cor_boxplot
+dev.off()
+
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_v_clusters_dotplot.pdf", width = 6, height = 10)
+dotplot
+dev.off()
+
+write.csv(ps_cor_long, "~/spinal_cord_paper/output/module_devel_TF_corr_pearson.csv")
+write.csv(sm_cor_long, "~/spinal_cord_paper/output/module_devel_TF_corr_spearman.csv")
+```
+
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
