@@ -11,6 +11,8 @@ markdown/DAseq_Gg_ctrl_*
 markdown/overlay_plots_ctrl_vs_poly.*
 markdown/spec_markers_ctrl_dotplots.*
 markdown/Vln_plots.*
+markdown/Gg_day_10_int.html
+markdown/Gg_devel_scWGCNA_module_analysis.html
 scripts/augur_*
 scripts/DAseq_Gg_ctrl_*
 scripts/Sister_pair_DE_analysis.sh
