@@ -1,0 +1,207 @@
+---
+title: "Gg_lumb_int GB WGCNA modules expression TF correlation"
+author: "Fabio Sacher"
+date: "08.09.2025"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r library}
+library(tidyverse)
+library(Seurat)
+library(ggrepel)
+library(gridExtra)
+library(pheatmap)
+library(cowplot)
+```
+
+
+# TF subset
+
+```{r GB-WGCNA-tf-subset}
+# TF table
+tfs <- read.delim("~/../GROUP/references/genomes/TFs/Gallus_gallus_TF_AnimalTFDB3_edited.txt")
+# gene names
+gnames <- modplots::gnames
+
+# GB int scWGCNA
+myWGCNA <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
+
+GB_modules <- lapply(myWGCNA[["module.genes"]], function(x) x[x %in% tfs$Ensembl])
+names(GB_modules) <- paste0(names(myWGCNA[["modules"]]),"_")
+
+GB_modules <- GB_modules[c("5_brown4_", "26_magenta_")]
+
+module_order <- c("brown4", "magenta")
+
+# TF subset of GB modules 
+mod_tf <- data.frame(Gene.stable.ID = unlist(GB_modules)) %>% 
+  rownames_to_column("module") %>% 
+  left_join(gnames, by = "Gene.stable.ID") %>% 
+  mutate(module = str_remove(module, "_\\d{1,3}$")) %>% 
+  mutate(module = str_remove(module, "^\\d{1,3}_")) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID))
+```
+
+# Average module expression
+
+```{r avg_module-exp}
+# module average expression
+avg_mod_exp <- myWGCNA[["sc.MEList"]][["averageExpr"]][,c("AEbrown4", "AEmagenta")]
+colnames(avg_mod_exp) <- str_remove(colnames(avg_mod_exp), "^AE") 
+```
+
+# TF vs module expression correlations
+
+```{r tf-expression}
+# seurat object to extrace TF expression from
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_lumb_int_seurat_250723.rds")
+
+exp_data <- my.se[["RNA"]]$data
+
+tf_exp <- exp_data[rownames(exp_data) %in% tfs$Ensembl, ]
+tf_exp <- tf_exp[!rowSums(tf_exp) == 0,]
+# transform
+tf_exp <- t(tf_exp)
+
+```
+
+## pearson
+
+```{r pearson_cor, fig.width= 8, fig.height=6}
+# Calculate Pearson correlation between each TF and module (apply takes 10 seconds)
+ps_correlations <- apply(tf_exp, 
+                         MARGIN = 2, 
+                         function(x) apply(avg_mod_exp,
+                                           MARGIN = 2,
+                                           function(y) cor(x, y, method = "pear")))
+
+# Convert correlations to a data frame for easier analysis
+
+ps_cor_long <- ps_correlations %>% 
+  data.frame() %>% 
+  rownames_to_column("module") %>% 
+  mutate(module = factor(module, levels = module_order)) %>% 
+  gather(key = "Gene.stable.ID", value = "corr", (2:(ncol(ps_correlations)+1))) %>% 
+  left_join(gnames) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID)) %>%
+  mutate(member = case_when(
+    tf_member %in% mod_tf$tf_member ~ "yes", 
+    TRUE ~ "no"))
+
+range(ps_cor_long$corr)
+
+ps_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(min)
+
+ps_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(max)
+
+ps_cor_boxplot <- ps_cor_long %>% 
+  mutate(outlier = case_when(
+    abs(corr) > 0.5 ~ Gene.name,
+    TRUE ~ NA
+  )) %>% 
+  ggplot(aes(x = module, y = corr, color = module, label = outlier)) +
+  geom_boxplot() +
+  scale_color_manual(values = module_order) +
+  ylim(c(-1,1)) +
+  geom_hline(yintercept = c(-0.5,0.5), lty = "dashed") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position = "none") +
+  ggrepel::geom_text_repel(color = "black", max.overlaps = 20) +
+  ggtitle("pearson corr TF vs module expression")
+
+
+ps_cor_boxplot
+
+ps_cor_filt <- ps_cor_long %>% 
+  filter(abs(corr) > 0.5)
+```
+
+## spearman
+
+```{r spearman, fig.width= 8, fig.height=6}
+# Calculate Pearson correlation between each TF and module (apply takes 100 seconds)
+sm_correlations <- apply(tf_exp, 
+                         MARGIN = 2, 
+                         function(x) apply(avg_mod_exp,
+                                           MARGIN = 2,
+                                           function(y) cor(x, y, method = "spearman")))
+
+# Convert correlations to a data frame for easier analysis
+
+sm_cor_long <- sm_correlations %>% 
+  data.frame() %>% 
+  rownames_to_column("module") %>% 
+  mutate(module = factor(module, levels = module_order)) %>% 
+  gather(key = "Gene.stable.ID", value = "corr", (2:(ncol(sm_correlations)+1))) %>% 
+  left_join(gnames) %>% 
+  mutate(tf_member = paste0(module, "_",Gene.stable.ID)) %>%
+  mutate(member = case_when(
+    tf_member %in% mod_tf$tf_member ~ "yes", 
+    TRUE ~ "no"))
+
+range(sm_cor_long$corr)
+
+sm_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(min)
+
+sm_correlations %>% 
+  t() %>% 
+  data.frame() %>% 
+  summarise_all(max)
+
+sm_cor_boxplot <- sm_cor_long %>% 
+  mutate(outlier = case_when(
+    abs(corr) > 0.5 ~ Gene.name,
+    TRUE ~ NA
+  )) %>% 
+  ggplot(aes(x = module, y = corr, color = module, label = outlier)) +
+  geom_boxplot() +
+  scale_color_manual(values = module_order) +
+  ylim(c(-1,1)) +
+  geom_hline(yintercept = c(-0.5,0.5), lty = "dashed") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position = "none") +
+  ggrepel::geom_text_repel(color = "black", max.overlaps = 20) +
+  ggtitle("spearman corr TF vs module expression")
+
+sm_cor_boxplot
+
+sm_cor_filt <- sm_cor_long %>% 
+  filter(abs(corr) > 0.5)
+```
+
+
+```{r export}
+
+pdf("~/spinal_cord_paper/figures/Fig_4_TF_GB_module_correlation.pdf", width = 4, height = 6)
+ps_cor_boxplot
+sm_cor_boxplot
+dev.off()
+
+write.csv(ps_cor_long, "~/spinal_cord_paper/output/module_GB_TF_corr_pearson.csv")
+write.csv(sm_cor_long, "~/spinal_cord_paper/output/module_GB_TF_corr_spearman.csv")
+```
+
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
