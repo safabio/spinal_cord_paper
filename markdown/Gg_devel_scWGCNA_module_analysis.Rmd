@@ -17,7 +17,7 @@ Render this report with ~/spinal_cord_paper/scripts/Gg_devel_scWGCNA_module_anal
 
 ```{r setup}
 library(Seurat)
-library(WGCNA)
+# library(WGCNA)
 library(tidyr)
 library(ggplot2)
 library(stringr)
@@ -313,6 +313,7 @@ p1
 pdf("~/spinal_cord_paper/figures/Devel_split_tsne.pdf", height = 7, width = 15)
 #Plot split tsne
 p1
+dev.off()
 ```
 
 # Avg. module exp. by stage
@@ -368,16 +369,18 @@ gridExtra::grid.arrange(grobs = full_plot, ncol = 3, as.table = FALSE)
 
 pdf("~/spinal_cord_paper/figures/Fig_2_devel_modules_AE_plots.pdf", width = 12, height = 70)
 gridExtra::grid.arrange(grobs = full_plot, ncol = 3, as.table = FALSE)
+dev.off()
 
 pdf("~/spinal_cord_paper/figures/Supp_Fig_2_modules_darkgreen_AE_plots.pdf", width = 13, height = 4)
 (full_plot[[9]] + full_plot[[31]] + full_plot[[53]]) + plot_layout(ncol = 3, guides = "collect")
+dev.off()
 ```
 
 # AE over time
 
 We plot the average expression of each module in the three stages and the 5 broad cell type clusters present in all 3 stages.
 
-```{r AE-over-time, fig.height=7, fig.width=12}
+```{r AE-over-time, fig.height=4, fig.width=12}
 # module annotations
 mod_annot <- read.csv("~/spinal_cord_paper/annotations/Gg_devel_int_scWGCNA_module_annotation.csv") %>%
   dplyr::mutate(module = str_replace_all(module, "\\d{1,2}\\_", "AE"))
@@ -426,19 +429,22 @@ mean_mod <- ggplot(data = mean_AE,
   geom_point() +
   scale_color_manual(values = clust_col$color[match(plot_clusters, clust_col$broad)]) +
   theme_bw() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.length.y = unit(0, "cm")) +
   # facet wrap with reordered factors
   facet_wrap(vars(factor(module, levels = unique(mean_AE$module)[module_order])),
              scales = "free_y",
-             nrow = 4,
-             ncol = 6) +
+             nrow = 2,
+             ncol = 11) +
   labs(color = "broad") +
   ggtitle("Average module expression by stage")
 
-plotly::ggplotly(mean_mod)
+# plotly::ggplotly(mean_mod)
 
-pdf("~/spinal_cord_paper/figures/Fig_2_mean_mod_AE.pdf", height = 7, width = 12)
+pdf("~/spinal_cord_paper/figures/Fig_2_mean_mod_AE.pdf", height = 4, width = 12)
 #Plot split tsne
 mean_mod
+dev.off()
 ```
 
 # VlnPlots of avg. module exp. by stage and seurat cluster 
@@ -481,6 +487,7 @@ pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_modcol.pdf", height = 20, w
 vplots[[1]]
 vplots[[2]]
 vplots[[3]]
+dev.off()
 ```
 
 ## colored by cell type
@@ -513,13 +520,15 @@ pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_clucol.pdf", height = 20, w
 vplots_id[[1]]
 vplots_id[[2]]
 vplots_id[[3]]
+
+dev.off()
 ```
 
 # MN modules
 
 For the figures we specifically select the two MN modules and plot them as Vln plots.
 
-```{r, fig.width=20, fig.height=5}
+```{r second_to_last, fig.width=20, fig.height=5}
 tmp <- avg.mod.eigengenes 
   
 identical(rownames(tmp), colnames(my.sec))
@@ -548,20 +557,10 @@ vln_ind <- VlnPlot(my.sec,
 vln_ind
 pdf("~/spinal_cord_paper/figures/Fig_2_AE_selected_mod.pdf", height = 22, width = 20)
 vln_ind
+dev.off()
 ```
 
-```{r}
-VlnPlot(
-    my.sec,
-    features = mods[module_order],
-    group.by = "sample_celltype",
-    stack = TRUE, flip = TRUE,
-    cols = substring(mods, 3)[module_order]) +
-    theme(legend.position = "none") +
-    geom_hline(yintercept = 0, lty = "dashed")
-
-
-
+```{r last}
 pdf("~/spinal_cord_paper/figures/Fig_2_AE_by_cluster_integrated_data.pdf", height = 20, width = 30)
 VlnPlot(
     my.sec,
@@ -571,6 +570,7 @@ VlnPlot(
     cols = substring(mods, 3)[module_order]) +
     theme(legend.position = "none") +
     geom_hline(yintercept = 0, lty = "dashed")
+dev.off()
 
 
 ```
