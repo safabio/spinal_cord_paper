@@ -267,3 +267,56 @@ ggsave("~/spinal_cord_paper/figures/Violinplot_HINTW_by_sample.pdf",
        (svol / svol_empty) + plot_layout(guides = "collect"))
 
 
+### ### ### ### ### ### ### ###
+#### All int QC violin plot ####
+### ### ### ### ### ### ### ###
+library(cowplot)
+my.int <- readRDS("~/spinal_cord_paper/data/Gg_all_int_seurat_270524.rds")
+
+ 
+meta_int <- my.int@meta.data %>% 
+  mutate(orig.ident = factor(
+    orig.ident,
+    levels = c("Gg_D05_ctrl", "Gg_D07_ctrl",
+               "Gg_ctrl_1", "Gg_ctrl_2",
+               "Gg_lumb_1", "Gg_lumb_2",
+               "Gg_poly_1", "Gg_poly_2")))
+
+vln_pm <- ggplot(meta_int, aes(x = orig.ident, y = percent.mt, fill = orig.ident)) +
+  geom_violin() +
+  scale_fill_manual(values = rep("grey60", 8)) +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+  ) 
+
+vln_nC <- ggplot(meta_int, aes(x = orig.ident, y = nCount_RNA, fill = orig.ident)) +
+  geom_violin() +
+  scale_fill_manual(values = rep("grey60", 8)) +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+  )
+
+vln_cF <- ggplot(meta_int, aes(x = orig.ident, y = nFeature_RNA, fill = orig.ident)) +
+  geom_violin() +
+  scale_fill_manual(values = rep("grey60", 8)) +
+  geom_boxplot(width = 0.1) +
+  theme_cowplot() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1,
+                                   hjust = 1)
+  )
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_1_Gg_all_vln_flat.pdf", width = 15, height = 5)
+vln_nC + vln_cF + vln_pm
+dev.off()
+
+##
