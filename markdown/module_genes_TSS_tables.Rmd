@@ -1,0 +1,118 @@
+---
+title: "Devel and GB modules TSS data frames"
+author: "Fabio Sacher"
+date: "02.09.2025"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+  html_notebook:
+    fig_height: 7
+    fig_width: 8
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r libraries}
+library(tidyverse)
+library(rtracklayer,quietly = TRUE)
+```
+
+```{r gtf_file}
+ensg6 <- readGFF("/scicore/home/tschoppp/GROUP/references/genomes/ENS_g6/10XGenome_ENSG6_extended_060420/genes/genes.gtf")
+```
+
+```{r}
+gnames <- modplots::gnames
+colnames(gnames) <- c("gene_id","gene_name")
+```
+
+
+# Glycogen Body modules 
+
+```{r gb_modules}
+# Day 10 lumbar scWGCNA
+myWGCNA <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_scWGCNA_250723.rds")
+
+gb_modules <- myWGCNA[["modules"]][c(5, 26)]
+
+gb_df <- bind_rows(gb_modules, .id = "module") %>% 
+  rownames_to_column("gene_id")
+
+gb_gtf <- ensg6 %>% 
+  filter(gene_id %in% gb_df$gene_id) %>% 
+  filter(type == "gene") %>% 
+  select(c(seqid, type, start, end, gene_id, strand)) %>% 
+  mutate(strand_start = case_when(
+    strand == "-" ~ end,
+    strand == "+" ~ start
+  ))
+
+gb_table <- gb_df %>% 
+  left_join(gb_gtf, by = "gene_id") %>% 
+  left_join(gnames, by = "gene_id") %>% 
+  select(c(seqid, type, start, end, strand, strand_start, gene_id, gene_name, module, Membership, p.val))
+
+saveRDS(gb_table, "~/spinal_cord_paper/data/Gg_lumb_int_GB_module_TSS_table.rds")
+write_csv(gb_table, "~/spinal_cord_paper/data/Gg_lumb_int_GB_module_TSS_table.csv")
+```
+
+# devel modules 
+
+```{r devel_modules}
+# Devel int scWGCNA
+myWGCNA <- readRDS("~/spinal_cord_paper/output/Gg_devel_int_scWGCNA_250723.rds")
+
+dev_modules <- myWGCNA[["modules"]]
+
+dev_df <- bind_rows(dev_modules, .id = "module") %>% 
+  rownames_to_column("gene_id")
+
+dev_gtf <- ensg6 %>% 
+  filter(gene_id %in% dev_df$gene_id) %>% 
+  filter(type == "gene") %>% 
+  select(c(seqid, type, start, end, gene_id, strand)) %>% 
+  mutate(strand_start = case_when(
+    strand == "-" ~ end,
+    strand == "+" ~ start
+  ))
+
+dev_table <- dev_df %>% 
+  left_join(dev_gtf, by = "gene_id") %>% 
+  left_join(gnames, by = "gene_id") %>% 
+  select(c(seqid, type, start, end, strand, strand_start, gene_id, gene_name, module, Membership, p.val))
+
+saveRDS(dev_table, "~/spinal_cord_paper/data/Gg_devel_int_module_TSS_table.rds")
+write_csv(dev_table, "~/spinal_cord_paper/data/Gg_devel_int_module_TSS_table.csv")
+```
+
+# Background
+
+Create table of all genes' TSS to serve as a background.
+
+```{r background}
+# Devel int scWGCNA
+
+bgr_gtf <- ensg6 %>% 
+  filter(type == "gene") %>% 
+  select(c(seqid, type, start, end, gene_id, strand)) %>% 
+  mutate(strand_start = case_when(
+    strand == "-" ~ end,
+    strand == "+" ~ start
+  ))
+
+bgr_table <- bgr_gtf %>% 
+  left_join(gnames, by = "gene_id") %>% 
+  select(c(seqid, type, start, end, strand, strand_start, gene_id, gene_name))
+
+saveRDS(bgr_table, "~/spinal_cord_paper/data/Background_TSS_table.rds")
+write_csv(bgr_table, "~/spinal_cord_paper/data/Background_TSS_table.csv")
+```
+
+```{r}
+# Date and time of Rendering
+Sys.time()
+
+sessionInfo()
+```
