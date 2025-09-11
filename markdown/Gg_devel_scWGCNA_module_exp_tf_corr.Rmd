@@ -561,13 +561,19 @@ dotplot
 ```
 
 ```{r export}
+module_order <- c("lightgreen","darkred","turquoise","brown","cyan",
+                  "purple","midnightblue","lightcyan","blue","salmon",
+                  "lightyellow","pink","royalblue","darkgreen","tan",
+                  "yellow","grey60","greenyellow","green","red",
+                  "magenta","black")
+
 pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_elbowplots.pdf", width = 8, height = 6)
 grid.arrange(grobs = elbowplots[module_order], ncol = 6, nrow = 4)
 dev.off()
 
-pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_fitted_elbowplots.pdf", width = 8, height = 6)
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_fitted_elbowplots.pdf", width = 12, height = 4)
 grid.arrange(grobs = fit_elbow[modules_to_plot], ncol = 5, nrow = 2)
-grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 6, nrow = 4)
+grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 11, nrow = 2)
 dev.off()
 
 
