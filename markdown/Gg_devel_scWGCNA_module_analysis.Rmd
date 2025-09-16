@@ -441,8 +441,7 @@ mean_mod <- ggplot(data = mean_AE,
 
 # plotly::ggplotly(mean_mod)
 
-pdf("~/spinal_cord_paper/figures/Fig_2_mean_mod_AE.pdf", height = 4, width = 12)
-#Plot split tsne
+pdf("~/spinal_cord_paper/figures/Fig_2_mean_mod_AE.pdf", height = 2.7, width = 12)
 mean_mod
 dev.off()
 ```
