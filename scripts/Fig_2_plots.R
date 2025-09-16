@@ -284,3 +284,60 @@ vln_ind <- VlnPlot(my.sec,
 pdf("~/spinal_cord_paper/figures/Fig_2_AE_selected_mod.pdf", height = 25, width = 20)
 vln_ind
 dev.off()
+
+
+### ### ### ### ### ### ### ### ### ### 
+#### TF enrichment and corr dotplots ####
+### ### ### ### ### ### ### ### ### ###
+
+enrich <- readRDS("~/spinal_cord_paper/output/DEV_TFmoduleCorr_motifEnrich.rds")
+df <- read.csv("~/spinal_cord_paper/output/DEV_TFPcorr_MotifEnrich_select.csv", sep = ";", header = FALSE)
+
+colnames(df) <- c("index","module","ID","tf_corr","gene.name","module.corr","member")
+
+module_order <- c("lightgreen","darkred","turquoise","brown","cyan",
+                  "purple","midnightblue","lightcyan","blue","salmon",
+                  "lightyellow","pink","royalblue","darkgreen","tan",
+                  "yellow","grey60","greenyellow","green","red",
+                  "magenta","black")
+
+# get the top enriched motif per gene
+enrich_top1 <- enrich %>% 
+  filter(module.corr %in% df$module.corr) %>% 
+  group_by(module.corr) %>% 
+  arrange(desc(motif.enrich)) %>% 
+  slice_head(n = 1) %>% 
+  group_by(module) %>% 
+  arrange(pearson.corr) %>% 
+  arrange(module) %>% 
+  mutate(module = factor(module, levels = rev(module_order))) %>% 
+  mutate(gene.module = paste0(module, "_", gene.name))%>% 
+  mutate(gene.module = factor(gene.module, levels = gene.module))
+
+
+pal_range <-range(enrich_top1$pearson.corr)*500
+
+palette <- colorRampPalette(c("#073b31","#2bb3a0", "white", "#bf9459", "#412901"))(n = 1000)
+palette <- palette[floor(500+pal_range[1]):ceiling(500+pal_range[2])]
+
+
+dotplot <- ggplot(data = enrich_top1,
+                  aes(x = gene.module,
+                      y = module,
+                      fill = pearson.corr,
+                      size = motif.enrich)) +
+  geom_point(color = "black", shape = 21) +
+  scale_fill_gradientn(colors = palette) +
+  facet_wrap("module", scales = "free", nrow = 2) +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.ticks = element_blank(),
+        legend.position="bottom")
+
+dotplot
+
+pdf("~/spinal_cord_paper/figures/Supp_fig_2_dotplot_motif_enrich.pdf",
+    width = 12, height = 4.4)
+dotplot
+dev.off()
