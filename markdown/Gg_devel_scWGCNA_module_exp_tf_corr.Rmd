@@ -194,7 +194,7 @@ elbowplots_thres_overall <- grid.arrange(grobs = elbowplots_thres[modules_to_plo
 
 Lines indicate detection threshold.
 
-```{r elbowplots, fig.height= 6, fig.width=8}
+```{r elbowplots, fig.height= 3, fig.width=12}
 elbowplots <- list()
 
 thresholds <- data.frame(module = colnames(avg_mod_exp))
@@ -208,14 +208,14 @@ for (i in seq(ncol(avg_mod_exp))) {
   module <- colnames(avg_mod_exp)[i]
   
   toplot <-  avg_mod_exp %>% 
-    arrange(desc(.data[[module]])) %>% 
+    arrange((.data[[module]])) %>% 
     mutate(rank = as.numeric(row_number())) %>% 
     select(!!sym(module),rank) %>% 
     dplyr::rename("mod_exp" = !!sym(module))
   
   elbowplots[[i]] <- ggplot(toplot, aes(x = rank, y = mod_exp)) +
     geom_hline(yintercept = tresh_df[module, 1], lty = "dashed") +
-    geom_line(col = module) +
+    geom_line(col = module, size = 1.5) +
     scale_x_continuous(breaks = seq(1, 15000, by = 14999))+
     ggtitle(module) +
     theme(
@@ -228,7 +228,7 @@ for (i in seq(ncol(avg_mod_exp))) {
 
 names(elbowplots) <- colnames(avg_mod_exp)
 
-elbow_overall <- grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 6, nrow = 4)
+elbow_overall <- grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 11, nrow = 2)
 ```
 
 
@@ -624,7 +624,7 @@ pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_elbowplots.pdf", width = 8, 
 grid.arrange(grobs = elbowplots[module_order], ncol = 6, nrow = 4)
 dev.off()
 
-pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_fitted_elbowplots.pdf", width = 12, height = 4)
+pdf("~/spinal_cord_paper/figures/Fig_1_devel_module_fitted_elbowplots.pdf", width = 12, height = 3)
 grid.arrange(grobs = fit_elbow[modules_to_plot], ncol = 5, nrow = 2)
 grid.arrange(grobs = elbowplots[rev(module_order)], ncol = 11, nrow = 2)
 dev.off()
