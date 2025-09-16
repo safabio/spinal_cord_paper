@@ -579,10 +579,66 @@ ggsave(
 )
 
 
+### ### ### ### ### ### ### ### ### ### 
+#### TF enrichment and corr dotplot ####
+### ### ### ### ### ### ### ### ### ###
+
+enrich_GB <- readRDS("~/spinal_cord_paper/output/GB_TFmoduleCorr_motifEnrich.rds")
+
+mod_corr <- read.csv("~/spinal_cord_paper/output/module_GB_TF_corr_pearson.csv")
+
+cand <- c("HOXD4","HOXC9","HOXD12","MEIS1","MEIS2","PBX1","PBX3","PBX4",
+          "ZIC1","ZIC3","MSX1","MSX2")
+
+# get the top enriched motif per gene
+enrich_GB_top1 <- enrich_GB %>% 
+  filter(gene.name %in% cand) %>% 
+  group_by(module.corr) %>% 
+  arrange(desc(motif.enrich)) %>% 
+  slice_head(n = 1) %>% 
+  ungroup() %>% 
+  mutate(gene.name = factor(gene.name, levels = c(cand)))
+
+# get the missing correlation values
+missing_enrich <- mod_corr %>% 
+  filter(Gene.name %in% cand) %>% 
+  filter(!tf_member %in% enrich_GB_top1$module.corr) %>% 
+  mutate(gene.name = factor(Gene.name, levels = c(cand))) %>% 
+  rename(pearson.corr = corr) %>% 
+  select(gene.name, module, pearson.corr) %>% 
+  mutate(motif.enrich = 4) %>% 
+  mutate(enriched = "no")
+
+toplot <- enrich_GB_top1 %>% 
+  select(gene.name, module, pearson.corr, motif.enrich) %>% 
+  mutate(enriched = "yes") %>% 
+  rbind(missing_enrich)
+
+pal_range_GB <-range(enrich_GB_top1$pearson.corr)*500
+
+palette_GB <- colorRampPalette(c("#073b31","#2bb3a0", "white", "#bf9459", "#412901"))(n = 1000)
+palette_GB <- palette_GB[floor(500+pal_range_GB[1]):ceiling(500+pal_range_GB[2])]
 
 
+dotplot_GB <- ggplot(data = toplot,
+                     aes(x = gene.name,
+                         y = module,
+                         fill = pearson.corr,
+                         color = enriched,
+                         size = motif.enrich)) +
+  geom_point(shape = 21) +
+  scale_color_manual(values = c("red", "black")) +
+  scale_fill_gradientn(colors = palette_GB) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position="bottom")
 
+dotplot_GB
 
+pdf("~/spinal_cord_paper/figures/Supp_fig_4_dotplot_motif_enrich.pdf",
+    width = 5, height = 2.5)
+dotplot_GB
+dev.off()
 
 
 
