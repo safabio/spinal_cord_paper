@@ -215,7 +215,7 @@ for (i in seq(ncol(avg_mod_exp))) {
   
   elbowplots[[i]] <- ggplot(toplot, aes(x = rank, y = mod_exp)) +
     geom_hline(yintercept = tresh_df[module, 1], lty = "dashed") +
-    geom_line(col = module, size = 1.5) +
+    geom_line(col = module) +
     scale_x_continuous(breaks = seq(1, 15000, by = 14999))+
     ggtitle(module) +
     theme(
