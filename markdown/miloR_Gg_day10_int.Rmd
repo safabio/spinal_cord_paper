@@ -176,7 +176,7 @@ res_1
 ```{r plot-resuts2}
 res_2 <- ggplot(da.results, aes(logFC, -log10(SpatialFDR))) + 
   geom_point() +
-  geom_hline(yintercept = -log10(0.05)) ## Mark significance threshold (0.05% FDR)
+  geom_hline(yintercept = -log10(0.1)) ## Mark significance threshold (0.05% FDR)
 res_2
 ```
 
@@ -193,7 +193,7 @@ my.milo <- buildNhoodGraph(my.milo)
 DimPlot(my.se,
         reduction = "tsne",
         group.by = "cond") + 
-  plotNhoodGraphDA(my.milo, da.results, alpha=1, layout = "TSNE") +
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "TSNE") +
   plot_layout(guides="collect")
 ```
 
@@ -201,7 +201,7 @@ DimPlot(my.se,
 DimPlot(my.se,
         reduction = "umap",
         group.by = "cond") + 
-  plotNhoodGraphDA(my.milo, da.results, alpha=1, layout = "UMAP") +
+  plotNhoodGraphDA(my.milo, da.results, alpha=0.9, layout = "UMAP") +
   plot_layout(guides="collect")
 ```
 
@@ -232,20 +232,6 @@ da.results$seurat_clusters_mixed <- factor(da.results$seurat_clusters_mixed, lev
 plotDAbeeswarm(da.results, group.by = "seurat_clusters_mixed", alpha=1.0)
 ```
 
-```{r barplot}
-bp_ncells_sex <- ggplot(my.se[[]], aes(x = orig.ident, fill = sex)) +
-  geom_bar(stat = "count") + 
-  stat_count(geom = "text", size = 3.5,
-             aes(label = ..count..),
-             position=position_stack(vjust=0.5)) +
-  scale_fill_manual(values = c("pink", "cyan")) +
-  theme_cowplot() +
-  theme(axis.text.x = element_text(angle = 90))
-
-bp_ncells_sex
-```
-
-
 #export
 
 ```{r export}
@@ -256,14 +242,13 @@ pdf(paste0("~/spinal_cord_paper/figures/",my.se@project.name ,"_milo_",format(Sy
 dim1 + ggtitle(my.se@project.name)
 plotNhoodGraphDA(my.milo,
                  da.results,
-                 alpha=1,
+                 alpha=0.9,
                  layout = "TSNE")
 plotNhoodGraphDA(my.milo,
                  da.results,
-                 alpha=1,
+                 alpha=0.9,
                  layout = "TSNE") + NoLegend()
-res_2 + ggtitle("line indicates FDR = 0.05 -> no sig. abundance")
-bp_ncells_sex
+res_2 + ggtitle("line indicates FDR = 0.1 -> no sig. abundance")
 dev.off()
 
 pdf("~/spinal_cord_paper/figures/Gg_day10_int_milo_volplot.pdf", height = 10, width = 5)
