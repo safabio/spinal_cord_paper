@@ -318,5 +318,3 @@ vln_cF <- ggplot(meta_int, aes(x = orig.ident, y = nFeature_RNA, fill = orig.ide
 pdf("~/spinal_cord_paper/figures/Supp_Fig_1_Gg_all_vln_flat.pdf", width = 15, height = 5)
 vln_nC + vln_cF + vln_pm
 dev.off()
-
-##
