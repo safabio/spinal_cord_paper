@@ -640,6 +640,34 @@ pdf("~/spinal_cord_paper/figures/Supp_fig_4_dotplot_motif_enrich.pdf",
 dotplot_GB
 dev.off()
 
+### ### ### ### ### ### ### ### ### ### 
+#### volplot milo ctlr_lumb and day.10 ####
+### ### ### ### ### ### ### ### ### ###
+
+da.results.day10 <- readRDS("~/spinal_cord_paper/output/Gg_day10_int_milo_da_results180925.rds") %>% 
+  select(logFC,SpatialFDR) %>% 
+  mutate(object = "day10_int")
+da.results.lumb <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_lumb_int_milo_da_results050225.rds") %>% 
+  select(logFC,SpatialFDR) %>% 
+  mutate(object = "ctrl_lumb_int")
+
+da.results <- rbind(da.results.day10, da.results.lumb)
+
+milo_volplot <- ggplot(da.results, aes(x = logFC, 
+                                       y = -log10(SpatialFDR),
+                                       colour = logFC)) + 
+  geom_point() +
+  geom_hline(yintercept = -log10(0.9), lty = "dashed") + ## Mark significance threshold used for plotting (FDR = 0.9)
+  geom_hline(yintercept = -log10(0.1)) + ## Mark significance threshold used (FDR = 0.1)
+  scale_color_gradient2() +
+  xlim(c(-7.4,7.4)) +
+  ylim(c(0,1.3)) +
+  facet_wrap("object")
+milo_volplot
+
+pdf("~/spinal_cord_paper/figures/milo_volplot_ctrl_lumb_int_vs_day10_int.pdf")
+milo_volplot
+dev.off()
 
 
 
