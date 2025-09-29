@@ -309,4 +309,108 @@ Reduce(intersect, venn_cilia)
 
 rm(wgcna_dat)
 
+### ### ### ### ### ### ### ### ### ### 
+#### module preservation boxplot  ####
+### ### ### ### ### ### ### ### ### ###
 
+library(tidyverse)
+
+#ctrl
+
+ctrl_cw <- readRDS("~/spinal_cord_paper/output/Gg_ctrl_int_comp_scWGCNA.rds")
+
+ctrl_v_lumb <- ctrl_cw$preservation$Z[[1]][[2]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(ctrl_cw$preservation$Z[[1]][2])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_ctrl_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+ctrl_v_poly <- ctrl_cw$preservation$Z[[1]][[3]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(ctrl_cw$preservation$Z[[1]][3])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_ctrl_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+#lumb
+
+lumb_cw <- readRDS("~/spinal_cord_paper/output/Gg_lumb_int_comp_scWGCNA.rds")
+
+lumb_v_ctrl <- lumb_cw$preservation$Z[[1]][[2]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(lumb_cw$preservation$Z[[1]][2])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_lumb_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+lumb_v_poly <- lumb_cw$preservation$Z[[1]][[3]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(lumb_cw$preservation$Z[[1]][3])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_lumb_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+#poly
+
+poly_cw <- readRDS("~/spinal_cord_paper/output/Gg_poly_int_comp_scWGCNA.rds")
+
+poly_v_ctrl <- poly_cw$preservation$Z[[1]][[2]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(poly_cw$preservation$Z[[1]][2])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_poly_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+poly_v_lumb <- poly_cw$preservation$Z[[1]][[3]] %>% 
+  rownames_to_column("module") %>% 
+  select(module,Zsummary.pres) %>% 
+  mutate(comp = names(poly_cw$preservation$Z[[1]][3])) %>% 
+  mutate(comp = str_extract(comp, "Gg_.{4}_int$")) %>% 
+  mutate(origin = "Gg_poly_int") %>% 
+  mutate(module_origin = paste(origin, module, sep = "-"))
+
+select_mod <- c("Gg_lumb_int-magenta","Gg_lumb_int-brown4","Gg_lumb_int-cyan","Gg_lumb_int-plum1")
+
+mod_zsum <- list(ctrl_v_lumb,
+                 ctrl_v_poly,
+                 lumb_v_ctrl,
+                 lumb_v_poly,
+                 poly_v_ctrl,
+                 poly_v_lumb) %>% 
+  bind_rows() %>% 
+  mutate(selected = case_when(
+    module_origin %in% select_mod ~ module_origin,
+    TRUE ~ "no"
+  )) %>% 
+  arrange(desc(selected))
+
+
+bplot <- ggplot(mod_zsum, 
+                aes(y = Zsummary.pres)) +
+  geom_boxplot(outliers = FALSE) +
+  geom_jitter(aes(x = 0,
+                  shape = origin,
+                  fill = selected),
+              alpha = 1) +
+  scale_shape_manual(values = c(24,22,21)) +
+  scale_fill_manual(values = c("brown4","cyan","magenta","plum1","white")) +
+  geom_hline(yintercept = 10, lty = "dashed", color = "grey") +
+  geom_hline(yintercept = 2, lty = "dashed", color = "grey")
+
+b3plot <- ggplot(mod_zsum,
+                 aes(x = origin,
+                     y = Zsummary.pres)) +
+  geom_boxplot() +
+  geom_hline(yintercept = 10, lty = "dashed", color = "grey") +
+  geom_hline(yintercept = 2, lty = "dashed", color = "grey")
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_3_scWGCNA_comp_box_plots.pdf", width = 3.5, height = 6)
+bplot
+b3plot
+dev.off()
