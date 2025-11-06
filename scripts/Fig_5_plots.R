@@ -324,9 +324,9 @@ alpha_size +
   NoLegend()
 dev.off()
 
-############################
-# GO terms of ctrl_poly DE #
-############################
+### ### ### ### ### ### ### 
+###  GO terms of ctrl_poly DE ####
+### ### ### ### ### ### ### 
 
 library(tidyverse)
 library(org.Gg.eg.db)
@@ -452,3 +452,461 @@ pdf("~/spinal_cord_paper/figures/Fig_5_Gg_ctrl_poly_int_markers_top50_GOterms.pd
 goplots
 dev.off()
 
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# barplot of n DEG for B/poly10int ####
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+library(tidyverse)
+
+poly_markers <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-")) %>% 
+  mutate(clust_id = factor(clust_id, levels = c(1:32))) %>% 
+  filter(p_val_adj < 0.05) %>% 
+  mutate(sample = case_when( # marker for B or poly?
+    avg_log2FC > 0 ~ "B10int",
+    avg_log2FC < 0 ~ "Poly10int"
+  )) %>% 
+  mutate(DE_groups = factor(paste0(sample, "_", clust_id)))
+
+DE_bar <- ggplot(poly_markers, aes(x = clust_id)) +
+  geom_bar(position="dodge") +
+  # scale_fill_manual(values = c("goldenrod3", "black")) +
+  scale_x_discrete(drop = FALSE) +
+  cowplot::theme_cowplot()
+
+factor_order <- c(1,3,7,9,13,16,17,18,19,27,23,22,5,6,11,20,25,29,30,32,2,4,8,12,14,15,26,10,24,21,28,31)
+
+DE_bar_ordered <- poly_markers %>% 
+  mutate(clust_id = factor(clust_id, levels = factor_order)) %>% 
+  ggplot(aes(x = clust_id)) +
+  geom_bar(position="dodge") +
+  # scale_fill_manual(values = c("goldenrod3", "black")) +
+  scale_x_discrete(drop = FALSE) +
+  cowplot::theme_cowplot()
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_5_Gg_ctrl_poly_int_markers_barplot.pdf", width = 10, height = 7)
+DE_bar/
+DE_bar_ordered
+dev.off()
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# bulk heatmaps DEG B/Poly10int ####
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+library(tidyverse)
+library(Seurat)
+library(pheatmap)
+
+gnames <- modplots::gnames
+
+my.se <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_seurat_250723.rds")
+
+my.se[[]] <- my.se[[]] %>% 
+  mutate(side = str_extract(orig.ident, "ctrl|poly")) %>% 
+  mutate(clust_side = paste(seurat_clusters, side, sep = "-"))
+
+NPC <- c(paste(c("g1","g3","g7","g9","g13","g16","g17","g18","g19","g22","g23","g27"), "ctrl", sep = "-"),
+         paste(c("g1","g3","g7","g9","g13","g16","g17","g18","g19","g22","g23","g27"), "poly", sep = "-"))
+OPC <- c(paste(c("g2","g4","g8","g10","g12","g14","g15","g24","g26"), "ctrl", sep = "-"),
+         paste(c("g2","g4","g8","g10","g12","g14","g15","g24","g26"), "poly", sep = "-"))
+neuron <-  c(paste(c("g5","g6","g11","g20","g25","g29","g30","g32"), "ctrl", sep = "-"),
+             paste(c("g5","g6","g11","g20","g25","g29","g30","g32"), "poly", sep = "-"))
+
+pb <- AggregateExpression(
+  my.se,
+  assays = "RNA",
+  group.by = "clust_side")
+
+
+top_markers_noMT <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-")) %>% 
+  mutate(clust_id = factor(clust_id, levels = c(1:32))) %>% 
+  filter(p_val_adj < 0.05) %>% 
+  mutate(sample = case_when( # marker for B or poly?
+    avg_log2FC > 0 ~ "ctrl",
+    avg_log2FC < 0 ~ "poly"
+  ))  %>% 
+  mutate(DE_groups = factor(paste0("g", clust_id, "-", sample))) %>% 
+  droplevels() %>% 
+  mutate(abs_logFC = abs(avg_log2FC)) %>% 
+  group_by(cluster) %>% 
+  filter(!grepl("^ND\\d$|^MT-|^CYTB|^ATP|^COX\\d|^COII$", Gene.name)) %>% 
+  slice_max(n = 10, order_by = abs_logFC) %>% 
+  mutate(Gene.name = str_replace(Gene.name, "^ENSGALG0+", "EG"))
+
+mark_NPC_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% NPC,]
+mark_OPC_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% OPC,]
+mark_neuron_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% neuron,]
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# DE genes row and col cluster noMT ####
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+pb_NPC <- pb[["RNA"]][unique(mark_NPC_noMT$Gene.stable.ID),NPC] %>% 
+  data.frame() %>% 
+  rownames_to_column("Gene.stable.ID") %>% 
+  mutate(Gene.stable.ID = str_remove(Gene.stable.ID, "\\.\\d+$")) %>% 
+  left_join(gnames) %>% 
+  mutate(Gene.name = str_replace(Gene.name, "^ENSGALG0+", "EG")) %>% 
+  column_to_rownames("Gene.name") %>% 
+  select(-Gene.stable.ID)
+
+pb_OPC <- pb[["RNA"]][unique(mark_OPC_noMT$Gene.stable.ID),OPC] %>% 
+  data.frame() %>% 
+  rownames_to_column("Gene.stable.ID") %>% 
+  mutate(Gene.stable.ID = str_remove(Gene.stable.ID, "\\.\\d+$")) %>% 
+  left_join(gnames) %>% 
+  mutate(Gene.name = str_replace(Gene.name, "^ENSGALG0+", "EG")) %>% 
+  column_to_rownames("Gene.name") %>% 
+  select(-Gene.stable.ID)
+
+pb_neuron <- pb[["RNA"]][unique(mark_neuron_noMT$Gene.stable.ID),neuron] %>% 
+  data.frame() %>% 
+  rownames_to_column("Gene.stable.ID") %>% 
+  mutate(Gene.stable.ID = str_remove(Gene.stable.ID, "\\.\\d+$")) %>% 
+  left_join(gnames) %>% 
+  mutate(Gene.name = str_replace(Gene.name, "^ENSGALG0+", "EG")) %>% 
+  column_to_rownames("Gene.name") %>% 
+  select(-Gene.stable.ID)
+
+ann_color <- list(
+  `cl-1` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-2` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-3` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-4` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-5` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-6` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-7` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-8` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-9` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-10` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-11` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-12` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-13` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-14` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-15` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-16` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-17` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-18` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-19` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-20` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-21` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-22` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-23` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-24` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-25` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-26` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-27` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-28` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-29` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-30` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-31` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  `cl-32` = c(
+    yes = "grey60",
+    no = "white"
+  ),
+  origin = c(
+    ctrl = "black",
+    poly = "goldenrod3"
+  )
+) 
+
+ann_col_NPC <- data.frame(
+  cluster = c(NPC)
+) %>% 
+  mutate(cluster = str_replace(cluster, "-", "\\.")) %>% 
+  mutate(origin = str_extract(cluster, "ctrl|poly")) %>% 
+  column_to_rownames("cluster")
+
+ann_col_OPC <- data.frame(
+  cluster = c(OPC)
+) %>% 
+  mutate(cluster = str_replace(cluster, "-", "\\.")) %>% 
+  mutate(origin = str_extract(cluster, "ctrl|poly")) %>% 
+  column_to_rownames("cluster")
+
+ann_col_neuron <- data.frame(
+  cluster = c(neuron)
+) %>% 
+  mutate(cluster = str_replace(cluster, "-", "\\.")) %>% 
+  mutate(origin = str_extract(cluster, "ctrl|poly")) %>% 
+  column_to_rownames("cluster")
+
+ann_row <- top_markers_noMT %>% 
+  select(c(Gene.name,cluster)) %>% 
+  mutate(DEG = "yes") %>% 
+  spread(key= cluster, value = DEG, fill = "no") %>% 
+  column_to_rownames("Gene.name")
+
+NPC <- c(paste(c("g1","g3","g7","g9","g13","g16","g17","g18","g19","g22","g23","g27"), "ctrl", sep = "-"),
+         paste(c("g1","g3","g7","g9","g13","g16","g17","g18","g19","g22","g23","g27"), "poly", sep = "-"))
+OPC <- c(paste(c("g2","g4","g8","g10","g12","g14","g15","g24","g26"), "ctrl", sep = "-"),
+         paste(c("g2","g4","g8","g10","g12","g14","g15","g24","g26"), "poly", sep = "-"))
+neuron <-  c(paste(c("g5","g6","g11","g20","g25","g29","g30","g32"), "ctrl", sep = "-"),
+             paste(c("g5","g6","g11","g20","g25","g29","g30","g32"), "poly", sep = "-"))
+
+ann_row_NPC <- ann_row %>% 
+  select(c(`cl-1`,`cl-3`,`cl-7`,`cl-9`,`cl-13`,`cl-16`,`cl-17`,`cl-18`,`cl-19`,`cl-22`,`cl-23`))
+
+ann_row_OPC <- ann_row %>% 
+  select(c(`cl-2`,`cl-4`,`cl-8`,`cl-10`,`cl-12`,`cl-15`,`cl-24`))
+
+ann_row_neuron <- ann_row %>% 
+  select(c(`cl-5`,`cl-6`,`cl-11`,`cl-20`,`cl-25`))
+
+heat_col <- colorRampPalette(colors = c("darkblue","dodgerblue4", "white", "red", "darkred"))
+
+
+## heatamaps of ctrl parts only to get col clustering
+## NPC
+NPC_log1p_zscore_ctrl <- pheatmap(
+  log1p(pb_NPC[,grepl("ctrl", colnames(pb_NPC))]),
+  annotation_col = ann_col_NPC,
+  annotation_colors = ann_color,
+  annotation_row = ann_row_NPC, 
+  scale = "row",
+  color = heat_col(700),
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "NPC DEG no MT log1p zscore"
+)
+
+
+NPC_ctrl <- NPC_log1p_zscore_ctrl$tree_col$labels[NPC_log1p_zscore_ctrl$tree_col$order]
+NPC_poly <- str_replace(NPC_ctrl, "ctrl", "poly")
+NPC_order <- c(rbind(NPC_ctrl, NPC_poly))
+
+## OPC
+OPC_log1p_zscore_ctrl <- pheatmap(
+  log1p(pb_OPC[,grepl("ctrl", colnames(pb_OPC))]),
+  annotation_col = ann_col_OPC,
+  annotation_colors = ann_color,
+  annotation_row = ann_row_OPC, 
+  scale = "row",
+  color = heat_col(700),
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "OPC DEG no MT log1p zscore"
+)
+
+
+OPC_ctrl <- OPC_log1p_zscore_ctrl$tree_col$labels[OPC_log1p_zscore_ctrl$tree_col$order]
+OPC_poly <- str_replace(OPC_ctrl, "ctrl", "poly")
+OPC_order <- c(rbind(OPC_ctrl, OPC_poly))
+
+## neuron
+neuron_log1p_zscore_ctrl <- pheatmap(
+  log1p(pb_neuron[,grepl("ctrl", colnames(pb_neuron))]),
+  annotation_col = ann_col_neuron,
+  annotation_colors = ann_color,
+  annotation_row = ann_row_neuron, 
+  scale = "row",
+  color = heat_col(700),
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "neuron DEG no MT log1p zscore"
+)
+
+
+neuron_ctrl <- neuron_log1p_zscore_ctrl$tree_col$labels[neuron_log1p_zscore_ctrl$tree_col$order]
+neuron_poly <- str_replace(neuron_ctrl, "ctrl", "poly")
+neuron_order <- c(rbind(neuron_ctrl, neuron_poly))
+
+
+# z-score heatmap
+NPC_log1p_zscore <- pheatmap(
+  log1p(pb_NPC[,NPC_order]),
+  annotation_col = ann_col_NPC,
+  annotation_colors = ann_color,
+  annotation_row = ann_row_NPC, 
+  scale = "row",
+  color = heat_col(700), 
+  cluster_cols = FALSE,
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "NPC DEG no MT log1p zscore"
+)
+# z-score heatmap
+OPC_log1p_zscore <- pheatmap(
+  log1p(pb_OPC[,OPC_order]),
+  annotation_col = ann_col_OPC, 
+  annotation_colors = ann_color,
+  annotation_row = ann_row_OPC,
+  scale = "row",
+  color = heat_col(700), 
+  cluster_cols = FALSE,
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "OPC DEG no MT log1p zscore"
+)
+# z-score heatmap
+neuron_log1p_zscore <- pheatmap(
+  log1p(pb_neuron[,neuron_order]),
+  annotation_col = ann_col_neuron, 
+  annotation_colors = ann_color,
+  annotation_row = ann_row_neuron,
+  scale = "row",
+  color = heat_col(700), 
+  cluster_cols = FALSE,
+  border_color = NA,
+  cellwidth = 9,
+  cellheight = 9,
+  main = "neuron DEG no MT log1p zscore"
+)
+
+pdf("~/spinal_cord_paper/figures/Supp_Fig_5_DEG_heatmap_noMT.pdf", height = 10, width = 9)
+gridExtra::grid.arrange(NPC_log1p_zscore_ctrl[[4]])
+gridExtra::grid.arrange(NPC_log1p_zscore[[4]])
+gridExtra::grid.arrange(OPC_log1p_zscore_ctrl[[4]])
+gridExtra::grid.arrange(OPC_log1p_zscore[[4]])
+gridExtra::grid.arrange(neuron_log1p_zscore_ctrl[[4]])
+gridExtra::grid.arrange(neuron_log1p_zscore[[4]])
+dev.off()
+
+### ### ### ### ### ###
+### Venn diagram DEG ####
+### ### ### ### ### ###
+library(tidyverse)
+library(VennDiagram) 
+library(eulerr)
+
+top_markers_noMT <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
+  mutate(clust_id = str_remove(cluster, "^cl-")) %>% 
+  mutate(clust_id = factor(clust_id, levels = c(1:32))) %>% 
+  filter(p_val_adj < 0.05) %>% 
+  mutate(sample = case_when( # marker for B or poly?
+    avg_log2FC > 0 ~ "ctrl",
+    avg_log2FC < 0 ~ "poly"
+  ))  %>% 
+  mutate(DE_groups = factor(paste0("g", clust_id, "-", sample))) %>% 
+  droplevels() %>% 
+  mutate(abs_logFC = abs(avg_log2FC)) %>% 
+  group_by(cluster) %>% 
+  filter(!grepl("^ND\\d$|^MT-|^CYTB|^ATP|^COX\\d|^COII$", Gene.name)) %>% 
+  mutate(Gene.name = str_replace(Gene.name, "^ENSGALG0+", "EG"))
+
+mark_NPC_all_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% NPC,] %>% 
+  pull(Gene.name) %>% 
+  unique()
+mark_OPC_all_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% OPC,] %>% 
+  pull(Gene.name) %>% 
+  unique()
+mark_neuron_all_noMT <- top_markers_noMT[top_markers_noMT$DE_groups %in% neuron,] %>% 
+  pull(Gene.name) %>% 
+  unique()
+
+venn.diagram(list(NPC = mark_NPC_all_noMT, 
+                  OPC = mark_OPC_all_noMT,
+                  neurons =mark_neuron_all_noMT),
+             fill = c("#edc919",
+                      "#008cb5",
+                      "#cd2b91"), 
+             alpha = c(0.5, 0.5, 0.5), lwd =0, 
+             imagetype = "svg",
+             "~/spinal_cord_paper/figures/Supp_fig_5_venn_diagram.svg")
+
+venn <- list(NPC = mark_NPC_all_noMT, 
+           OPC = mark_OPC_all_noMT,
+           neurons =mark_neuron_all_noMT)
+
+pdf("~/spinal_cord_paper/figures/Supp_fig_5_DEGvenn_diagram.pdf")
+plot(euler(venn, shape = "ellipse"), quantities = TRUE)
+dev.off()
