@@ -244,44 +244,46 @@ write.csv(Kegg_paths, "tables/Supp_table_6.csv", row.names = FALSE)
 
 rm(Kegg_paths, table_list, x, files, i, name)
 
+### ### ### ### ### ### ### ### ### ##
+#### Supp table 7 / Devel module tf cor pearson #### 
+### ### ### ### ### ### ### ### ### ##
+
+devel_TF_mod_corr <- read.csv("~/spinal_cord_paper/output/module_devel_TF_corr_pearson.csv")
+
+write.csv(devel_TF_mod_corr, "tables/Supp_table_7.csv", row.names = FALSE)
+
 ### ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 7 / Volcano plot DE genes  #### 
+#### Supp table 9 / Volcano plot DE genes  #### 
 ### ### ### ### ### ### ### ### ### ### ### ###
 
 marker_list <- list()
 
 marker_list[["L10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_lumb_int_markers.rds") %>% 
   mutate(clust_id = as.numeric(str_remove(cluster, "^cl-"))) %>% 
-  filter(clust_id %in% c(17)) %>%  
   mutate(cluster = fct_drop(cluster)) %>% 
-  mutate(data = "B10int_vs_L10int") %>% 
-  mutate(cell_type = case_when(
-    clust_id == 16 ~ "MFOL_early",
-    clust_id == 17 ~ "exc_neuron_1",
-    clust_id == 18 ~ "MFOL_late",
-    clust_id == 27 ~ "exc_neuron_2"
-  )) %>% 
-  select(-cell_type)
+  mutate(data = "B10int_vs_L10int")
 
 marker_list[["P10int"]] <- readRDS("~/spinal_cord_paper/data/Gg_ctrl_poly_int_markers.rds") %>% 
   mutate(clust_id = as.numeric(str_remove(cluster, "^cl-"))) %>% 
-  filter(clust_id %in% c(5, 11, 18, 23, 25)) %>%  
   mutate(cluster = fct_drop(cluster)) %>% 
-  mutate(data = "B10int_vs_Poly10int") %>% 
-  mutate(cell_type = case_when(
-    clust_id == 24 ~ "MFOL",
-    clust_id == 25 ~ "motor_neurons"
-  )) %>% 
-  select(-cell_type)
+  mutate(data = "B10int_vs_Poly10int") 
 
 marker_df <- do.call(rbind, marker_list)
 
-write.csv(marker_df, "tables/Supp_table_7.csv", row.names = FALSE)
+write.csv(marker_df, "tables/Supp_table_9.csv", row.names = FALSE)
 
 rm(marker_list, marker_df)
 
+### ### ### ### ### ### ### ### ### ##
+#### Supp table 10 / GB module tf cor pearson #### 
+### ### ### ### ### ### ### ### ### ##
+
+GB_TF_mod_corr <- read.csv("~/spinal_cord_paper/output/module_GB_TF_corr_pearson.csv")
+
+write.csv(GB_TF_mod_corr, "tables/Supp_table_10.csv", row.names = FALSE)
+
 ### ### ### ### ### ### ### ### ### ### ###
-#### Supp table 8 / ISH Probe Primers  #### 
+#### Supp table 12 / ISH Probe Primers  #### 
 ### ### ### ### ### ### ### ### ### ### ###
 
 
