@@ -101,81 +101,6 @@ grid.arrange(plots[[1]][[1]],plots[[2]][[1]],plots[[3]][[1]],
              plots[[1]][[3]],plots[[2]][[3]],plots[[3]][[3]])
 dev.off()
 
-### ### ### ### ### ###
-#### Supp figure 3 ####
-### ### ### ### ### ##
-
-t11 <- plots[[1]][[1]] + 
-  theme_void() + 
-  theme(plot.title = element_blank()) +
-  NoLegend() +
-  annotate("text", label = "B10_int", x = 0, y = 110) +
-  annotate("text", label = "A", fontface = "bold", x = -110, y = 110) + 
-  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90)
-
-t21 <- plots[[2]][[1]] + 
-  theme_void() +
-  theme(plot.title = element_blank()) + 
-  NoLegend() + 
-  annotate("text", label = "L10_int", x = 0, y = 110) + 
-  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90, color = "white")
-
-t31 <- plots[[3]][[1]] +
-  theme_void() +
-  theme(plot.title = element_blank())  +
-  NoLegend() + 
-  annotate("text", label = "P10_int", x = 0, y = 110) + 
-  annotate("text", label = probes[1], fontface = "italic", x = -110, y = 0, angle = 90, color = "white")
-# SFRP5
-t12 <- plots[[1]][[2]] +
-  theme_void() + 
-  theme(plot.title = element_blank()) +
-  NoLegend() + 
-  annotate("text", label = "brachial", x = 0, y = 110, color = "white") +
-  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90)
-
-t22 <- plots[[2]][[2]] +
-  theme_void() + 
-  theme(plot.title = element_blank()) +
-  annotate("text", label = "lumbar", x = 0, y = 110, color = "white") +
-  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
-  NoLegend()
-
-t32 <- plots[[3]][[2]] +
-  theme_void() + 
-  theme(plot.title = element_blank()) +
-  annotate("text", label = "polydactyl", x = 0, y = 110, color = "white") + 
-  annotate("text", label = probes[2], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
-  NoLegend() 
-# CRTAC1
-t13 <- plots[[1]][[3]] +
-  theme_void() + 
-  theme(plot.title = element_blank()) +
-  NoLegend() + 
-  annotate("text", label = "brachial", x = 0, y = 110, color = "white") +
-  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90)
-
-t23 <- plots[[2]][[3]] +
-  theme_void() + 
-  annotate("text", label = "lumbar", x = 0, y = 110, color = "white") +
-  theme(plot.title = element_blank()) + 
-  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
-  NoLegend()
-
-t33 <- plots[[3]][[3]] +
-  theme_void() + 
-  annotate("text", label = "polydactyl", x = 0, y = 110, color = "white") +
-  theme(plot.title = element_blank()) + 
-  annotate("text", label = probes[3], fontface = "italic", x = -110, y = 0, angle = 90, color = "white") +
-  NoLegend()
-
-pdf("~/spinal_cord_paper/figures/Supp_Fig_3.pdf", paper = "a4", width = 8.5, height = 11)
-grid.arrange(t11, t21, t31,
-             t12, t22, t32,
-             t13, t23, t32,
-             p1, p2, p3, heights=c(1,1,1,2))
-dev.off()
-
 ### ### ### ### ### ### ### ### ### ### ###
 #### CSF modules network plot  ####
 ### ### ### ### ### ### ### ### ### ### ###
@@ -293,7 +218,7 @@ p_lab_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black"), s
 p_cilia <- ggvenn(venn_cilia, fill_color = c("purple", "yellow", "black")) +
   ggtitle("Cilia/Flagella modules D10 int")
 
-pdf("~/spinal_cord_paper/figures/RP_FP_cilia_modules_venn_D10.pdf", width = 7, height = 7)
+pdf("~/spinal_cord_paper/figures/Supp_Fig_3_RP_FP_cilia_modules_venn_D10.pdf", width = 7, height = 7)
 p_lab_rp
 p_rp
 p_lab_fp
