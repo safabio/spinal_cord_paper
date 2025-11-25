@@ -32,6 +32,13 @@ Next we run the comparative scWGCNA pipeline to calculate module conservation be
 
 -   ***comparative_scWGCNA_array.sh***: compares each data set's modules with the other two data sets. Produces the "Gg_*_int_comp_scWGCNA.pdf" plots.
 
+## TF motif enrichment
+
+-   ***module_genes_TSS_tables.Rmd***: TSS tables used for motif enrichment analysis.
+-   ***motif_enrichment_analysis.R***: Motif enrichment analysis. Contains code run in the unix shell.
+
+Final plots using the Motif Enrichment scores are done in Fig_2_plots.R and Fig_4_plots.R.
+
 ## miloR (differential abundance)
 
 Differential abundance is calculated with [miloR](https://github.com/MarioniLab/miloR). Again the script is called with a  separate array job:
